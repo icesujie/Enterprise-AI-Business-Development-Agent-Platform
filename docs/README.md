@@ -2,41 +2,42 @@
 
 ## Documentation Index / 文档索引
 
-这套文档采用“英文技术基线 + 中文审阅指南”的方式维护：
+这套文档采用“英文技术基线 + 中文说明”的方式维护：
 
 - **英文技术文档**是后续开发、接口联调、数据库建模和架构验收的正式依据。
-- **中文审阅指南**解释业务含义、关键设计决策、风险和需要确认的问题。
-- 如果中英文理解存在冲突，以英文技术基线中的字段、状态、接口和约束为准；确认后的业务变更应先更新英文基线，再同步中文指南。
+- **中文说明**用于解释业务含义和设计结果。
+- 技术方案、MVP 取舍和开发顺序由 AI 工程代理负责决定并验证。
+- 如果中英文理解存在冲突，以英文技术基线中的字段、状态、接口和约束为准。
 
-这种方式比逐段双语复制更容易维护，也更适合非纯技术人员参与评审。
+你不需要逐份审核这些技术文档。
 
-## 建议阅读顺序
+## 你只需要看什么
 
-1. 先阅读 [中文架构审阅指南](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)。
-2. 确认指南中的“需要业务方确认”事项。
-3. 再按需查看以下英文技术细节：
+如果想了解项目，直接看：
 
-| 文档 | 中文说明 | 适合谁审核 |
+1. [Project Roadmap](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/roadmap.md>)：项目分几期、目前做到哪里。
+2. [MVP Scope](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/mvp-scope.md>)：第一版具体做什么。
+3. [中文架构说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)：系统整体如何工作。
+
+其余文档主要供开发使用：
+
+| 文档 | 用途 |
 |---|---|---|
-| [Technical Architecture](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/technical-architecture.md>) | 系统、前后端、AI、集成、部署和安全架构 | 产品负责人、技术负责人、安全和运维 |
-| [Database Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/database-design.md>) | 实体关系、表、字段、关系和索引 | 后端、数据、产品和合规 |
-| [API Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.md>) | REST API、接口清单、示例和认证 | 前后端、集成、自动化和安全 |
+| [Technical Architecture](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/technical-architecture.md>) | 系统、前后端、AI、集成、部署和安全架构 |
+| [Database Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/database-design.md>) | 实体关系、表、字段、关系和索引 |
+| [API Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.md>) | REST API、接口清单、示例和认证 |
+| [Project Rules](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/AGENTS.md>) | AI 工程代理必须遵守的开发规则 |
 
-## 审核输出建议
+## 什么时候需要你确认
 
-审核时不需要逐字检查所有英文内容。建议把意见分成以下四类：
+AI 工程代理会自行决定技术实现。只有以下情况会请你确认：
 
-- **业务不符合：** 流程、角色、状态、审批条件与实际业务不一致。
-- **范围调整：** 第一阶段不需要，或遗漏了必须上线的能力。
-- **数据问题：** 字段缺失、数据不应保存、保存时间不合适。
-- **技术风险：** 性能、安全、集成、部署或成本不可接受。
+- 使用真实客户数据。
+- 向真实客户发送邮件、WhatsApp、提案或营销内容。
+- 对价格、折扣、交期、技术保证或合同作出商业承诺。
+- 购买付费服务或产生明显费用。
+- 部署到正式生产环境。
+- 执行不可恢复的数据删除或高风险变更。
+- 现有设计与 Sari Arta 的真实业务事实明显冲突。
 
-意见示例：
-
-```text
-文档：database-design.md
-章节：5.5 opportunities
-类型：业务不符合
-意见：Sari Arta 的项目必须同时记录项目顾问和技术负责人，不能只有一个 owner。
-```
-
+其他技术选择、页面结构、数据库字段、API、测试和开发顺序由 AI 工程代理自行完成。
