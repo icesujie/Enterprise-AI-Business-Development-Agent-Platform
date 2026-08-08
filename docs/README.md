@@ -17,7 +17,8 @@
 
 1. [Project Roadmap](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/roadmap.md>)：项目分几期、目前做到哪里。
 2. [MVP Scope](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/mvp-scope.md>)：第一版具体做什么。
-3. [中文架构说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)：系统整体如何工作。
+3. [Phase 1 Tasks](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-1-tasks.md>)：第一阶段任务、依赖和验收标准。
+4. [中文架构说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)：系统整体如何工作。
 
 其余文档主要供开发使用：
 
