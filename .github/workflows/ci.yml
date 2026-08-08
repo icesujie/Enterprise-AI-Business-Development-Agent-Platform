@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: apps/api/requirements-dev.lock
+
+      - name: Install dependencies
+        run: pip install --requirement apps/api/requirements-dev.lock
+
+      - name: Check lockfiles
+        run: |
+          pip-compile apps/api/pyproject.toml --output-file apps/api/requirements.lock --strip-extras --quiet
+          pip-compile apps/api/pyproject.toml --extra dev --output-file apps/api/requirements-dev.lock --strip-extras --quiet
+          git diff --exit-code -- apps/api/requirements.lock apps/api/requirements-dev.lock
+
+      - name: Lint
+        run: ruff check apps/api/src apps/api/tests apps/api/migrations
+
+      - name: Type check
+        run: mypy apps/api/src
+
+      - name: Test
+        run: pytest apps/api/tests
+
+      - name: Validate migration graph
+        working-directory: apps/api
+        run: alembic heads
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test:ci
+
+      - name: Build
+        run: npm run build
+
+  compose:
+    name: Docker Compose
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Validate configuration
+        run: docker compose config --quiet

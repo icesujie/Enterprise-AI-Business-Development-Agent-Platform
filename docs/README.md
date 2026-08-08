@@ -28,6 +28,7 @@
 | [Database Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/database-design.md>) | 实体关系、表、字段、关系和索引 |
 | [API Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.md>) | REST API、接口清单、示例和认证 |
 | [Project Rules](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/AGENTS.md>) | AI 工程代理必须遵守的开发规则 |
+| [Local Development](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/development.md>) | 本地安装、运行、验证和故障排查 |
 
 ## 什么时候需要你确认
 

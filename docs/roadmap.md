@@ -38,7 +38,7 @@
 
 ### Required capabilities
 
-- [ ] Project foundation and local Docker environment
+- [x] Project foundation and local Docker environment
 - [ ] Authentication for `admin` and `sales`
 - [ ] PostgreSQL schema and migrations
 - [ ] FastAPI backend API

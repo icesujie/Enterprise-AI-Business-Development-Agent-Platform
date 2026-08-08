@@ -5,13 +5,15 @@
 **Project:** Enterprise AI Business Development Agent Platform  
 **Reference business:** Sari Arta  
 **Current phase:** Phase 1 — MVP  
-**Current state:** Documentation complete; application implementation not started  
+**Current state:** M1 implemented and validated on 2026-08-08
 **Scope sources:** `docs/roadmap.md`, then `docs/mvp-scope.md`, then the enterprise design documents  
-**Coding gate:** Do not begin M1 implementation until the project owner approves the plan.
+**Coding gate:** Do not begin M2 implementation until the project owner approves the next milestone.
 
 ## Next highest-priority milestone
 
 ### M1 — Runnable project foundation
+
+**Status:** Complete.
 
 **Objective:** Create a reproducible development environment in which the frontend, backend, PostgreSQL, and Redis start successfully and can be validated automatically.
 
@@ -19,19 +21,19 @@ This milestone comes first because every Phase 1 capability depends on a stable 
 
 ### M1 tasks
 
-| ID | Task | Deliverable | Acceptance evidence |
-|---|---|---|---|
-| FND-001 | Establish repository layout | `apps/web`, `apps/api`, infrastructure and documentation locations | Layout is documented and contains no duplicated application ownership |
-| FND-002 | Pin runtime and package-manager policy | Node, Python and dependency-manager versions; lockfiles | Clean setup uses the documented versions and locked dependencies |
-| FND-003 | Scaffold Next.js frontend | Strict TypeScript App Router shell with basic health/status page | Frontend lint, type check and production build pass |
-| FND-004 | Scaffold FastAPI backend | Typed application shell with `/health/live` and `/health/ready` | API unit test and type/lint checks pass |
-| FND-005 | Establish backend layering | Route, application, domain and adapter package boundaries | Dependency direction is documented and tested by import conventions |
-| FND-006 | Create local service environment | Docker Compose for PostgreSQL and Redis plus application profiles | Services start, report healthy and persist development DB data |
-| FND-007 | Define configuration and secrets policy | Validated settings, `.env.example`, safe development defaults | Missing required configuration fails safely; no secret is committed |
-| FND-008 | Add database connectivity baseline | SQLAlchemy 2.x session/unit-of-work boundary and Alembic setup | API readiness check verifies DB connectivity; empty migration cycle succeeds |
-| FND-009 | Add quality commands | Ruff, Python type checking, pytest, ESLint, TypeScript check and frontend tests | One documented command runs the local affected checks |
-| FND-010 | Add CI baseline | Workflow for lint, types, tests and build without deployment | CI definition is syntax-valid and mirrors local validation |
-| FND-011 | Add developer setup documentation | Prerequisites, startup, shutdown, validation and troubleshooting | A new developer can reach healthy frontend/API/services from the guide |
+| Status | ID | Task | Deliverable | Acceptance evidence |
+|---|---|---|---|---|
+| [x] | FND-001 | Establish repository layout | `apps/web`, `apps/api`, infrastructure and documentation locations | Layout is documented and contains no duplicated application ownership |
+| [x] | FND-002 | Pin runtime and package-manager policy | Node, Python and dependency-manager versions; lockfiles | Clean setup uses the documented versions and locked dependencies |
+| [x] | FND-003 | Scaffold Next.js frontend | Strict TypeScript App Router shell with basic health/status page | Frontend lint, type check and production build pass |
+| [x] | FND-004 | Scaffold FastAPI backend | Typed application shell with `/health/live` and `/health/ready` | API unit test and type/lint checks pass |
+| [x] | FND-005 | Establish backend layering | Route, application, domain and adapter package boundaries | Dependency direction is documented and tested by import conventions |
+| [x] | FND-006 | Create local service environment | Docker Compose for PostgreSQL and Redis plus application profiles | Services start, report healthy and persist development DB data |
+| [x] | FND-007 | Define configuration and secrets policy | Validated settings, `.env.example`, safe development defaults | Missing required configuration fails safely; no secret is committed |
+| [x] | FND-008 | Add database connectivity baseline | SQLAlchemy 2.x session/unit-of-work boundary and Alembic setup | API readiness check verifies DB connectivity; empty migration cycle succeeds |
+| [x] | FND-009 | Add quality commands | Ruff, Python type checking, pytest, ESLint, TypeScript check and frontend tests | One documented command runs the local affected checks |
+| [x] | FND-010 | Add CI baseline | Workflow for lint, types, tests and build without deployment | CI definition is syntax-valid and mirrors local validation |
+| [x] | FND-011 | Add developer setup documentation | Prerequisites, startup, shutdown, validation and troubleshooting | A new developer can reach healthy frontend/API/services from the guide |
 
 ### M1 implementation decisions
 
@@ -183,7 +185,7 @@ M5 and M6 may run in parallel only if more than one developer is available. For 
 
 ## Approval checkpoint
 
-Approval of this plan authorizes implementation of **M1 only**. It does not authorize:
+The completed approval authorized implementation of **M1 only**. It did not authorize:
 
 - Access to real Sari Arta or customer data.
 - Creation or purchase of Supabase/OpenAI production resources.
@@ -192,4 +194,4 @@ Approval of this plan authorizes implementation of **M1 only**. It does not auth
 - Phase 2–4 implementation.
 - Destructive operations, commits, pushes or publication.
 
-At the end of M1, report validation evidence before beginning M2.
+M1 validation evidence must be reported before requesting approval to begin M2.
