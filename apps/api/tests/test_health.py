@@ -59,4 +59,3 @@ async def test_readiness_fails_when_database_is_unavailable() -> None:
         "status": "unhealthy",
         "checks": {"database": "unhealthy"},
     }
-

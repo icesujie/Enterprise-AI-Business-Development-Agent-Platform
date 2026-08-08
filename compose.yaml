@@ -41,6 +41,9 @@ services:
       LOG_LEVEL: INFO
       DATABASE_URL: postgresql+asyncpg://sariarta:sariarta_dev@postgres:5432/sariarta
       REDIS_URL: redis://redis:6379/0
+      AUTH_ISSUER: https://local.supabase.example/auth/v1
+      AUTH_AUDIENCE: authenticated
+      AUTH_JWKS_URL: https://local.supabase.example/auth/v1/.well-known/jwks.json
     ports:
       - "8000:8000"
     depends_on:
@@ -77,4 +80,3 @@ services:
 volumes:
   postgres_data:
   redis_data:
-

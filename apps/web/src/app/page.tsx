@@ -17,8 +17,8 @@ const services = [
 ] as const;
 
 const nextMilestones = [
-  "Identity and workspace access",
   "Lead and customer records",
+  "Tasks and opportunity conversion",
   "AI-assisted lead qualification",
 ] as const;
 
@@ -34,7 +34,7 @@ export default function Home() {
             <p className="mt-1 text-sm font-medium">AI Business Development</p>
           </div>
           <span className="rounded-full border border-[var(--accent)]/25 bg-[var(--accent-soft)] px-3 py-1 text-xs font-semibold text-[var(--accent)]">
-            M1 Foundation
+            M2 Data foundation
           </span>
         </header>
 
@@ -47,8 +47,8 @@ export default function Home() {
               Business development, built on a reliable foundation.
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-[var(--muted)]">
-              The first milestone establishes the secure, testable platform that
-              will support Sari Arta&apos;s lead workflow and AI qualification.
+              The secure application foundation now includes workspace identity,
+              role enforcement, and the core CRM data model needed for lead work.
             </p>
 
             <dl className="mt-10 grid gap-4 sm:grid-cols-3">
@@ -75,7 +75,7 @@ export default function Home() {
               Delivery sequence
             </p>
             <h2 className="mt-4 text-2xl font-semibold tracking-[-0.02em]">
-              What comes after M1
+              What comes after M2
             </h2>
             <ol className="mt-8 space-y-5">
               {nextMilestones.map((milestone, index) => (

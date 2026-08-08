@@ -50,4 +50,3 @@ async def ready(
         status=readiness.status,
         checks=ReadinessChecks(database=readiness.database),
     )
-

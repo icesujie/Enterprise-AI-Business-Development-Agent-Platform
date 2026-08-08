@@ -55,7 +55,14 @@ The services store local state in named Docker volumes. `make services-down` sto
 make migrate
 ```
 
-M1 contains an empty baseline revision. Business tables begin in M2.
+M1 contains the migration baseline. M2 creates the identity and core business tables and
+adds synthetic `admin` and `sales` memberships for local authorization tests. These accounts
+use reserved `.example` addresses and are not real Sari Arta users.
+
+Protected API calls require a Supabase access token signed by an asymmetric `ES256` or
+`RS256` project key. Configure the issuer, audience and JWKS URL in `.env`; symmetric JWT
+secrets are intentionally unsupported. The local test suite uses generated keys and never
+requires a live Supabase project.
 
 ## 6. Start the applications
 
@@ -151,4 +158,3 @@ Confirm `DATABASE_URL` points to `localhost` when the API runs on the host and t
 ### Resetting local development data
 
 Removing Docker volumes deletes local database and Redis data. This is destructive and should be done only when the exact local targets and recovery need are understood.
-

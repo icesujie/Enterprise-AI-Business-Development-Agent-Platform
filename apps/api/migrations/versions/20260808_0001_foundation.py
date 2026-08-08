@@ -19,4 +19,3 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Return to the pre-M1 migration state."""
-

@@ -18,4 +18,3 @@ class Readiness:
 def evaluate_readiness(*, database_ready: bool) -> Readiness:
     database = HealthStatus.HEALTHY if database_ready else HealthStatus.UNHEALTHY
     return Readiness(status=database, database=database)
-

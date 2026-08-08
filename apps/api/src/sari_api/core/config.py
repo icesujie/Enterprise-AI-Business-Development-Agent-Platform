@@ -23,6 +23,10 @@ class Settings(BaseSettings):
         min_length=1,
     )
     redis_url: str = Field(default="redis://localhost:6379/0", min_length=1)
+    auth_issuer: str = "https://local.supabase.example/auth/v1"
+    auth_audience: str = "authenticated"
+    auth_jwks_url: str = "https://local.supabase.example/auth/v1/.well-known/jwks.json"
+    auth_jwks_cache_seconds: int = Field(default=600, ge=60, le=1200)
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:
@@ -32,6 +36,8 @@ class Settings(BaseSettings):
                 raise ValueError("production DATABASE_URL must not use local development values")
             if any(marker in self.redis_url for marker in local_markers):
                 raise ValueError("production REDIS_URL must not use local development values")
+            if ".example" in self.auth_issuer or ".example" in self.auth_jwks_url:
+                raise ValueError("production Supabase Auth endpoints must be configured")
         return self
 
 

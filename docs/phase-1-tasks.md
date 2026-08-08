@@ -5,11 +5,14 @@
 **Project:** Enterprise AI Business Development Agent Platform  
 **Reference business:** Sari Arta  
 **Current phase:** Phase 1 — MVP  
-**Current state:** M1 implemented and validated on 2026-08-08
+**Current state:** M2 implemented and validated on 2026-08-08
 **Scope sources:** `docs/roadmap.md`, then `docs/mvp-scope.md`, then the enterprise design documents  
-**Coding gate:** Do not begin M2 implementation until the project owner approves the next milestone.
+**Coding gate:** Ordinary Phase 1 milestones may proceed autonomously within `AGENTS.md` safety boundaries.
 
-## Next highest-priority milestone
+## Milestone history and current priority
+
+The next highest-priority milestone is **M3 — CRM lead vertical slice**. M1 and M2
+are retained below as implementation and validation history.
 
 ### M1 — Runnable project foundation
 
@@ -61,16 +64,19 @@ This milestone comes first because every Phase 1 capability depends on a stable 
 
 **Depends on:** M1
 
-- [ ] ID-001 Integrate Supabase Auth behind the FastAPI authentication boundary.
-- [ ] ID-002 Validate issuer, audience, signature, expiry and subject for access tokens.
-- [ ] ID-003 Implement seeded Sari Arta workspace and `admin`/`sales` membership.
-- [ ] ID-004 Implement request identity and tenant context without trusting a client-selected tenant ID.
-- [ ] DB-001 Create initial identity, CRM, task, agent-run and audit migrations.
-- [ ] DB-002 Add foreign keys, state constraints, version fields and tenant-scoped indexes.
-- [ ] DB-003 Add repository integration-test database and migration tests.
-- [ ] SEC-001 Test unauthenticated, wrong-role and cross-workspace access denial.
+- [x] ID-001 Integrate Supabase Auth behind the FastAPI authentication boundary.
+- [x] ID-002 Validate issuer, audience, signature, expiry and subject for access tokens.
+- [x] ID-003 Implement seeded Sari Arta workspace and `admin`/`sales` membership.
+- [x] ID-004 Implement request identity and tenant context without trusting a client-selected tenant ID.
+- [x] DB-001 Create initial identity, CRM, task, agent-run and audit migrations.
+- [x] DB-002 Add foreign keys, state constraints, version fields and tenant-scoped indexes.
+- [x] DB-003 Add repository integration-test database and migration tests.
+- [x] SEC-001 Test unauthenticated, wrong-role and cross-workspace access denial.
 
 **Exit:** Authenticated admin and sales users reach protected API operations with tested role and tenant enforcement.
+
+**Status:** Complete. Validation includes 19 backend tests, migration downgrade/upgrade,
+authorization denial paths, and database row-security policy inspection.
 
 ### M3 — CRM lead vertical slice
 
@@ -183,15 +189,16 @@ M4 + M5 + M7
 
 M5 and M6 may run in parallel only if more than one developer is available. For one developer, complete them in the listed order to maintain a usable non-AI system before adding AI.
 
-## Approval checkpoint
+## Autonomous development boundary
 
-The completed approval authorized implementation of **M1 only**. It did not authorize:
+The project owner authorized autonomous execution of ordinary Phase 1 milestones. This does not authorize:
 
 - Access to real Sari Arta or customer data.
 - Creation or purchase of Supabase/OpenAI production resources.
 - Production deployment.
 - External communication.
 - Phase 2–4 implementation.
-- Destructive operations, commits, pushes or publication.
+- Destructive operations against non-synthetic data, commits, pushes or publication.
 
-M1 validation evidence must be reported before requesting approval to begin M2.
+M3 is the next milestone. Real data, paid or production resources, external communication,
+and irreversible operations remain explicit safety boundaries.

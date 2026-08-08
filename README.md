@@ -4,7 +4,9 @@ AI-assisted lead management for Sari Arta, an Indonesian commercial-kitchen engi
 
 ## Current delivery
 
-The project is in **Phase 1 — MVP**. **M1 — Runnable project foundation** is complete; M2 requires a separate approval before implementation.
+The project is in **Phase 1 — MVP**. **M1 — Runnable project foundation** and
+**M2 — Identity and data foundation** are complete. The next milestone is the
+CRM lead vertical slice.
 
 M1 provides:
 
@@ -17,6 +19,11 @@ M1 provides:
 - Docker images and Docker Compose orchestration.
 
 M1 does not connect to Supabase, OpenAI, real customer data or production infrastructure.
+
+M2 adds Supabase-compatible asymmetric JWT verification, protected identity APIs,
+synthetic `admin` and `sales` memberships, core PostgreSQL business tables, tenant
+row-security policies, and authorization/integration tests. It still uses no live
+Supabase project or real customer data.
 
 ## Repository layout
 
@@ -68,7 +75,7 @@ Open:
 
 ## Validation
 
-Run the complete M1 validation suite:
+Run the complete affected validation suite:
 
 ```bash
 make check

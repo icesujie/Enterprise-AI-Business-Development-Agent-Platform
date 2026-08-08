@@ -16,6 +16,23 @@ jobs:
   backend:
     name: Backend
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sariarta
+          POSTGRES_USER: sariarta
+          POSTGRES_PASSWORD: sariarta_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sariarta -d sariarta"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      APP_ENVIRONMENT: test
+      DATABASE_URL: postgresql+asyncpg://sariarta:sariarta_dev@localhost:5432/sariarta
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -41,6 +58,10 @@ jobs:
 
       - name: Type check
         run: mypy apps/api/src
+
+      - name: Apply database migrations
+        working-directory: apps/api
+        run: alembic upgrade head
 
       - name: Test
         run: pytest apps/api/tests

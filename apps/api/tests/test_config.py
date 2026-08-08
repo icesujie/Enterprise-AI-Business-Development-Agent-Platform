@@ -38,3 +38,12 @@ def test_production_rejects_local_service_configuration(
             redis_url=redis_url,
         )
 
+
+def test_production_requires_real_auth_endpoints() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            app_environment="production",
+            database_url="postgresql+asyncpg://app:secret@database.internal:5432/sariarta",
+            redis_url="redis://cache.internal:6379/0",
+        )

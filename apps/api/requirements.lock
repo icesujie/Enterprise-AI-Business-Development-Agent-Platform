@@ -16,8 +16,12 @@ anyio==4.14.2
     #   watchfiles
 asyncpg==0.31.0
     # via sari-arta-api (apps/api/pyproject.toml)
+cffi==2.1.1
+    # via cryptography
 click==8.4.2
     # via uvicorn
+cryptography==50.0.0
+    # via pyjwt
 fastapi==0.141.1
     # via sari-arta-api (apps/api/pyproject.toml)
 greenlet==3.5.4
@@ -32,6 +36,8 @@ mako==1.4.1
     # via alembic
 markupsafe==3.0.3
     # via mako
+pycparser==3.0
+    # via cffi
 pydantic==2.13.4
     # via
     #   fastapi
@@ -39,6 +45,8 @@ pydantic==2.13.4
 pydantic-core==2.46.4
     # via pydantic
 pydantic-settings==2.15.0
+    # via sari-arta-api (apps/api/pyproject.toml)
+pyjwt==2.13.0
     # via sari-arta-api (apps/api/pyproject.toml)
 python-dotenv==1.2.2
     # via

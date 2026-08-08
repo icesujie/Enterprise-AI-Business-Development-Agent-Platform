@@ -20,9 +20,7 @@ def imported_modules(path: Path) -> set[str]:
 def assert_layer_avoids(layer: str, forbidden_prefixes: tuple[str, ...]) -> None:
     for path in (PACKAGE_ROOT / layer).rglob("*.py"):
         forbidden = {
-            module
-            for module in imported_modules(path)
-            if module.startswith(forbidden_prefixes)
+            module for module in imported_modules(path) if module.startswith(forbidden_prefixes)
         }
         assert not forbidden, f"{path} imports forbidden modules: {sorted(forbidden)}"
 
@@ -41,4 +39,3 @@ def test_domain_layer_is_independent() -> None:
 
 def test_application_layer_does_not_depend_on_transport_or_adapters() -> None:
     assert_layer_avoids("application", ("sari_api.adapters", "sari_api.api"))
-

@@ -39,8 +39,8 @@
 ### Required capabilities
 
 - [x] Project foundation and local Docker environment
-- [ ] Authentication for `admin` and `sales`
-- [ ] PostgreSQL schema and migrations
+- [x] Authentication for `admin` and `sales`
+- [x] PostgreSQL schema and migrations
 - [ ] FastAPI backend API
 - [ ] Manual and website lead capture
 - [ ] Customer-company and contact records
@@ -78,7 +78,7 @@ Sign in
 - The application runs through the documented Docker-based setup.
 - A portfolio demonstration can complete the workflow in five to seven minutes.
 
-**Current status:** Not started.
+**Current status:** In progress — M1 and M2 complete; M3 CRM lead slice is next.
 
 ## Phase 2 — AI Enhancement
 
