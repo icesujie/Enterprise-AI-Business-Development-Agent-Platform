@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     agent_timeout_seconds: int = Field(default=45, ge=5, le=180)
     agent_max_turns: int = Field(default=3, ge=1, le=8)
     agent_max_output_tokens: int = Field(default=1200, ge=200, le=4000)
+    agent_max_attempts: int = Field(default=3, ge=1, le=5)
+    agent_retry_base_seconds: int = Field(default=2, ge=1, le=60)
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:

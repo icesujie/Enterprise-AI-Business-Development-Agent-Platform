@@ -22,6 +22,8 @@ from sari_api.adapters.qualification_repository import (
 )
 from sari_api.adapters.work_repository import SqlAlchemyWorkRepository
 from sari_api.api.dependencies import require_permission
+from sari_api.core.config import get_settings
+from sari_api.core.observability import get_correlation_id
 from sari_api.domain.identity import Principal
 from sari_api.domain.qualification import (
     QUALIFICATION_FACTOR_LABELS,
@@ -61,6 +63,11 @@ class QualificationRunResponse(StrictModel):
     completed_at: datetime | None
     error_code: str | None
     error_message: str | None
+    correlation_id: str | None
+    attempt_count: int
+    max_attempts: int
+    next_retry_at: datetime | None
+    last_heartbeat_at: datetime | None
     created_at: datetime
 
 
@@ -118,6 +125,11 @@ def run_response(run: AgentRun) -> QualificationRunResponse:
         completed_at=run.completed_at,
         error_code=run.error_code,
         error_message=run.error_message_safe,
+        correlation_id=run.correlation_id,
+        attempt_count=run.attempt_count,
+        max_attempts=run.max_attempts,
+        next_retry_at=run.next_retry_at,
+        last_heartbeat_at=run.last_heartbeat_at,
         created_at=run.created_at,
     )
 
@@ -217,6 +229,8 @@ async def start_qualification(
             lead_id=lead_id,
             user_id=principal.user_id,
             input_snapshot=snapshot,
+            correlation_id=get_correlation_id(),
+            max_attempts=get_settings().agent_max_attempts,
         )
         result = run_start_response(run)
         session.add(

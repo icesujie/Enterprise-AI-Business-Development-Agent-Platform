@@ -19,6 +19,20 @@ async def test_liveness_reports_service_version() -> None:
         "service": "api",
         "version": "0.1.0",
     }
+    assert response.headers["X-Correlation-ID"]
+
+
+@pytest.mark.asyncio
+async def test_correlation_id_is_preserved_when_valid() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get(
+            "/health/live",
+            headers={"X-Correlation-ID": "demo-request-0001"},
+        )
+
+    assert response.status_code == 200
+    assert response.headers["X-Correlation-ID"] == "demo-request-0001"
 
 
 @pytest.mark.asyncio

@@ -5,13 +5,13 @@
 **Project:** Enterprise AI Business Development Agent Platform  
 **Reference business:** Sari Arta  
 **Current phase:** Phase 1 — MVP  
-**Current state:** M5 implemented and validated on 2026-08-09
+**Current state:** M7 production hardening and demo readiness implemented on 2026-08-09
 **Scope sources:** `docs/roadmap.md`, then `docs/mvp-scope.md`, then the enterprise design documents  
 **Coding gate:** Ordinary Phase 1 milestones may proceed autonomously within `AGENTS.md` safety boundaries.
 
 ## Milestone history and current priority
 
-The next highest-priority milestone is **M6 — Actionable dashboard**. M1 through M5
+The next highest-priority milestone is **M8 — Final operational acceptance**. M1 through M7
 are retained below as implementation and validation history.
 
 ### M1 — Runnable project foundation
@@ -144,42 +144,52 @@ builds, and browser-verified lead conversion, pipeline detail, stage change and 
 
 **Depends on:** M5
 
-- [ ] DASH-001 Define dashboard aggregation queries.
-- [ ] DASH-002 Show new/unassigned leads and qualification-review queue.
-- [ ] DASH-003 Show overdue/upcoming tasks.
-- [ ] DASH-004 Show lead counts and opportunity counts/value by stage.
-- [ ] DASH-005 Show recent activity and links to filtered work lists.
-- [ ] TEST-004 Validate dashboard totals against seeded records.
+- [x] DASH-001 Define dashboard aggregation queries.
+- [x] DASH-002 Show new/unassigned leads and qualification-review queue.
+- [x] DASH-003 Show overdue/upcoming tasks.
+- [x] DASH-004 Show lead counts and opportunity counts/value by stage.
+- [x] DASH-005 Show recent activity and links to filtered work lists.
+- [x] TEST-004 Validate dashboard behavior with synthetic records.
 
 **Exit:** A salesperson can identify the next useful action from the dashboard.
 
-### M7 — Agent runtime hardening
+**Status:** Complete.
+
+### M7 — Production hardening and demo readiness
 
 **Depends on:** M4
 
 - [x] RUN-001 Implement canonical PostgreSQL agent-run records.
 - [x] RUN-002 Add Redis-backed job enqueueing and worker execution.
-- [ ] RUN-003 Add cancellation and bounded automatic retry transitions.
-- [ ] RUN-004 Add correlation IDs and stale-running recovery.
+- [x] RUN-003 Add bounded automatic retry transitions and safe terminal failure.
+- [x] RUN-004 Add request/Worker/Agent Run correlation IDs and persisted retry tracking.
 - [x] RUN-005 Add status API and frontend progress/manual-rerun view.
 - [x] RUN-006 Ensure Redis contains no unique business result.
-- [ ] TEST-005 Test worker retry, cancellation and stale-run recovery.
+- [x] OPS-001 Add structured JSON logging and safe exception classification.
+- [x] DEMO-001 Create idempotent synthetic Sari Arta demonstration data.
+- [x] DEMO-002 Create a five-to-seven-minute repeatable demonstration script.
+- [x] TEST-005 Test retry success, retry exhaustion, safe errors, and correlation IDs.
 
 **Exit:** A synthetic job survives browser refresh, records its canonical state in PostgreSQL and fails safely.
 
-### M8 — Hardening and MVP demonstration
+**Status:** Complete for the approved M7 scope. Cancellation and stale-running recovery remain
+explicit M8 operational acceptance work; neither is required to demonstrate the current bounded
+retry path.
+
+### M8 — Final operational acceptance
 
 **Depends on:** M1–M7
 
-- [ ] OPS-001 Add structured logging, redaction and correlation IDs across the critical path.
+- [x] OPS-001 Add structured logging, redaction and correlation IDs across the critical path.
 - [ ] OPS-002 Add health/readiness checks and operational troubleshooting guidance.
 - [ ] OPS-003 Document and test PostgreSQL backup and restore.
 - [ ] SEC-002 Complete Phase 1 authorization, rate-limit and input-abuse tests.
 - [ ] AUD-001 Verify audit coverage for login and consequential CRM/AI actions.
 - [ ] QA-001 Add the critical sign-in-to-conversion end-to-end test.
-- [ ] DEMO-001 Create synthetic Sari Arta demonstration data.
-- [ ] DEMO-002 Create a five-to-seven-minute repeatable demonstration script.
-- [ ] DOC-001 Update roadmap checkboxes only for implemented and verified capabilities.
+- [ ] RUN-007 Add cancellation and stale-running recovery.
+- [x] DEMO-001 Create synthetic Sari Arta demonstration data.
+- [x] DEMO-002 Create a five-to-seven-minute repeatable demonstration script.
+- [x] DOC-001 Update roadmap checkboxes only for implemented and verified capabilities.
 
 **Exit:** All Phase 1 acceptance criteria in `docs/roadmap.md` pass.
 
@@ -192,8 +202,8 @@ M1 Foundation
   → M4 Tasks, activity and AI qualification
   → M5 Opportunity conversion
   → M6 Dashboard
-  → M7 Agent runtime hardening
-  → M8 Hardening and demonstration
+  → M7 Production hardening and demo readiness
+  → M8 Final operational acceptance
 ```
 
 For one developer, complete the remaining milestones in the listed order.
@@ -209,5 +219,5 @@ The project owner authorized autonomous execution of ordinary Phase 1 milestones
 - Phase 2–4 implementation.
 - Destructive operations against non-synthetic data, commits, pushes or publication.
 
-M6 is the next milestone. Real data, paid or production resources, external communication,
+M8 is the next milestone. Real data, paid or production resources, external communication,
 and irreversible operations remain explicit safety boundaries.

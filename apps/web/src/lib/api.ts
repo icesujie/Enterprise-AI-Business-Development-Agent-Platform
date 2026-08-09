@@ -132,6 +132,11 @@ export type QualificationRun = {
   completed_at: string | null;
   error_code: string | null;
   error_message: string | null;
+  correlation_id: string | null;
+  attempt_count: number;
+  max_attempts: number;
+  next_retry_at: string | null;
+  last_heartbeat_at: string | null;
   created_at: string;
 };
 

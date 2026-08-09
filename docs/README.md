@@ -22,6 +22,7 @@
 5. [UI/UX Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/ui-design.md>)：官网和内部销售工作台的产品体验与视觉设计基线。
 6. [Website Design Reference](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/design-reference.md>)：Nayati 参考分析与 Sari Arta 原创官网方向。
 7. [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>)：M6 前端页面、组件、响应式和实施范围的最终规格。
+8. [Phase 1 Demo Script](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/demo-script.md>)：使用纯合成数据完成 5–7 分钟业务演示。
 
 其余文档主要供开发使用：
 
@@ -35,6 +36,7 @@
 | [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>) | M6 可实施的官网、内部工作台、设计系统、路由与阶段范围 |
 | [Project Rules](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/AGENTS.md>) | AI 工程代理必须遵守的开发规则 |
 | [Local Development](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/development.md>) | 本地安装、运行、验证和故障排查 |
+| [Phase 1 Demo Script](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/demo-script.md>) | 网站询盘、AI 资格评估、Dashboard 和商机转换演示流程 |
 
 ## 什么时候需要你确认
 

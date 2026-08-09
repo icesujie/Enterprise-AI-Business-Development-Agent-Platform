@@ -35,6 +35,21 @@ class RecordingQueue:
         self.messages.append((run_id, tenant_id))
 
 
+class FlakyQualificationProvider:
+    provider_type = "synthetic-flaky"
+    model_id = "synthetic-flaky-v1"
+
+    def __init__(self, failures_before_success: int) -> None:
+        self.failures_before_success = failures_before_success
+        self.calls = 0
+
+    async def qualify(self, snapshot: dict[str, object]) -> QualificationOutput:
+        self.calls += 1
+        if self.calls <= self.failures_before_success:
+            raise RuntimeError("synthetic provider detail that must not be persisted")
+        return await MockQualificationProvider().qualify(snapshot)
+
+
 @pytest.mark.parametrize(
     ("score", "tier"),
     [(90, "hot"), (60, "warm"), (20, "cold")],
@@ -219,7 +234,10 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
             assert lead.status_code == 201, lead.text
             lead_body = lead.json()
             key = f"qualification-{uuid4()}"
-            headers = {"Idempotency-Key": key}
+            headers = {
+                "Idempotency-Key": key,
+                "X-Correlation-ID": "qualification-demo-0001",
+            }
             payload = {
                 "rubric_key": "commercial_kitchen_project_v1",
                 "language": "en",
@@ -250,6 +268,9 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
             assert run.status_code == 200, run.text
             assert run.json()["status"] == "succeeded"
             assert run.json()["provider_type"] == "mock"
+            assert run.json()["correlation_id"] == "qualification-demo-0001"
+            assert run.json()["attempt_count"] == 1
+            assert run.json()["max_attempts"] == 3
             assert run.json()["result"]["tier"] == "warm"
             assert run.json()["result"]["qualification_level"] == "B"
             assert run.json()["result"]["business_summary"] == (
@@ -288,5 +309,91 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
                 json={"decision": "rejected"},
             )
             assert repeated_review.status_code == 409
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_run_retries_and_then_succeeds() -> None:
+    queue = RecordingQueue()
+    provider = FlakyQualificationProvider(failures_before_success=2)
+    app.dependency_overrides[get_token_identity] = admin_identity
+    app.dependency_overrides[get_agent_queue] = lambda: queue
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            lead = await client.post(
+                "/api/v1/leads",
+                json={
+                    "source_channel": "manual",
+                    "inquiry_summary": "Synthetic school kitchen retry test project.",
+                    "project_type": "School kitchen",
+                    "expected_capacity": "900 meals/day",
+                },
+            )
+            started = await client.post(
+                f"/api/v1/leads/{lead.json()['id']}/qualification-runs",
+                headers={"Idempotency-Key": f"retry-{uuid4()}"},
+                json={"rubric_key": "commercial_kitchen_project_v1", "language": "en"},
+            )
+            assert started.status_code == 202, started.text
+            run_id, tenant_id = queue.messages[0]
+            executor = QualificationRunExecutor(provider, retry_base_seconds=0)
+
+            first_retry = await executor.execute(run_id, tenant_id)
+            assert first_retry is not None
+            after_first = await client.get(f"/api/v1/agent-runs/{run_id}")
+            assert after_first.json()["status"] == "queued"
+            assert after_first.json()["attempt_count"] == 1
+            assert after_first.json()["next_retry_at"] is not None
+
+            second_retry = await executor.execute(run_id, tenant_id)
+            assert second_retry is not None
+            assert await executor.execute(run_id, tenant_id) is None
+
+            completed = await client.get(f"/api/v1/agent-runs/{run_id}")
+            assert completed.json()["status"] == "succeeded"
+            assert completed.json()["attempt_count"] == 3
+            assert completed.json()["error_code"] is None
+            assert provider.calls == 3
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_agent_run_fails_safely_after_bounded_retries() -> None:
+    queue = RecordingQueue()
+    provider = FlakyQualificationProvider(failures_before_success=99)
+    app.dependency_overrides[get_token_identity] = admin_identity
+    app.dependency_overrides[get_agent_queue] = lambda: queue
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            lead = await client.post(
+                "/api/v1/leads",
+                json={
+                    "source_channel": "manual",
+                    "inquiry_summary": "Synthetic hospital kitchen failure test project.",
+                    "project_type": "Hospital kitchen",
+                },
+            )
+            started = await client.post(
+                f"/api/v1/leads/{lead.json()['id']}/qualification-runs",
+                headers={"Idempotency-Key": f"failure-{uuid4()}"},
+                json={"rubric_key": "commercial_kitchen_project_v1", "language": "en"},
+            )
+            assert started.status_code == 202, started.text
+            run_id, tenant_id = queue.messages[0]
+            executor = QualificationRunExecutor(provider, retry_base_seconds=0)
+            assert await executor.execute(run_id, tenant_id) is not None
+            assert await executor.execute(run_id, tenant_id) is not None
+            assert await executor.execute(run_id, tenant_id) is None
+
+            failed = await client.get(f"/api/v1/agent-runs/{run_id}")
+            body = failed.json()
+            assert body["status"] == "failed"
+            assert body["attempt_count"] == body["max_attempts"] == 3
+            assert body["error_code"] == "provider_unavailable"
+            assert "synthetic provider detail" not in body["error_message"]
     finally:
         app.dependency_overrides.clear()

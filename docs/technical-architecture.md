@@ -3,11 +3,29 @@
 ## Technical Architecture Design
 
 **Reference business:** Sari Arta, Indonesia commercial kitchen engineering  
-**Status:** Architecture baseline; no application code  
+**Status:** Enterprise architecture baseline with Phase 1 M7 implementation status
 **Primary stack:** Next.js, FastAPI, PostgreSQL, OpenAI Agents SDK with multi-model provider adapters, n8n, Docker  
 **Document version:** 1.0
 
 > 中文审阅入口：[中文架构审阅指南](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)。本英文文档是正式技术基线，中文指南提供逐主题解释、术语对照和审核问题。
+
+## Current implementation status — Phase 1 M7
+
+The working MVP implements the public Sari Arta website, consultation lead capture,
+authenticated CRM workspace, company/contact relationships, lead and follow-up management,
+AI lead qualification with human review, transactional opportunity conversion, and an
+actionable sales dashboard.
+
+The M7 runtime uses PostgreSQL as the canonical Agent Run store and Redis only as transport.
+Each run records provider/model identity, correlation ID, attempt count, bounded maximum
+attempts, heartbeat, next retry time, structured output, and safe terminal failure. API and
+Worker processes emit JSON logs with correlation fields and exclude credentials, raw provider
+errors, prompts, and hidden model reasoning.
+
+The repository also includes an idempotent synthetic demo-data command and a repeatable Phase 1
+demo script. These controls improve local and presentation readiness but do not claim that
+production deployment, backup/restore verification, external monitoring, or real-data approval
+is complete.
 
 ## 1. Purpose and scope
 

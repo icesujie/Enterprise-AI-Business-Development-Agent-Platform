@@ -9,6 +9,7 @@ from sari_api import __version__
 from sari_api.adapters.database import dispose_database
 from sari_api.api.router import router
 from sari_api.core.config import get_settings
+from sari_api.core.observability import CorrelationIdMiddleware, configure_logging
 
 
 @asynccontextmanager
@@ -19,6 +20,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    configure_logging(settings.log_level)
     application = FastAPI(
         title=settings.app_name,
         version=__version__,
@@ -26,6 +28,7 @@ def create_app() -> FastAPI:
         redoc_url=None,
         lifespan=lifespan,
     )
+    application.add_middleware(CorrelationIdMiddleware)
     application.include_router(router)
     return application
 

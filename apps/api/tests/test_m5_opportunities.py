@@ -226,9 +226,7 @@ async def test_opportunity_stage_transitions_are_guarded_and_audited() -> None:
             )
             assert lost_without_reason.status_code == 409
 
-            activities = await client.get(
-                f"/api/v1/opportunities/{opportunity['id']}/activities"
-            )
+            activities = await client.get(f"/api/v1/opportunities/{opportunity['id']}/activities")
             assert activities.status_code == 200
             assert {item["activity_type"] for item in activities.json()} >= {
                 "lead_converted",

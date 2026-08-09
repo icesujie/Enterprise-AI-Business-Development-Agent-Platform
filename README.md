@@ -6,9 +6,10 @@ AI-assisted lead management for Sari Arta, an Indonesian commercial-kitchen engi
 
 The project is in **Phase 1 — MVP**. **M1 — Runnable project foundation** and
 **M2 — Identity and data foundation**, **M3 — CRM lead vertical slice**, and
-**M4 — Work tracking and AI qualification**, and **M5 — Opportunity conversion**
-are complete. M6 now includes the public business website, lead capture, internal sales
-workspace, and the integrated AI qualification experience.
+**M4 — Work tracking and AI qualification**, **M5 — Opportunity conversion**, and
+**M6 — Public website and sales workspace** are complete. M7 production hardening and
+demo readiness adds bounded Agent Run retries, correlation IDs, structured logs, safe failure
+tracking, and a repeatable synthetic Sari Arta demonstration dataset.
 
 M1 provides:
 
@@ -44,6 +45,11 @@ M6 adds the responsive Sari Arta website and consultation flow, dashboard and le
 workspace, A/B/C qualification results, deterministic API-key-free demo qualification, and
 the switchable OpenAI Agents SDK provider. Every assessment still requires human review.
 
+M7 makes the workflow presentation-ready: Agent Runs persist attempt and retry metadata in
+PostgreSQL, delayed retries travel through Redis, API and Worker logs use JSON with correlation
+IDs, provider details are not exposed in saved failure messages, and `make demo-seed` loads
+four realistic but entirely synthetic business scenarios.
+
 ## Repository layout
 
 ```text
@@ -77,6 +83,7 @@ After dependencies are installed:
 cp .env.example .env
 make services-up
 make migrate
+make demo-seed
 make api-dev
 ```
 
@@ -107,6 +114,7 @@ This command runs backend lint, type checks and tests; frontend lint, type check
 
 - [Documentation index](docs/README.md)
 - [Project roadmap](docs/roadmap.md)
+- [Phase 1 demo script](docs/demo-script.md)
 - [MVP scope](docs/mvp-scope.md)
 - [Phase 1 tasks](docs/phase-1-tasks.md)
 - [Technical architecture](docs/technical-architecture.md)

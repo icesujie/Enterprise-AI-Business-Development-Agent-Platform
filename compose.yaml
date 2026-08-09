@@ -50,6 +50,8 @@ services:
       AI_ENABLED: ${AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      AGENT_MAX_ATTEMPTS: ${AGENT_MAX_ATTEMPTS:-3}
+      AGENT_RETRY_BASE_SECONDS: ${AGENT_RETRY_BASE_SECONDS:-2}
     ports:
       - "8000:8000"
     depends_on:
@@ -83,6 +85,8 @@ services:
       AI_ENABLED: ${AI_ENABLED:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+      AGENT_MAX_ATTEMPTS: ${AGENT_MAX_ATTEMPTS:-3}
+      AGENT_RETRY_BASE_SECONDS: ${AGENT_RETRY_BASE_SECONDS:-2}
     depends_on:
       postgres:
         condition: service_healthy

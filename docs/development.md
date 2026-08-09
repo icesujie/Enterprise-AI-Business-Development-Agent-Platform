@@ -62,6 +62,16 @@ use reserved `.example` addresses and are not real Sari Arta users.
 Later Phase 1 migrations add CRM behavior, AI qualification, work tracking, and the M5
 opportunity-stage constraint. Always run `make migrate` after pulling application changes.
 
+Load the optional synthetic presentation dataset after migrations:
+
+```bash
+make demo-seed
+```
+
+The command creates four fixed `.example` company/contact scenarios, representative leads,
+tasks, an opportunity, and approved/pending qualification results. It is idempotent and does
+not delete or overwrite existing CRM records. Never replace it with real customer data.
+
 Protected API calls require a Supabase access token signed by an asymmetric `ES256` or
 `RS256` project key. Configure the issuer, audience and JWKS URL in `.env`; symmetric JWT
 secrets are intentionally unsupported. The local test suite uses generated keys and never
@@ -85,7 +95,9 @@ qualification rubric so local demos work without an API key. To use the approved
 provider path, set `AI_ENABLED=true`, provide `OPENAI_API_KEY`, and select the approved model
 through `OPENAI_MODEL`. Never put a real key in `.env.example`, source control, logs, or
 screenshots. The qualification input is a minimal saved CRM snapshot; sensitive SDK tracing
-is disabled.
+is disabled. Agent Runs use `AGENT_MAX_ATTEMPTS` and exponential retry timing based on
+`AGENT_RETRY_BASE_SECONDS`. PostgreSQL stores attempt state and safe failures; Redis stores
+only immediate or delayed queue messages.
 
 ## 6. Start the applications
 

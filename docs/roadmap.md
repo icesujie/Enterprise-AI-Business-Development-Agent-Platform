@@ -47,13 +47,13 @@
 - [x] Lead list, detail, filtering, ownership, status, priority, and notes
 - [x] Follow-up tasks and activity history
 - [x] Lead-to-opportunity conversion with a simple opportunity list
-- [ ] Dashboard with actionable sales metrics
+- [x] Dashboard with actionable sales metrics
 - [x] Asynchronous AI run execution and status
 - [x] AI Lead Qualification Agent
 - [x] Human acceptance or rejection of AI qualification
 - [ ] Minimum authorization, validation, audit, logging, rate limiting, backup, and health checks
-- [ ] Seeded synthetic demonstration data
-- [ ] Critical-path tests and a repeatable demo
+- [x] Seeded synthetic demonstration data
+- [x] Critical-path tests and a repeatable demo
 
 ### Phase 1 acceptance workflow
 
@@ -78,8 +78,9 @@ Sign in
 - The application runs through the documented Docker-based setup.
 - A portfolio demonstration can complete the workflow in five to seven minutes.
 
-**Current status:** In progress — M1 through M5 are complete; the actionable sales
-dashboard is next.
+**Current status:** Functional MVP complete; M1 through M7 are implemented. Final operational
+acceptance still requires backup/restore verification, broader audit/security coverage, and a
+browser-level sign-in-to-conversion test before production use.
 
 ## Phase 2 — AI Enhancement
 

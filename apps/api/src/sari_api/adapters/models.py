@@ -332,6 +332,15 @@ class AgentRun(TimestampVersionMixin, Base):
             name="agent_runs_status_check",
         ),
         Index("ix_agent_runs_tenant_status_created", "tenant_id", "status", "created_at"),
+        Index("ix_agent_runs_tenant_retry", "tenant_id", "status", "next_retry_at"),
+        CheckConstraint(
+            "attempt_count >= 0 AND attempt_count <= max_attempts",
+            name="agent_runs_attempt_count_check",
+        ),
+        CheckConstraint(
+            "max_attempts BETWEEN 1 AND 5",
+            name="agent_runs_max_attempts_check",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -349,6 +358,11 @@ class AgentRun(TimestampVersionMixin, Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     error_code: Mapped[str | None] = mapped_column(String(100))
     error_message_safe: Mapped[str | None] = mapped_column(Text)
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    attempt_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    max_attempts: Mapped[int] = mapped_column(Integer, server_default="3")
+    next_retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class LeadAssessment(Base):

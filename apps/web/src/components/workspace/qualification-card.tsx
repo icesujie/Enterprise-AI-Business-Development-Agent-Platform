@@ -332,6 +332,15 @@ export function AgentRunStatus({
               "The AI service returned a safe failure. Manual qualification remains available."
             : "AI can summarize project fit, timeline, budget evidence, authority, missing information, and a recommended next action."}
       </p>
+      {run ? (
+        <p className="mt-3 text-xs text-[var(--color-muted)]">
+          Attempt {run.attempt_count} of {run.max_attempts}
+          {run.status === "queued" && run.next_retry_at
+            ? ` · automatic retry scheduled for ${formatDateTime(run.next_retry_at)}`
+            : ""}
+          {run.correlation_id ? ` · Reference ${run.correlation_id}` : ""}
+        </p>
+      ) : null}
       {inProgress ? (
         <Link
           href={`/leads/${lead.id}?tab=qualification`}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 from uuid import UUID
@@ -174,6 +174,8 @@ class SqlAlchemyQualificationRepository:
         lead_id: UUID,
         user_id: UUID,
         input_snapshot: dict[str, Any],
+        correlation_id: str,
+        max_attempts: int,
     ) -> AgentRun:
         run = AgentRun(
             tenant_id=self._tenant_id,
@@ -183,6 +185,8 @@ class SqlAlchemyQualificationRepository:
             lead_id=lead_id,
             input_snapshot=input_snapshot,
             status="queued",
+            correlation_id=correlation_id,
+            max_attempts=max_attempts,
         )
         self._session.add(run)
         await self._session.flush()
@@ -218,10 +222,32 @@ class SqlAlchemyQualificationRepository:
     async def start_run(self, run: AgentRun, provider_type: str, model_id: str) -> None:
         if run.status != "queued":
             return
+        now = datetime.now(UTC)
         run.status = "running"
         run.provider_type = provider_type
         run.model_id = model_id
-        run.started_at = datetime.now(UTC)
+        run.started_at = run.started_at or now
+        run.last_heartbeat_at = now
+        run.next_retry_at = None
+        run.completed_at = None
+        run.attempt_count += 1
+        run.version += 1
+        await self._session.flush()
+
+    async def schedule_retry(
+        self,
+        run: AgentRun,
+        code: str,
+        message: str,
+        delay_seconds: int,
+    ) -> None:
+        now = datetime.now(UTC)
+        run.status = "queued"
+        run.error_code = code
+        run.error_message_safe = message[:1000]
+        run.next_retry_at = now + timedelta(seconds=delay_seconds)
+        run.last_heartbeat_at = now
+        run.completed_at = None
         run.version += 1
         await self._session.flush()
 
@@ -269,6 +295,10 @@ class SqlAlchemyQualificationRepository:
         run.output_result = result
         run.status = "succeeded"
         run.completed_at = datetime.now(UTC)
+        run.last_heartbeat_at = run.completed_at
+        run.next_retry_at = None
+        run.error_code = None
+        run.error_message_safe = None
         run.version += 1
         await self._session.flush()
         return assessment
@@ -276,6 +306,8 @@ class SqlAlchemyQualificationRepository:
     async def fail_run(self, run: AgentRun, code: str, message: str) -> None:
         run.status = "failed"
         run.completed_at = datetime.now(UTC)
+        run.last_heartbeat_at = run.completed_at
+        run.next_retry_at = None
         run.error_code = code
         run.error_message_safe = message[:1000]
         run.version += 1
