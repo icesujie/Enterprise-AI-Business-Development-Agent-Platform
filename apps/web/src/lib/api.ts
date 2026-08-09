@@ -13,6 +13,9 @@ export type Organization = {
   country_code: string | null;
   city: string | null;
   lifecycle_stage: string;
+  owner_membership_id: string | null;
+  created_at: string;
+  updated_at: string;
   version: number;
 };
 
@@ -23,7 +26,14 @@ export type Contact = {
   last_name: string | null;
   email: string | null;
   phone_e164: string | null;
+  whatsapp_e164: string | null;
   job_title: string | null;
+  preferred_language: string | null;
+  marketing_consent_status: string;
+  do_not_contact: boolean;
+  owner_membership_id: string | null;
+  created_at: string;
+  updated_at: string;
   version: number;
 };
 
@@ -31,13 +41,17 @@ export type Lead = {
   id: string;
   organization_id: string | null;
   contact_id: string | null;
+  source_channel: string;
+  source_detail: string | null;
   inquiry_summary: string;
   status: string;
   priority: string;
+  owner_membership_id: string | null;
   project_country_code: string | null;
   project_city: string | null;
   project_type: string | null;
   expected_capacity: string | null;
+  requirements: Record<string, unknown>;
   target_timeline: string | null;
   estimated_value: string | null;
   currency: string | null;
@@ -76,6 +90,8 @@ export type OpportunityList = {
 export type Task = {
   id: string;
   lead_id: string | null;
+  opportunity_id?: string | null;
+  organization_id?: string | null;
   title: string;
   description: string | null;
   status: string;
@@ -124,7 +140,7 @@ export type LeadAssessment = {
   score: string;
   tier: string;
   need_summary: string | null;
-  qualification: Record<string, string>;
+  qualification: Record<string, unknown>;
   recommended_action: string;
   missing_information: string[];
   confidence: string;

@@ -10,7 +10,7 @@ export function WorkspaceTopbar() {
         <p className="text-sm font-bold">Sari Arta Indonesia</p>
       </div>
       <div className="flex items-center gap-3">
-        <StatusBadge tone="success">Preview ready</StatusBadge>
+        <StatusBadge tone="success">Internal workspace</StatusBadge>
         <span
           className="grid h-9 w-9 place-items-center rounded-full bg-[var(--color-brand)] text-xs font-bold text-white"
           aria-label="Signed in user"
