@@ -12,8 +12,9 @@ export function MarketingFooter() {
               SARI ARTA
             </p>
             <p className="mt-4 max-w-sm text-sm leading-6 text-white/60">
-              An Indonesia commercial kitchen engineering partner for
-              institutional and industrial projects.
+              Commercial kitchen design, manufacturing coordination, and local
+              project delivery for institutional and industrial operations in
+              Indonesia.
             </p>
           </div>
           <FooterGroup
@@ -36,15 +37,15 @@ export function MarketingFooter() {
               Project inquiry
             </p>
             <Link
-              href="/inquiry"
+              href="/contact"
               className="mt-4 inline-block text-sm font-semibold underline decoration-white/30 underline-offset-4"
             >
-              Share your project brief
+              Request kitchen consultation
             </Link>
           </div>
         </div>
         <div className="flex flex-col gap-3 pt-7 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Sari Arta. Preview content for design review.</p>
+          <p>© 2026 Sari Arta. All project scopes remain subject to review.</p>
           <div className="flex gap-5">
             <span>English</span>
             <Link href="/login">Staff access</Link>

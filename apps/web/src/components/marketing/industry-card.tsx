@@ -1,17 +1,19 @@
 import Link from "next/link";
 
 export function IndustryCard({
+  slug,
   index,
   title,
   description,
 }: {
+  slug: string;
   index: string;
   title: string;
   description: string;
 }) {
   return (
     <Link
-      href="/industries"
+      href={`/industries#${slug}`}
       className="group border-t border-[var(--color-line)] py-6 transition hover:border-[var(--color-brand)]"
     >
       <span className="text-xs font-bold tracking-[0.16em] text-[var(--color-accent)]">

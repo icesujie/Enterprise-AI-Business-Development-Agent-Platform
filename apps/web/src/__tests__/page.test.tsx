@@ -14,12 +14,12 @@ test("renders the public engineering positioning and consultation action", () =>
   render(<HomePage />);
   expect(
     screen.getByRole("heading", {
-      name: "Built around the way your kitchen must work.",
+      name: "Commercial kitchens engineered for real operating demands.",
     }),
   ).toBeDefined();
   expect(
-    screen.getByRole("link", { name: "Request project consultation" }),
-  ).toBeDefined();
+    screen.getAllByRole("link", { name: "Request kitchen consultation" }),
+  ).toHaveLength(2);
 });
 
 test("renders the M6 workspace navigation and dashboard", () => {

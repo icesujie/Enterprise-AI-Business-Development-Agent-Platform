@@ -10,30 +10,31 @@ export function HeroSection() {
             Indonesia Commercial Kitchen Engineering Partner
           </p>
           <h1 className="display-title text-balance mt-6 max-w-3xl">
-            Built around the way your kitchen must work.
+            Commercial kitchens engineered for real operating demands.
           </h1>
           <p className="mt-7 max-w-xl text-base leading-8 text-white/68 sm:text-lg">
-            A coordinated approach to workflow planning, manufacturing,
-            installation, and commissioning for demanding food-service
-            operations.
+            Sari Arta brings together commercial kitchen design, China-based
+            manufacturing capability, and local Indonesia installation to help
+            institutional and industrial projects move from requirement to
+            operation.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <ButtonLink href="/contact" className="button-inverse">
-              Request project consultation
+              Request kitchen consultation
             </ButtonLink>
             <ButtonLink
               href="/solutions"
               variant="secondary"
               className="border-white/25 bg-transparent text-white hover:bg-white/10"
             >
-              Explore delivery approach
+              See how we deliver
             </ButtonLink>
           </div>
           <dl className="mt-12 grid grid-cols-3 gap-4 border-t border-white/15 pt-6">
             {[
-              ["01", "Engineering"],
-              ["02", "Manufacturing"],
-              ["03", "Local delivery"],
+              ["01", "Kitchen engineering"],
+              ["02", "China manufacturing"],
+              ["03", "Indonesia installation"],
             ].map(([value, label]) => (
               <div key={value}>
                 <dt className="text-xs font-bold tracking-[0.18em] text-[#d4a48e]">

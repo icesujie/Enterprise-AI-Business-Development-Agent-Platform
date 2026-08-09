@@ -46,7 +46,7 @@ export function ContentBand({
 }
 
 export function ConsultationBand({
-  title = "Planning a commercial kitchen project?",
+  title = "Planning a commercial kitchen project in Indonesia?",
 }: {
   title?: string;
 }) {
@@ -59,12 +59,13 @@ export function ConsultationBand({
           </p>
           <h2 className="section-title mt-4 max-w-3xl">{title}</h2>
           <p className="mt-5 max-w-2xl leading-7 text-white/65">
-            Incomplete drawings or early requirements are welcome. A human
-            specialist reviews every inquiry before any commitment is made.
+            Share your facility type, location, approximate size or meal volume,
+            target date, and known requirements. Early-stage briefs are welcome
+            and every inquiry is reviewed by a person.
           </p>
         </div>
         <ButtonLink href="/contact" className="button-inverse shrink-0">
-          Request consultation
+          Request kitchen consultation
         </ButtonLink>
       </div>
     </ContentBand>

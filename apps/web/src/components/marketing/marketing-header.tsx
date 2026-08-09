@@ -56,7 +56,7 @@ export function MarketingHeader() {
           >
             EN
           </button>
-          <ButtonLink href="/contact">Request consultation</ButtonLink>
+          <ButtonLink href="/contact">Request kitchen consultation</ButtonLink>
         </div>
 
         <details className="mobile-menu relative lg:hidden">
@@ -76,7 +76,7 @@ export function MarketingHeader() {
               ))}
             </nav>
             <ButtonLink href="/contact" className="mt-3 w-full">
-              Request consultation
+              Request kitchen consultation
             </ButtonLink>
           </div>
         </details>
