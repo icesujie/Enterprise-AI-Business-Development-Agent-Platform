@@ -24,6 +24,7 @@
 7. [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>)：M6 前端页面、组件、响应式和实施范围的最终规格。
 8. [Phase 1 Demo Script](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/demo-script.md>)：使用纯合成数据完成 5 分钟业务演示。
 9. [Production Readiness Checklist](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/production-readiness-checklist.md>)：M8 权限、运行可靠性、审计、备份恢复和生产上线门槛。
+10. [Phase 2 智能体框架设计（中文）](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.zh-CN.md>)：多领域 Agent Registry、知识、工具、数据库和迁移方案。
 
 其余文档主要供开发使用：
 
@@ -39,6 +40,8 @@
 | [Local Development](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/development.md>) | 本地安装、运行、验证和故障排查 |
 | [Phase 1 Demo Script](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/demo-script.md>) | 网站询盘、AI 资格评估、Dashboard 和商机转换演示流程 |
 | [Production Readiness Checklist](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/production-readiness-checklist.md>) | Phase 1 最终验收证据与生产上线前置条件 |
+| [Phase 2 Agent Framework Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.md>) | Phase 2 多领域智能体框架英文技术基线 |
+| [Phase 2 智能体框架设计（中文）](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.zh-CN.md>) | Phase 2 中文审核版本 |
 
 ## 什么时候需要你确认
 
