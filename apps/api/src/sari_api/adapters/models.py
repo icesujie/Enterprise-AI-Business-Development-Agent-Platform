@@ -207,6 +207,10 @@ class Opportunity(TenantMutableMixin, Base):
     __table_args__ = (
         UniqueConstraint("tenant_id", "source_lead_id"),
         CheckConstraint(
+            "stage IN ('discovery','requirements_confirmed','proposal','negotiation','won','lost')",
+            name="opportunities_stage_check",
+        ),
+        CheckConstraint(
             "status IN ('open','won','lost','cancelled')",
             name="opportunities_status_check",
         ),
@@ -226,7 +230,7 @@ class Opportunity(TenantMutableMixin, Base):
     primary_contact_id: Mapped[UUID | None] = mapped_column(ForeignKey("contacts.id"))
     source_lead_id: Mapped[UUID | None] = mapped_column(ForeignKey("leads.id"))
     name: Mapped[str] = mapped_column(String(250))
-    stage: Mapped[str] = mapped_column(String(40), server_default="qualification")
+    stage: Mapped[str] = mapped_column(String(40), server_default="discovery")
     status: Mapped[str] = mapped_column(String(20), server_default="open")
     probability: Mapped[Decimal] = mapped_column(Numeric(5, 2), server_default="10")
     estimated_value: Mapped[Decimal] = mapped_column(Numeric(19, 4), server_default="0")

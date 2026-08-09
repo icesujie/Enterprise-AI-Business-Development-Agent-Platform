@@ -2,6 +2,7 @@ import Link from "next/link";
 
 const navigation = [
   ["Leads", "/leads"],
+  ["Opportunities", "/opportunities"],
   ["Companies", "/organizations"],
   ["Contacts", "/contacts"],
   ["Tasks", "/tasks"],
@@ -25,7 +26,7 @@ export default function WorkspaceLayout({
             <p className="mt-1 font-semibold">Business Development</p>
           </div>
           <span className="rounded-full bg-[var(--success-soft)] px-3 py-1 text-xs font-semibold text-[var(--success)]">
-            M4 AI workbench
+            M5 sales pipeline
           </span>
         </div>
       </header>

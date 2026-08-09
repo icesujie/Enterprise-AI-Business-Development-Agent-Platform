@@ -49,6 +49,30 @@ export type Lead = {
 
 export type LeadList = { items: Lead[]; next_cursor: string | null };
 
+export type Opportunity = {
+  id: string;
+  organization_id: string;
+  primary_contact_id: string | null;
+  source_lead_id: string | null;
+  name: string;
+  stage: string;
+  status: string;
+  probability: string;
+  estimated_value: string;
+  currency: string;
+  expected_close_date: string | null;
+  requirements: Record<string, unknown>;
+  owner_membership_id: string;
+  created_at: string;
+  updated_at: string;
+  version: number;
+};
+
+export type OpportunityList = {
+  items: Opportunity[];
+  next_cursor: string | null;
+};
+
 export type Task = {
   id: string;
   lead_id: string | null;
@@ -67,6 +91,7 @@ export type Task = {
 export type Activity = {
   id: string;
   lead_id: string | null;
+  opportunity_id?: string | null;
   activity_type: string;
   occurred_at: string;
   subject: string;

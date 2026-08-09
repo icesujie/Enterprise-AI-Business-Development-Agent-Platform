@@ -46,7 +46,7 @@
 - [x] Customer-company and contact records
 - [x] Lead list, detail, filtering, ownership, status, priority, and notes
 - [x] Follow-up tasks and activity history
-- [ ] Lead-to-opportunity conversion with a simple opportunity list
+- [x] Lead-to-opportunity conversion with a simple opportunity list
 - [ ] Dashboard with actionable sales metrics
 - [x] Asynchronous AI run execution and status
 - [x] AI Lead Qualification Agent
@@ -78,8 +78,8 @@ Sign in
 - The application runs through the documented Docker-based setup.
 - A portfolio demonstration can complete the workflow in five to seven minutes.
 
-**Current status:** In progress — M1 through M4 are complete; transactional
-lead-to-opportunity conversion is next.
+**Current status:** In progress — M1 through M5 are complete; the actionable sales
+dashboard is next.
 
 ## Phase 2 — AI Enhancement
 

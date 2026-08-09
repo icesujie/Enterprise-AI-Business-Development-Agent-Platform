@@ -9,6 +9,7 @@ import {
   type Lead,
   type LeadAssessment,
   type Organization,
+  type Opportunity,
   type Task,
 } from "@/lib/api";
 
@@ -156,4 +157,55 @@ export async function reviewQualification(
   );
   revalidatePath(`/leads/${leadId}`);
   revalidatePath("/leads");
+}
+
+export async function convertLead(
+  leadId: string,
+  version: number,
+  formData: FormData,
+) {
+  const rawValue = optional(formData, "estimated_value");
+  const body: Record<string, string | null> = {
+    name: String(formData.get("name") ?? ""),
+    expected_close_date: optional(formData, "expected_close_date"),
+  };
+  if (rawValue) {
+    body.estimated_value = rawValue;
+    body.currency = String(formData.get("currency") ?? "IDR").toUpperCase();
+  }
+  const opportunity = await apiFetch<Opportunity>(
+    `/api/v1/leads/${leadId}/conversions`,
+    {
+      method: "POST",
+      headers: {
+        "If-Match": `"${version}"`,
+        "Idempotency-Key": crypto.randomUUID(),
+      },
+      body: JSON.stringify(body),
+    },
+  );
+  revalidatePath("/leads");
+  revalidatePath("/opportunities");
+  redirect(`/opportunities/${opportunity.id}`);
+}
+
+export async function transitionOpportunity(
+  opportunityId: string,
+  version: number,
+  stage: string,
+  formData?: FormData,
+) {
+  await apiFetch<Opportunity>(
+    `/api/v1/opportunities/${opportunityId}/stage-transitions`,
+    {
+      method: "POST",
+      headers: { "If-Match": `"${version}"` },
+      body: JSON.stringify({
+        stage,
+        reason: formData ? optional(formData, "reason") : null,
+      }),
+    },
+  );
+  revalidatePath(`/opportunities/${opportunityId}`);
+  revalidatePath("/opportunities");
 }

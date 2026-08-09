@@ -10,8 +10,9 @@ test("renders the M4 workspace navigation", () => {
       <p>Workspace content</p>
     </WorkspaceLayout>,
   );
-  expect(screen.getByText("M4 AI workbench")).toBeDefined();
+  expect(screen.getByText("M5 sales pipeline")).toBeDefined();
   expect(screen.getByRole("link", { name: "Leads" })).toBeDefined();
+  expect(screen.getByRole("link", { name: "Opportunities" })).toBeDefined();
   expect(screen.getByRole("link", { name: "Companies" })).toBeDefined();
   expect(screen.getByRole("link", { name: "Contacts" })).toBeDefined();
   expect(screen.getByRole("link", { name: "Tasks" })).toBeDefined();

@@ -5,13 +5,13 @@
 **Project:** Enterprise AI Business Development Agent Platform  
 **Reference business:** Sari Arta  
 **Current phase:** Phase 1 — MVP  
-**Current state:** M4 implemented and validated on 2026-08-09
+**Current state:** M5 implemented and validated on 2026-08-09
 **Scope sources:** `docs/roadmap.md`, then `docs/mvp-scope.md`, then the enterprise design documents  
 **Coding gate:** Ordinary Phase 1 milestones may proceed autonomously within `AGENTS.md` safety boundaries.
 
 ## Milestone history and current priority
 
-The next highest-priority milestone is **M5 — Opportunity conversion**. M1 through M4
+The next highest-priority milestone is **M6 — Actionable dashboard**. M1 through M5
 are retained below as implementation and validation history.
 
 ### M1 — Runnable project foundation
@@ -128,13 +128,17 @@ results, human review, and the no-key safe-failure path.
 
 **Depends on:** M4
 
-- [ ] OPP-001 Implement transactional qualified-lead conversion.
-- [ ] OPP-002 Prevent duplicate conversion and reuse the existing company/contact.
-- [ ] OPP-003 Implement opportunity list, detail and validated stage transitions.
-- [ ] WEB-004 Add opportunity list and detail interfaces.
-- [ ] TEST-003 Test conversion idempotency, transitions and transaction rollback.
+- [x] OPP-001 Implement transactional qualified-lead conversion.
+- [x] OPP-002 Prevent duplicate conversion and reuse the existing company/contact.
+- [x] OPP-003 Implement opportunity list, detail and validated stage transitions.
+- [x] WEB-004 Add opportunity list and detail interfaces.
+- [x] TEST-003 Test conversion idempotency, transitions and transaction rollback.
 
 **Exit:** A salesperson can convert a qualified lead without duplicating business records.
+
+**Status:** Complete. Validation includes 35 backend tests, concurrent conversion and
+rollback coverage, migration downgrade/upgrade, frontend lint/type/tests/build, Docker API/web/worker
+builds, and browser-verified lead conversion, pipeline detail, stage change and audit history.
 
 ### M6 — Actionable dashboard
 
@@ -205,5 +209,5 @@ The project owner authorized autonomous execution of ordinary Phase 1 milestones
 - Phase 2–4 implementation.
 - Destructive operations against non-synthetic data, commits, pushes or publication.
 
-M5 is the next milestone. Real data, paid or production resources, external communication,
+M6 is the next milestone. Real data, paid or production resources, external communication,
 and irreversible operations remain explicit safety boundaries.

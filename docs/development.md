@@ -59,6 +59,9 @@ M1 contains the migration baseline. M2 creates the identity and core business ta
 adds synthetic `admin` and `sales` memberships for local authorization tests. These accounts
 use reserved `.example` addresses and are not real Sari Arta users.
 
+Later Phase 1 migrations add CRM behavior, AI qualification, work tracking, and the M5
+opportunity-stage constraint. Always run `make migrate` after pulling application changes.
+
 Protected API calls require a Supabase access token signed by an asymmetric `ES256` or
 `RS256` project key. Configure the issuer, audience and JWKS URL in `.env`; symmetric JWT
 secrets are intentionally unsupported. The local test suite uses generated keys and never

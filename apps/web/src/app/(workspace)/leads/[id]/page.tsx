@@ -12,6 +12,7 @@ import {
 import {
   createNote,
   createTask,
+  convertLead,
   reviewQualification,
   runQualification,
   updateLead,
@@ -35,6 +36,7 @@ export default async function LeadDetailPage({
   const taskAction = createTask.bind(null, lead.id);
   const noteAction = createNote.bind(null, lead.id);
   const qualificationAction = runQualification.bind(null, lead.id);
+  const conversionAction = convertLead.bind(null, lead.id, lead.version);
 
   return (
     <div>
@@ -234,6 +236,84 @@ export default async function LeadDetailPage({
         </div>
 
         <aside className="space-y-6">
+          {lead.status === "qualified" ? (
+            <section className="card p-6">
+              <p className="eyebrow">Sales handoff</p>
+              <h2 className="mt-3 text-xl font-semibold">Create opportunity</h2>
+              {lead.organization_id ? (
+                <form action={conversionAction} className="mt-5 space-y-4">
+                  <label className="label">
+                    Opportunity name
+                    <input
+                      className="field mt-2"
+                      name="name"
+                      defaultValue={
+                        lead.project_type
+                          ? `${lead.project_type} · ${lead.project_city ?? "Project"}`
+                          : lead.inquiry_summary.slice(0, 80)
+                      }
+                      minLength={3}
+                      maxLength={250}
+                      required
+                    />
+                  </label>
+                  <label className="label">
+                    Expected close
+                    <input
+                      className="field mt-2"
+                      name="expected_close_date"
+                      type="date"
+                    />
+                  </label>
+                  <div className="grid grid-cols-[1fr_90px] gap-3">
+                    <label className="label">
+                      Estimated value
+                      <input
+                        className="field mt-2"
+                        name="estimated_value"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={lead.estimated_value ?? ""}
+                      />
+                    </label>
+                    <label className="label">
+                      Currency
+                      <input
+                        className="field mt-2 uppercase"
+                        name="currency"
+                        defaultValue={lead.currency ?? "IDR"}
+                        minLength={3}
+                        maxLength={3}
+                      />
+                    </label>
+                  </div>
+                  <button className="button-primary w-full">
+                    Convert to opportunity
+                  </button>
+                </form>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                  Select a customer company on this lead before conversion.
+                </p>
+              )}
+            </section>
+          ) : null}
+          {lead.status === "converted" ? (
+            <section className="card p-6">
+              <p className="eyebrow">Converted</p>
+              <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+                This source lead is preserved and locked against duplicate
+                conversion.
+              </p>
+              <Link
+                href="/opportunities"
+                className="button-secondary mt-5 block text-center"
+              >
+                View sales pipeline
+              </Link>
+            </section>
+          ) : null}
           <section className="card p-6">
             <p className="eyebrow">AI qualification</p>
             <QualificationPanel
