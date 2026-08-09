@@ -1,21 +1,40 @@
-import { render, screen } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, expect, test, vi } from "vitest";
 
+import HomePage from "@/app/(marketing)/page";
 import WorkspaceLayout from "@/app/(workspace)/layout";
+import DashboardPage from "@/app/(workspace)/dashboard/page";
 import LoginPage from "@/app/login/page";
 
-test("renders the M4 workspace navigation", () => {
+vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+
+afterEach(cleanup);
+
+test("renders the public engineering positioning and consultation action", () => {
+  render(<HomePage />);
+  expect(
+    screen.getByRole("heading", {
+      name: "Built around the way your kitchen must work.",
+    }),
+  ).toBeDefined();
+  expect(
+    screen.getByRole("link", { name: "Request project consultation" }),
+  ).toBeDefined();
+});
+
+test("renders the M6 workspace navigation and dashboard", () => {
   render(
     <WorkspaceLayout>
-      <p>Workspace content</p>
+      <DashboardPage />
     </WorkspaceLayout>,
   );
-  expect(screen.getByText("M5 sales pipeline")).toBeDefined();
-  expect(screen.getByRole("link", { name: "Leads" })).toBeDefined();
-  expect(screen.getByRole("link", { name: "Opportunities" })).toBeDefined();
-  expect(screen.getByRole("link", { name: "Companies" })).toBeDefined();
-  expect(screen.getByRole("link", { name: "Contacts" })).toBeDefined();
-  expect(screen.getByRole("link", { name: "Tasks" })).toBeDefined();
+  expect(screen.getAllByRole("link", { name: "Dashboard" })).toHaveLength(2);
+  expect(screen.getAllByRole("link", { name: "Leads" })).toHaveLength(2);
+  expect(screen.getAllByRole("link", { name: "Opportunities" })).toHaveLength(
+    2,
+  );
+  expect(screen.getAllByRole("link", { name: "Follow-up" })).toHaveLength(2);
+  expect(screen.getByRole("heading", { name: "Good morning." })).toBeDefined();
 });
 
 test("renders the production sign-in form", () => {
