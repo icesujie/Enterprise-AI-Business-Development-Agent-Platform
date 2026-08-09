@@ -21,6 +21,7 @@
 4. [中文架构说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)：系统整体如何工作。
 5. [UI/UX Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/ui-design.md>)：官网和内部销售工作台的产品体验与视觉设计基线。
 6. [Website Design Reference](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/design-reference.md>)：Nayati 参考分析与 Sari Arta 原创官网方向。
+7. [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>)：M6 前端页面、组件、响应式和实施范围的最终规格。
 
 其余文档主要供开发使用：
 
@@ -31,6 +32,7 @@
 | [API Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.md>) | REST API、接口清单、示例和认证 |
 | [UI/UX Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/ui-design.md>) | 官网、内部工作台、组件、视觉、响应式和实施建议 |
 | [Website Design Reference](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/design-reference.md>) | 商用厨房参考站分析、Sari Arta 网站结构、获客与 SEO 方向 |
+| [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>) | M6 可实施的官网、内部工作台、设计系统、路由与阶段范围 |
 | [Project Rules](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/AGENTS.md>) | AI 工程代理必须遵守的开发规则 |
 | [Local Development](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/development.md>) | 本地安装、运行、验证和故障排查 |
 
