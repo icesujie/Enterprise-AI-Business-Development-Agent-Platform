@@ -10,10 +10,12 @@ export type Organization = {
   id: string;
   legal_name: string;
   display_name: string;
+  website_url: string | null;
   domain: string | null;
   industry: string | null;
   country_code: string | null;
   city: string | null;
+  preferred_language: string | null;
   lifecycle_stage: string;
   owner_membership_id: string | null;
   created_at: string;

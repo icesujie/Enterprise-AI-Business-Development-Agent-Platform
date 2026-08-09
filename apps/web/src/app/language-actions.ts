@@ -5,8 +5,7 @@ import { revalidatePath } from "next/cache";
 
 import { isLocale, localeCookie } from "@/i18n/config";
 
-export async function setLanguage(formData: FormData) {
-  const locale = String(formData.get("locale") ?? "");
+export async function setLanguage(locale: string) {
   if (!isLocale(locale)) return;
   (await cookies()).set(localeCookie, locale, {
     httpOnly: true,

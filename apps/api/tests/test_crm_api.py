@@ -41,6 +41,22 @@ async def test_company_contact_and_lead_vertical_slice() -> None:
             organization_body = organization.json()
             assert organization_body["domain"] == f"{suffix}.example.com"
 
+            updated_organization = await client.patch(
+                f"/api/v1/organizations/{organization_body['id']}",
+                headers={"If-Match": '"1"'},
+                json={
+                    "display_name": f"Nusantara Engineering {suffix}",
+                    "industry": "Hospitality",
+                    "lifecycle_stage": "qualified",
+                },
+            )
+            assert updated_organization.status_code == 200, updated_organization.text
+            assert updated_organization.json()["display_name"] == (
+                f"Nusantara Engineering {suffix}"
+            )
+            assert updated_organization.json()["lifecycle_stage"] == "qualified"
+            assert updated_organization.json()["version"] == 2
+
             duplicate = await client.post(
                 "/api/v1/organizations",
                 json={
@@ -63,6 +79,19 @@ async def test_company_contact_and_lead_vertical_slice() -> None:
                 },
             )
             assert contact.status_code == 201, contact.text
+
+            updated_contact = await client.patch(
+                f"/api/v1/contacts/{contact.json()['id']}",
+                headers={"If-Match": '"1"'},
+                json={
+                    "job_title": "Facilities Director",
+                    "whatsapp_e164": "+6281234567890",
+                    "preferred_language": "en",
+                },
+            )
+            assert updated_contact.status_code == 200, updated_contact.text
+            assert updated_contact.json()["job_title"] == "Facilities Director"
+            assert updated_contact.json()["preferred_language"] == "en"
 
             company_contacts = await client.get(
                 "/api/v1/contacts",

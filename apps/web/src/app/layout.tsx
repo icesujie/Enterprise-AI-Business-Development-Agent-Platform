@@ -41,7 +41,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const locale = await getLocale();
   return (
-    <html lang={locale} className="h-full antialiased">
+    <html lang={locale} className="h-full antialiased" suppressHydrationWarning>
       <body className="min-h-full">
         <I18nProvider locale={locale}>{children}</I18nProvider>
       </body>

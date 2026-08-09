@@ -1,16 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { setLanguage } from "@/app/language-actions";
 import { useI18n } from "@/i18n/context";
 
 export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
-  const form = useRef<HTMLFormElement>(null);
+  const router = useRouter();
   const { locale, messages } = useI18n();
-  const [selectedLocale, setSelectedLocale] = useState(locale);
+  const [isPending, startTransition] = useTransition();
+
   return (
-    <form action={setLanguage} ref={form}>
+    <div>
       <label
         className="sr-only"
         htmlFor={`language-${compact ? "compact" : "full"}`}
@@ -18,16 +20,20 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
         {messages.language.label}
       </label>
       <select
+        key={locale}
         id={`language-${compact ? "compact" : "full"}`}
-        name="locale"
-        value={selectedLocale}
+        defaultValue={locale}
         onChange={(event) => {
-          setSelectedLocale(event.target.value as "en" | "zh-CN");
-          form.current?.requestSubmit();
+          const nextLocale = event.target.value as "en" | "zh-CN";
+          startTransition(async () => {
+            await setLanguage(nextLocale);
+            router.refresh();
+          });
         }}
+        disabled={isPending}
         className={
           compact
-            ? "min-h-9 rounded-lg border border-white/15 bg-white/10 px-2 text-xs font-bold text-white"
+            ? "min-h-9 min-w-[6.75rem] rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-subtle)] px-3 text-xs font-bold text-[var(--color-ink)] shadow-sm outline-none transition hover:border-[var(--color-brand)] focus:border-[var(--color-brand)] focus:ring-2 focus:ring-[var(--color-brand)]/20 disabled:opacity-60"
             : "min-h-10 rounded-lg border border-[var(--color-line)] bg-white px-3 text-sm font-semibold text-[var(--color-ink)]"
         }
         aria-label={messages.language.label}
@@ -39,6 +45,6 @@ export function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
           中文
         </option>
       </select>
-    </form>
+    </div>
   );
 }

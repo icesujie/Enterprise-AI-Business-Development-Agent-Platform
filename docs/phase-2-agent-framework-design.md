@@ -747,11 +747,11 @@ Before activating a new domain/configuration:
 
 ## 13. Phase 2 implementation milestones
 
-This document recommends the following planning sequence; it does not mark any item implemented:
+This document recommends the following delivery sequence. Implementation status is recorded below:
 
 | Milestone | Outcome |
 |---|---|
-| P2-M1 Registry foundation | Stable domains/agents, versioned configs, Sari Arta backfill, shadow resolver |
+| P2-M1 Registry foundation | **In progress:** registry schema/API, versioned configs, Sari Arta backfill, and IVC draft package are complete; shadow resolver is pending |
 | P2-M2 Knowledge ingestion | Secure upload, document versions, processing, approval, hybrid retrieval |
 | P2-M3 Knowledge Assistant | Cited Sari Arta answers with evaluation and insufficient-evidence behavior |
 | P2-M4 Tool registry | Versioned tools/bindings, execution steps, approval-aware gateway |
@@ -773,3 +773,17 @@ Technical planning can continue, but implementation should not start until these
 6. What citation quality, latency, cost, and domain accuracy thresholds constitute a release pass?
 
 Until those decisions are approved, the Phase 1 Sari Arta qualification workflow remains the production baseline.
+
+## 15. Agent Registry MVP implementation status
+
+Implemented additively in the first Phase 2 increment:
+
+- Global `domain_packages`, `agents`, and `agent_capabilities` records.
+- Existing `agent_configurations` retained as immutable tenant-scoped agent versions.
+- Tenant-scoped `agent_capability_bindings` and `tenant_agent_activations`, protected by forced RLS.
+- Sari Arta registered under `commercial_kitchen`; its existing `lead_qualification` runtime key remains active and unchanged.
+- Laboratory Animal Facility registered under `laboratory_animal_facility` with a draft, execution-disabled IVC configuration and no activation.
+- Code-owned domain manifests define objectives, qualification fields, knowledge categories, capabilities, and localized labels in `en`, `zh-CN`, and `id`.
+- Admin-only read APIs at `/api/v1/agent-registry/domains`, `/agents`, and `/agents/{agent_key}`.
+
+Not implemented in this increment: shadow runtime resolution, IVC prompt execution, IVC knowledge ingestion/retrieval, tool execution, new frontend pages, or any modification to the accepted Phase 1 workflow.

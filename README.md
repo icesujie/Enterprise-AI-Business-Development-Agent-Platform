@@ -9,7 +9,8 @@ identity/data foundation, CRM workflow, AI qualification, opportunity conversion
 website, and sales workspace. M7–M8 complete the reliability and demonstration baseline with
 durable Agent Run status, bounded retries, cancellation, interruption recovery, correlation
 IDs, structured logs, safe failures, three synthetic acceptance scenarios, and verified local
-backup/restore tooling. Phase 2 multi-domain agents have not started.
+backup/restore tooling. Phase 2 has started with an additive Agent Registry MVP; the accepted
+Phase 1 runtime remains the operational baseline.
 
 M1 provides:
 
@@ -56,6 +57,13 @@ Agent actions write audit records, and the dataset includes Level A school, Leve
 and Level C low-value inquiry outcomes. `make backup` and `make verify-backup` provide a
 repeatable local restore check. Production deployment still requires the human launch gate in
 `docs/production-readiness-checklist.md`.
+
+The first Phase 2 framework increment adds versioned domain and agent registration, tenant-level
+capability bindings and activation records, and localized registry metadata for English, Chinese,
+and Bahasa Indonesia. Sari Arta is registered as the active `commercial_kitchen` domain. The
+`laboratory_animal_facility` package and its IVC Facility Business Development Agent are registered
+as non-executable drafts for framework validation; no IVC knowledge base or production workflow is
+enabled. Admins can inspect the registry through `/api/v1/agent-registry/*`.
 
 ## Repository layout
 

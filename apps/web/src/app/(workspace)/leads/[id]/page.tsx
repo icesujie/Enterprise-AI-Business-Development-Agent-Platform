@@ -50,30 +50,36 @@ export default async function LeadDetailPage({
     ? requestedTab
     : "overview";
   const lead = await apiFetch<Lead>(`/api/v1/leads/${id}`);
-  const [tasks, activities, assessments, runs, organization, contact, linked] =
-    await Promise.all([
-      apiFetch<Task[]>(`/api/v1/tasks?lead_id=${id}`),
-      apiFetch<Activity[]>(`/api/v1/leads/${id}/activities`),
-      apiFetch<LeadAssessment[]>(
-        `/api/v1/leads/${id}/qualification-assessments`,
-      ),
-      apiFetch<QualificationRun[]>(`/api/v1/leads/${id}/qualification-runs`),
-      lead.organization_id
-        ? apiFetch<Organization>(
-            `/api/v1/organizations/${lead.organization_id}`,
-          )
-        : Promise.resolve(null),
-      lead.contact_id
-        ? apiFetch<Contact>(`/api/v1/contacts/${lead.contact_id}`)
-        : Promise.resolve(null),
-      lead.status === "converted"
-        ? apiFetch<OpportunityList>("/api/v1/opportunities?limit=100").then(
-            (data) =>
-              data.items.find((item) => item.source_lead_id === lead.id) ??
-              null,
-          )
-        : Promise.resolve(null),
-    ]);
+  const [
+    tasks,
+    activities,
+    assessments,
+    runs,
+    organization,
+    contact,
+    linked,
+    organizations,
+    contacts,
+  ] = await Promise.all([
+    apiFetch<Task[]>(`/api/v1/tasks?lead_id=${id}`),
+    apiFetch<Activity[]>(`/api/v1/leads/${id}/activities`),
+    apiFetch<LeadAssessment[]>(`/api/v1/leads/${id}/qualification-assessments`),
+    apiFetch<QualificationRun[]>(`/api/v1/leads/${id}/qualification-runs`),
+    lead.organization_id
+      ? apiFetch<Organization>(`/api/v1/organizations/${lead.organization_id}`)
+      : Promise.resolve(null),
+    lead.contact_id
+      ? apiFetch<Contact>(`/api/v1/contacts/${lead.contact_id}`)
+      : Promise.resolve(null),
+    lead.status === "converted"
+      ? apiFetch<OpportunityList>("/api/v1/opportunities?limit=100").then(
+          (data) =>
+            data.items.find((item) => item.source_lead_id === lead.id) ?? null,
+        )
+      : Promise.resolve(null),
+    apiFetch<Organization[]>("/api/v1/organizations?limit=100"),
+    apiFetch<Contact[]>("/api/v1/contacts?limit=100"),
+  ]);
   const latestAssessment = assessments[0];
   const latestRun = runs[0];
   const qualificationAction = runQualification.bind(null, lead.id);
@@ -111,7 +117,15 @@ export default async function LeadDetailPage({
               {contactName(contact)} · Created {formatDate(lead.created_at)}
             </p>
           </div>
-          <PrimaryAction lead={lead} linked={linked} />
+          <div className="flex flex-wrap gap-3">
+            <PrimaryAction lead={lead} linked={linked} />
+            <Link
+              className="button-tertiary"
+              href={`/leads/${lead.id}?tab=overview#edit-lead`}
+            >
+              Edit lead
+            </Link>
+          </div>
         </div>
 
         <dl className="mt-7 grid gap-4 border-t border-[var(--color-line)] pt-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -170,6 +184,8 @@ export default async function LeadDetailPage({
             assessment={latestAssessment}
             tasks={tasks}
             linked={linked}
+            organizations={organizations}
+            contacts={contacts}
           />
         ) : null}
         {tab === "qualification" ? (
@@ -200,6 +216,8 @@ function OverviewTab({
   assessment,
   tasks,
   linked,
+  organizations,
+  contacts,
 }: {
   lead: Lead;
   organization: Organization | null;
@@ -207,6 +225,8 @@ function OverviewTab({
   assessment?: LeadAssessment;
   tasks: Task[];
   linked: Opportunity | null;
+  organizations: Organization[];
+  contacts: Contact[];
 }) {
   const editAction = updateLead.bind(null, lead.id, lead.version);
   const conversionAction = convertLead.bind(null, lead.id, lead.version);
@@ -309,6 +329,7 @@ function OverviewTab({
         </section>
 
         <form
+          id="edit-lead"
           key={lead.version}
           action={editAction}
           className="card p-6 sm:p-7"
@@ -335,6 +356,39 @@ function OverviewTab({
             />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
+            <label className="label">
+              Customer company
+              <select
+                className="field mt-2"
+                name="organization_id"
+                defaultValue={lead.organization_id ?? ""}
+              >
+                <option value="">Not linked</option>
+                {organizations.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.display_name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="label">
+              Primary contact
+              <select
+                className="field mt-2"
+                name="contact_id"
+                defaultValue={lead.contact_id ?? ""}
+              >
+                <option value="">Not linked</option>
+                {contacts.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {contactName(item)}
+                    {item.organization_id
+                      ? ` · ${organizations.find((company) => company.id === item.organization_id)?.display_name ?? "Company"}`
+                      : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
             <SelectField
               label="Status"
               name="status"
@@ -361,6 +415,11 @@ function OverviewTab({
               value={lead.project_city}
             />
             <EditField
+              label="Project country code"
+              name="project_country_code"
+              value={lead.project_country_code}
+            />
+            <EditField
               label="Project type"
               name="project_type"
               value={lead.project_type}
@@ -374,6 +433,18 @@ function OverviewTab({
               label="Target timeline"
               name="target_timeline"
               value={lead.target_timeline}
+            />
+            <EditField
+              label="Estimated value"
+              name="estimated_value"
+              value={lead.estimated_value}
+              type="number"
+            />
+            <SelectField
+              label="Currency"
+              name="currency"
+              value={lead.currency ?? "IDR"}
+              options={["IDR", "USD", "CNY", "SGD"]}
             />
           </div>
           <button className="button-primary mt-6">Save changes</button>
@@ -770,15 +841,24 @@ function EditField({
   label,
   name,
   value,
+  type = "text",
 }: {
   label: string;
   name: string;
   value: string | null;
+  type?: string;
 }) {
   return (
     <label className="label">
       {label}
-      <input className="field mt-2" name={name} defaultValue={value ?? ""} />
+      <input
+        className="field mt-2"
+        name={name}
+        type={type}
+        min={type === "number" ? "0" : undefined}
+        step={type === "number" ? "0.01" : undefined}
+        defaultValue={value ?? ""}
+      />
     </label>
   );
 }

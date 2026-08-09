@@ -303,6 +303,145 @@ class Activity(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class DomainPackage(Base):
+    __tablename__ = "domain_packages"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft','available','suspended','deprecated','retired')",
+            name="domain_packages_status_check",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    domain_key: Mapped[str] = mapped_column(String(100), unique=True)
+    display_name: Mapped[dict[str, str]] = mapped_column(JSONB)
+    description: Mapped[dict[str, str]] = mapped_column(JSONB, server_default="{}")
+    package_key: Mapped[str] = mapped_column(String(120))
+    package_version: Mapped[str] = mapped_column(String(40))
+    implementation_ref: Mapped[str] = mapped_column(String(255))
+    supported_locales: Mapped[list[str]] = mapped_column(JSONB)
+    default_locale: Mapped[str] = mapped_column(String(20), server_default="en")
+    status: Mapped[str] = mapped_column(String(30), server_default="draft")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Agent(Base):
+    __tablename__ = "agents"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft','available','suspended','deprecated','retired')",
+            name="agents_status_check",
+        ),
+        Index("ix_agents_domain_type_status", "domain_package_id", "agent_type", "status"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    domain_package_id: Mapped[UUID] = mapped_column(ForeignKey("domain_packages.id"))
+    agent_key: Mapped[str] = mapped_column(String(120), unique=True)
+    display_name: Mapped[dict[str, str]] = mapped_column(JSONB)
+    description: Mapped[dict[str, str]] = mapped_column(JSONB, server_default="{}")
+    agent_type: Mapped[str] = mapped_column(String(60))
+    implementation_key: Mapped[str] = mapped_column(String(160))
+    supported_locales: Mapped[list[str]] = mapped_column(JSONB)
+    response_locale_policy: Mapped[str] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(30), server_default="draft")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class AgentCapability(Base):
+    __tablename__ = "agent_capabilities"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('available','planned','retired')",
+            name="agent_capabilities_status_check",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    capability_key: Mapped[str] = mapped_column(String(120), unique=True)
+    display_name: Mapped[dict[str, str]] = mapped_column(JSONB)
+    description: Mapped[dict[str, str]] = mapped_column(JSONB, server_default="{}")
+    status: Mapped[str] = mapped_column(String(30), server_default="planned")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AgentCapabilityBinding(Base):
+    __tablename__ = "agent_capability_bindings"
+    __table_args__ = (
+        UniqueConstraint("agent_configuration_id", "capability_id"),
+        CheckConstraint(
+            "requirement_level IN ('required','optional')",
+            name="agent_capability_bindings_requirement_check",
+        ),
+        CheckConstraint(
+            "status IN ('available','planned','disabled')",
+            name="agent_capability_bindings_status_check",
+        ),
+        Index(
+            "ix_agent_capability_bindings_tenant_config",
+            "tenant_id",
+            "agent_configuration_id",
+            "status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    agent_configuration_id: Mapped[UUID] = mapped_column(
+        ForeignKey("agent_configurations.id", ondelete="CASCADE")
+    )
+    capability_id: Mapped[UUID] = mapped_column(ForeignKey("agent_capabilities.id"))
+    requirement_level: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20))
+    binding_config: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class TenantAgentActivation(Base):
+    __tablename__ = "tenant_agent_activations"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "agent_id", "environment"),
+        CheckConstraint(
+            "environment IN ('development','staging','production')",
+            name="tenant_agent_activations_environment_check",
+        ),
+        CheckConstraint(
+            "status IN ('pending','active','suspended','retired')",
+            name="tenant_agent_activations_status_check",
+        ),
+        CheckConstraint(
+            "rollout_percentage BETWEEN 0 AND 100",
+            name="tenant_agent_activations_rollout_check",
+        ),
+        Index(
+            "ix_tenant_agent_activations_status",
+            "tenant_id",
+            "status",
+            "agent_id",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id"))
+    agent_configuration_id: Mapped[UUID] = mapped_column(ForeignKey("agent_configurations.id"))
+    environment: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20))
+    locale_policy: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    rollout_percentage: Mapped[int] = mapped_column(Integer, server_default="100")
+    activated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    activated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    suspended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reason: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AgentConfiguration(Base):
     __tablename__ = "agent_configurations"
     __table_args__ = (
@@ -315,11 +454,18 @@ class AgentConfiguration(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id"))
+    agent_id: Mapped[UUID | None] = mapped_column(ForeignKey("agents.id"))
     agent_key: Mapped[str] = mapped_column(String(80))
     version_number: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), server_default="draft")
     instructions_ref: Mapped[str] = mapped_column(String(255))
+    input_schema_version: Mapped[str | None] = mapped_column(String(50))
     output_schema_version: Mapped[str] = mapped_column(String(50))
+    config_digest: Mapped[str | None] = mapped_column(String(64))
+    supported_locales: Mapped[list[str]] = mapped_column(JSONB, server_default='["en"]')
+    response_locale_policy: Mapped[str] = mapped_column(
+        String(80), server_default="requested_then_tenant_default"
+    )
     runtime_config: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

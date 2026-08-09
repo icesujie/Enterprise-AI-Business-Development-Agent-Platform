@@ -743,11 +743,11 @@ active configuration: 当前 Phase 1 配置
 
 ## 13. 推荐 Phase 2 里程碑
 
-以下只是规划，不代表已开发：
+以下为推荐交付顺序，并标注当前实现状态：
 
 | 里程碑 | 结果 |
 |---|---|
-| P2-M1 Registry Foundation | Domain/Agent、配置版本、Sari Arta 回填、Shadow Resolver |
+| P2-M1 Registry Foundation | **进行中：** Registry 数据库/API、配置版本、Sari Arta 回填和 IVC 草稿领域包已完成；Shadow Resolver 待开发 |
 | P2-M2 Knowledge Ingestion | 安全上传、文档版本、处理、批准和混合检索 |
 | P2-M3 Knowledge Assistant | 带引用的 Sari Arta 知识问答及无证据处理 |
 | P2-M4 Tool Registry | 工具版本、绑定、执行步骤和审批网关 |
@@ -767,3 +767,17 @@ active configuration: 当前 Phase 1 配置
 6. 引用质量、延迟、费用和行业准确率达到什么标准才允许上线？
 
 这些事项批准前，Phase 1 Sari Arta 资格评估工作流继续作为正式运行基线。
+
+## 15. Agent Registry MVP 实现状态
+
+第一批 Phase 2 增量已完成：
+
+- 全局 `domain_packages`、`agents` 和 `agent_capabilities` 注册数据。
+- 保留 `agent_configurations` 作为企业级、可版本化的 Agent 配置。
+- 增加带强制 RLS 的 `agent_capability_bindings` 和 `tenant_agent_activations`。
+- Sari Arta 注册为 `commercial_kitchen`；现有 `lead_qualification` 运行键和 Phase 1 流程保持不变。
+- 实验动物设施注册为 `laboratory_animal_facility`；IVC 配置为草稿、禁止执行、未激活。
+- 领域清单以代码定义业务目标、资格字段、知识分类、能力及 `en`、`zh-CN`、`id` 三语文案。
+- 管理员只读接口：`/api/v1/agent-registry/domains`、`/agents`、`/agents/{agent_key}`。
+
+本批次未实现：Shadow Runtime Resolver、IVC Prompt 执行、IVC 知识导入或检索、工具执行、新前端页面，以及任何 Phase 1 正式工作流修改。

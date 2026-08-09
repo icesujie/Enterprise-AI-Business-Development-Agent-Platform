@@ -1,18 +1,39 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, expect, test, vi } from "vitest";
 
 import HomePage from "@/app/(marketing)/page";
 import WorkspaceLayout from "@/app/(workspace)/layout";
 import DashboardPage from "@/app/(workspace)/dashboard/page";
+import ContactsPage from "@/app/(workspace)/contacts/page";
+import OrganizationsPage from "@/app/(workspace)/organizations/page";
 import LoginPage from "@/app/login/page";
 import { QualificationCard } from "@/components/workspace/qualification-card";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import { I18nProvider } from "@/i18n/context";
 import {
   createDemoSessionToken,
   verifyDemoCredentials,
   verifyDemoSessionToken,
 } from "@/lib/demo-auth";
 
-vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+const { refreshMock, setLanguageMock } = vi.hoisted(() => ({
+  refreshMock: vi.fn(),
+  setLanguageMock: vi.fn(async () => undefined),
+}));
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/dashboard",
+  useRouter: () => ({ refresh: refreshMock }),
+}));
+vi.mock("@/app/language-actions", () => ({
+  setLanguage: setLanguageMock,
+}));
 vi.mock("@/i18n/server", async () => {
   const { messagesFor } = await import("@/i18n/messages");
   return {
@@ -56,14 +77,76 @@ vi.mock("@/lib/api", () => ({
       return { items: [], next_cursor: null };
     }
     if (path.startsWith("/api/v1/tasks")) return [];
+    if (path.startsWith("/api/v1/contacts")) {
+      return [
+        {
+          id: "contact-1",
+          organization_id: "org-1",
+          first_name: "Dewi",
+          last_name: "Santoso",
+          email: "dewi@example.invalid",
+          phone_e164: "+6281234567890",
+          whatsapp_e164: null,
+          job_title: "Facility Manager",
+          preferred_language: "en",
+          marketing_consent_status: "unknown",
+          do_not_contact: false,
+          version: 1,
+        },
+      ];
+    }
     if (path.startsWith("/api/v1/organizations")) {
-      return [{ id: "org-1", display_name: "Synthetic School Group" }];
+      return [
+        {
+          id: "org-1",
+          legal_name: "Synthetic School Group Ltd",
+          display_name: "Synthetic School Group",
+          website_url: "https://school.example.invalid",
+          domain: "school.example.invalid",
+          industry: "Education",
+          country_code: "ID",
+          city: "Jakarta",
+          preferred_language: "en",
+          lifecycle_stage: "prospect",
+          contact_count: 1,
+          version: 1,
+        },
+      ];
     }
     throw new Error(`Unexpected API path: ${path}`);
   }),
 }));
 
 afterEach(cleanup);
+
+test("switches from Chinese back to English and refreshes server content", async () => {
+  render(
+    <I18nProvider locale="zh-CN">
+      <LanguageSwitcher />
+    </I18nProvider>,
+  );
+
+  const selector = screen.getByRole("combobox", { name: "语言" });
+  expect((selector as HTMLSelectElement).value).toBe("zh-CN");
+  fireEvent.change(selector, { target: { value: "en" } });
+
+  await waitFor(() => expect(setLanguageMock).toHaveBeenCalledWith("en"));
+  await waitFor(() => expect(refreshMock).toHaveBeenCalled());
+  expect((selector as HTMLSelectElement).value).toBe("en");
+});
+
+test("uses a readable light theme for the workspace language selector", () => {
+  render(
+    <I18nProvider locale="en">
+      <LanguageSwitcher compact />
+    </I18nProvider>,
+  );
+
+  const selector = screen.getByRole("combobox", { name: "Language" });
+  expect(selector.className).toContain("text-[var(--color-ink)]");
+  expect(selector.className).toContain("bg-[var(--color-surface-subtle)]");
+  expect(selector.className).not.toContain("text-white");
+});
 
 test("renders the public engineering positioning and consultation action", () => {
   render(<HomePage />);
@@ -99,6 +182,25 @@ test("renders the production sign-in form", async () => {
   ).toBeDefined();
   expect(screen.getByLabelText("Email")).toBeDefined();
   expect(screen.getByLabelText("Password")).toBeDefined();
+});
+
+test("shows edit controls for companies and contacts", async () => {
+  render(
+    await OrganizationsPage({
+      params: Promise.resolve({}),
+      searchParams: Promise.resolve({}),
+    }),
+  );
+  expect(screen.getByRole("link", { name: "Edit" })).toBeDefined();
+  cleanup();
+
+  render(
+    await ContactsPage({
+      params: Promise.resolve({}),
+      searchParams: Promise.resolve({}),
+    }),
+  );
+  expect(screen.getByRole("link", { name: "Edit" })).toBeDefined();
 });
 
 test("renders structured AI qualification without hidden reasoning", () => {

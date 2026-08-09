@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from sari_api.api.routes.agent_registry import router as agent_registry_router
 from sari_api.api.routes.crm import router as crm_router
 from sari_api.api.routes.health import router as health_router
 from sari_api.api.routes.identity import router as identity_router
@@ -18,3 +19,4 @@ router.include_router(public_leads_router)
 router.include_router(qualification_router)
 router.include_router(work_router)
 router.include_router(opportunities_router)
+router.include_router(agent_registry_router)

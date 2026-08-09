@@ -88,6 +88,10 @@ production launch remains a separate human-approved activity with environment-sp
 
 **Goal:** Use approved Sari Arta knowledge to improve answers, content, and proposal preparation.
 
+- [x] Agent Registry MVP with domains, agents, versioned configurations, and capability bindings
+- [x] Register the existing Sari Arta qualification agent as `commercial_kitchen`
+- [x] Add a non-executable Laboratory Animal Facility / IVC validation package
+- [x] Define English, Chinese, and Bahasa Indonesia agent-localization contracts
 - [ ] Knowledge-document upload and approval
 - [ ] Text extraction, chunking, embeddings, and pgvector retrieval
 - [ ] RAG Knowledge Assistant with citations and insufficient-evidence behavior
@@ -132,9 +136,11 @@ production launch remains a separate human-approved activity with environment-sp
 
 ## Current development focus
 
-**M8 Phase 1 acceptance is complete.** Phase 2–4 implementation remains paused until the
-project owner explicitly authorizes the next phase. Production deployment is also not
-authorized by this roadmap update.
+**M8 Phase 1 acceptance is complete. Phase 2 framework implementation has started.** The Agent
+Registry MVP and two domain manifests are implemented. The Sari Arta runtime continues using its
+existing Phase 1 lookup, while the IVC package remains draft, unactivated, and knowledge-disabled.
+The next authorized work should validate the registry resolver in shadow mode; knowledge ingestion,
+new domain execution, and production activation remain outside this increment.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

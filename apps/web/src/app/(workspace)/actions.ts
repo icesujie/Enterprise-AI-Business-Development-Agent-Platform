@@ -32,6 +32,32 @@ export async function createOrganization(formData: FormData) {
   revalidatePath("/organizations");
 }
 
+export async function updateOrganization(
+  organizationId: string,
+  version: number,
+  formData: FormData,
+) {
+  await apiFetch<Organization>(`/api/v1/organizations/${organizationId}`, {
+    method: "PATCH",
+    headers: { "If-Match": `"${version}"` },
+    body: JSON.stringify({
+      legal_name: String(formData.get("legal_name") ?? ""),
+      display_name: String(formData.get("display_name") ?? ""),
+      website_url: optional(formData, "website_url"),
+      domain: optional(formData, "domain"),
+      industry: optional(formData, "industry"),
+      country_code: optional(formData, "country_code"),
+      city: optional(formData, "city"),
+      preferred_language: optional(formData, "preferred_language"),
+      lifecycle_stage: String(formData.get("lifecycle_stage") ?? "prospect"),
+    }),
+  });
+  revalidatePath("/organizations");
+  revalidatePath("/contacts");
+  revalidatePath("/leads");
+  redirect("/organizations?updated=1");
+}
+
 export async function createContact(formData: FormData) {
   await apiFetch<Contact>("/api/v1/contacts", {
     method: "POST",
@@ -46,6 +72,35 @@ export async function createContact(formData: FormData) {
     }),
   });
   revalidatePath("/contacts");
+}
+
+export async function updateContact(
+  contactId: string,
+  version: number,
+  formData: FormData,
+) {
+  await apiFetch<Contact>(`/api/v1/contacts/${contactId}`, {
+    method: "PATCH",
+    headers: { "If-Match": `"${version}"` },
+    body: JSON.stringify({
+      organization_id: optional(formData, "organization_id"),
+      first_name: optional(formData, "first_name"),
+      last_name: optional(formData, "last_name"),
+      email: optional(formData, "email"),
+      phone_e164: optional(formData, "phone_e164"),
+      whatsapp_e164: optional(formData, "whatsapp_e164"),
+      job_title: optional(formData, "job_title"),
+      preferred_language: optional(formData, "preferred_language"),
+      marketing_consent_status: String(
+        formData.get("marketing_consent_status") ?? "unknown",
+      ),
+      do_not_contact: formData.get("do_not_contact") === "on",
+    }),
+  });
+  revalidatePath("/contacts");
+  revalidatePath("/organizations");
+  revalidatePath("/leads");
+  redirect("/contacts?updated=1");
 }
 
 export async function createLead(formData: FormData) {
@@ -77,13 +132,20 @@ export async function updateLead(
     method: "PATCH",
     headers: { "If-Match": `"${version}"` },
     body: JSON.stringify({
+      organization_id: optional(formData, "organization_id"),
+      contact_id: optional(formData, "contact_id"),
       status: String(formData.get("status") ?? "new"),
       priority: String(formData.get("priority") ?? "normal"),
       inquiry_summary: String(formData.get("inquiry_summary") ?? ""),
       project_city: optional(formData, "project_city"),
+      project_country_code: optional(formData, "project_country_code"),
       project_type: optional(formData, "project_type"),
       expected_capacity: optional(formData, "expected_capacity"),
       target_timeline: optional(formData, "target_timeline"),
+      estimated_value: optional(formData, "estimated_value"),
+      currency: optional(formData, "estimated_value")
+        ? String(formData.get("currency") ?? "IDR").toUpperCase()
+        : null,
     }),
   });
   revalidatePath(`/leads/${leadId}`);
