@@ -6,8 +6,20 @@ import WorkspaceLayout from "@/app/(workspace)/layout";
 import DashboardPage from "@/app/(workspace)/dashboard/page";
 import LoginPage from "@/app/login/page";
 import { QualificationCard } from "@/components/workspace/qualification-card";
+import {
+  createDemoSessionToken,
+  verifyDemoCredentials,
+  verifyDemoSessionToken,
+} from "@/lib/demo-auth";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/dashboard" }));
+vi.mock("@/i18n/server", async () => {
+  const { messagesFor } = await import("@/i18n/messages");
+  return {
+    getLocale: vi.fn(async () => "en"),
+    getMessages: vi.fn(async () => messagesFor("en")),
+  };
+});
 vi.mock("@/lib/api", () => ({
   apiFetch: vi.fn(async (path: string) => {
     if (path.startsWith("/api/v1/leads")) {
@@ -67,7 +79,7 @@ test("renders the public engineering positioning and consultation action", () =>
 
 test("renders the M6 workspace navigation and live dashboard", async () => {
   const dashboard = await DashboardPage();
-  render(<WorkspaceLayout>{dashboard}</WorkspaceLayout>);
+  render(await WorkspaceLayout({ children: dashboard }));
   expect(screen.getAllByRole("link", { name: "Dashboard" })).toHaveLength(2);
   expect(screen.getAllByRole("link", { name: "Leads" })).toHaveLength(2);
   expect(screen.getAllByRole("link", { name: "Opportunities" })).toHaveLength(
@@ -80,8 +92,8 @@ test("renders the M6 workspace navigation and live dashboard", async () => {
   expect(screen.getByText("School kitchen · Jakarta")).toBeDefined();
 });
 
-test("renders the production sign-in form", () => {
-  render(<LoginPage />);
+test("renders the production sign-in form", async () => {
+  render(await LoginPage({}));
   expect(
     screen.getByRole("heading", { name: "Sales workspace" }),
   ).toBeDefined();
@@ -121,14 +133,19 @@ test("renders structured AI qualification without hidden reasoning", () => {
         assessment_version: 1,
         agent_run_id: "run-1",
         score: "82.00",
+        qualification_level: "A",
         tier: "hot",
         need_summary: "A defined institutional kitchen requirement.",
+        business_summary: "A defined institutional kitchen requirement.",
         qualification: {
           need_status: "confirmed",
           timeline_status: "confirmed",
           budget_status: "unknown",
           authority_status: "partial",
         },
+        key_qualification_factors: [
+          { key: "need", label: "Need and project fit", status: "confirmed" },
+        ],
         recommended_action: "Schedule discovery and request the floor plan.",
         missing_information: ["Approved budget"],
         confidence: "0.8200",
@@ -152,5 +169,41 @@ test("renders structured AI qualification without hidden reasoning", () => {
   expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
     "82",
   );
+  expect(screen.getByText("Level A")).toBeDefined();
   expect(screen.queryByText(/chain-of-thought/i)).toBeNull();
 });
+
+test("validates the development-only demo login and signed session", async () => {
+  const previous = {
+    environment: process.env.APP_ENVIRONMENT,
+    email: process.env.DEMO_AUTH_EMAIL,
+    password: process.env.DEMO_AUTH_PASSWORD,
+    secret: process.env.DEMO_AUTH_SECRET,
+  };
+  process.env.APP_ENVIRONMENT = "development";
+  process.env.DEMO_AUTH_EMAIL = "admin@sariarta.local";
+  process.env.DEMO_AUTH_PASSWORD = "SariArtaDemo2026!";
+  process.env.DEMO_AUTH_SECRET =
+    "unit-test-demo-session-secret-with-at-least-32-characters";
+  try {
+    expect(
+      await verifyDemoCredentials("admin@sariarta.local", "SariArtaDemo2026!"),
+    ).toBe(true);
+    expect(
+      await verifyDemoCredentials("admin@sariarta.local", "wrong-password"),
+    ).toBe(false);
+    const token = await createDemoSessionToken();
+    expect(await verifyDemoSessionToken(token)).toBe(true);
+    expect(await verifyDemoSessionToken(`${token}tampered`)).toBe(false);
+  } finally {
+    restoreEnvironment("APP_ENVIRONMENT", previous.environment);
+    restoreEnvironment("DEMO_AUTH_EMAIL", previous.email);
+    restoreEnvironment("DEMO_AUTH_PASSWORD", previous.password);
+    restoreEnvironment("DEMO_AUTH_SECRET", previous.secret);
+  }
+});
+
+function restoreEnvironment(name: string, value: string | undefined) {
+  if (value === undefined) delete process.env[name];
+  else process.env[name] = value;
+}

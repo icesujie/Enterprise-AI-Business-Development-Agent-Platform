@@ -1,7 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { SectionContainer } from "@/components/layout/section-container";
 import { ButtonLink } from "@/components/ui/button";
+import { useI18n } from "@/i18n/context";
 
 export function InnerPageHero({
   eyebrow,
@@ -45,27 +48,26 @@ export function ContentBand({
   );
 }
 
-export function ConsultationBand({
-  title = "Planning a commercial kitchen project in Indonesia?",
-}: {
-  title?: string;
-}) {
+export function ConsultationBand({ title }: { title?: string }) {
+  const { messages } = useI18n();
+  const copy = messages.public;
+  const band = copy.consultationBand;
   return (
     <ContentBand tone="dark">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d4a48e]">
-            Start with what you know
+            {band.eyebrow}
           </p>
-          <h2 className="section-title mt-4 max-w-3xl">{title}</h2>
+          <h2 className="section-title mt-4 max-w-3xl">
+            {title ?? band.title}
+          </h2>
           <p className="mt-5 max-w-2xl leading-7 text-white/65">
-            Share your facility type, location, approximate size or meal volume,
-            target date, and known requirements. Early-stage briefs are welcome
-            and every inquiry is reviewed by a person.
+            {band.description}
           </p>
         </div>
         <ButtonLink href="/contact" className="button-inverse shrink-0">
-          Request kitchen consultation
+          {copy.consultation}
         </ButtonLink>
       </div>
     </ContentBand>

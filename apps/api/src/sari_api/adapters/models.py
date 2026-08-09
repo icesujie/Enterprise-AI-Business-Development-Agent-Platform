@@ -133,6 +133,7 @@ class Contact(TenantMutableMixin, Base):
         ),
         Index("ix_contacts_tenant_email", "tenant_id", "email"),
         Index("ix_contacts_tenant_phone", "tenant_id", "phone_e164"),
+        Index("ix_contacts_tenant_organization", "tenant_id", "organization_id"),
     )
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)

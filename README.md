@@ -7,7 +7,8 @@ AI-assisted lead management for Sari Arta, an Indonesian commercial-kitchen engi
 The project is in **Phase 1 — MVP**. **M1 — Runnable project foundation** and
 **M2 — Identity and data foundation**, **M3 — CRM lead vertical slice**, and
 **M4 — Work tracking and AI qualification**, and **M5 — Opportunity conversion**
-are complete. The next milestone is the actionable sales dashboard.
+are complete. M6 now includes the public business website, lead capture, internal sales
+workspace, and the integrated AI qualification experience.
 
 M1 provides:
 
@@ -38,6 +39,10 @@ default and does not change lead status or perform external actions.
 M5 adds transactional qualified-lead conversion, concurrent duplicate protection,
 company/contact reuse, a staged opportunity pipeline, guarded stage transitions, and
 automatic conversion/stage activity records.
+
+M6 adds the responsive Sari Arta website and consultation flow, dashboard and lead detail
+workspace, A/B/C qualification results, deterministic API-key-free demo qualification, and
+the switchable OpenAI Agents SDK provider. Every assessment still requires human review.
 
 ## Repository layout
 

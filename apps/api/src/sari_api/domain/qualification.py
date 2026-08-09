@@ -1,10 +1,24 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 QualificationStatus = Literal["confirmed", "partial", "unknown", "not_fit"]
+QualificationLevel = Literal["A", "B", "C"]
+
+QUALIFICATION_FACTOR_LABELS = {
+    "need_status": "Need and project fit",
+    "timeline_status": "Timeline",
+    "budget_status": "Budget",
+    "authority_status": "Decision authority",
+}
+
+
+def qualification_level_for_score(score: float | Decimal) -> QualificationLevel:
+    numeric_score = float(score)
+    return "A" if numeric_score >= 75 else "B" if numeric_score >= 45 else "C"
 
 
 class QualificationOutput(BaseModel):
@@ -35,3 +49,16 @@ class QualificationOutput(BaseModel):
             "need_status": self.need_status,
             "timeline_status": self.timeline_status,
         }
+
+    def qualification_level(self) -> QualificationLevel:
+        return qualification_level_for_score(self.score)
+
+    def key_qualification_factors(self) -> list[dict[str, str]]:
+        return [
+            {
+                "key": key.removesuffix("_status"),
+                "label": QUALIFICATION_FACTOR_LABELS[key],
+                "status": status,
+            }
+            for key, status in self.qualification_dimensions().items()
+        ]

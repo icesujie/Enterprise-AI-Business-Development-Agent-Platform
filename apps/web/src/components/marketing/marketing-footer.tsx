@@ -1,8 +1,10 @@
 import Link from "next/link";
 
 import { SectionContainer } from "@/components/layout/section-container";
+import { getMessages } from "@/i18n/server";
 
-export function MarketingFooter() {
+export async function MarketingFooter() {
+  const { public: copy, language } = await getMessages();
   return (
     <footer className="bg-[var(--color-ink)] py-14 text-white">
       <SectionContainer>
@@ -12,43 +14,43 @@ export function MarketingFooter() {
               SARI ARTA
             </p>
             <p className="mt-4 max-w-sm text-sm leading-6 text-white/60">
-              Commercial kitchen design, manufacturing coordination, and local
-              project delivery for institutional and industrial operations in
-              Indonesia.
+              {copy.footerDescription}
             </p>
           </div>
           <FooterGroup
-            title="Explore"
+            title={copy.explore}
             links={[
-              ["Solutions", "/solutions"],
-              ["Industries", "/industries"],
-              ["Projects", "/projects"],
+              [copy.solutions, "/solutions"],
+              [copy.industries, "/industries"],
+              [copy.projects, "/projects"],
             ]}
           />
           <FooterGroup
-            title="Company"
+            title={copy.company}
             links={[
-              ["About Us", "/about"],
-              ["Contact", "/contact"],
+              [copy.about, "/about"],
+              [copy.contact, "/contact"],
             ]}
           />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">
-              Project inquiry
+              {copy.projectInquiry}
             </p>
             <Link
               href="/contact"
               className="mt-4 inline-block text-sm font-semibold underline decoration-white/30 underline-offset-4"
             >
-              Request kitchen consultation
+              {copy.consultation}
             </Link>
           </div>
         </div>
         <div className="flex flex-col gap-3 pt-7 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-          <p>© 2026 Sari Arta. All project scopes remain subject to review.</p>
+          <p>{copy.copyright}</p>
           <div className="flex gap-5">
-            <span>English</span>
-            <Link href="/login">Staff access</Link>
+            <span>
+              {language.english} / {language.chinese}
+            </span>
+            <Link href="/login">{copy.staffAccess}</Link>
           </div>
         </div>
       </SectionContainer>

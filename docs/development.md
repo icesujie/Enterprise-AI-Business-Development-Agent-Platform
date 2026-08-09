@@ -70,16 +70,22 @@ requires a live Supabase project.
 The Next.js application uses Supabase SSR cookie sessions when
 `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are configured.
 For local Docker development only, the server-side `DEVELOPMENT_AUTH_SUBJECT` selects the
-seeded synthetic administrator. FastAPI rejects this development path in production.
+seeded synthetic administrator. The frontend still requires the local demo credentials from
+`DEMO_AUTH_EMAIL` and `DEMO_AUTH_PASSWORD`, then stores a signed, HttpOnly eight-hour session
+cookie. The example credentials are `admin@sariarta.local` / `SariArtaDemo2026!` and must never
+be reused outside local demonstration. FastAPI rejects the development identity path in
+production, and the frontend demo login is disabled unless `APP_ENVIRONMENT=development`.
 
 The public inquiry form requires `PUBLIC_SITE_TOKEN`; the local value is synthetic. Its
 FastAPI endpoint applies a Redis fixed-window rate limit and PostgreSQL idempotency. Redis
 unavailability causes a safe `503` instead of accepting an unbounded public write.
 
-AI qualification is disabled by default. To use the approved OpenAI provider path, set
-`AI_ENABLED=true`, provide `OPENAI_API_KEY`, and select the approved deployment through
-`OPENAI_MODEL`. Never put a real key in `.env.example`, source control, logs, or screenshots.
-The qualification input is a minimal saved CRM snapshot; sensitive SDK tracing is disabled.
+External AI is disabled by default. With `AI_ENABLED=false`, the worker uses the deterministic
+qualification rubric so local demos work without an API key. To use the approved OpenAI
+provider path, set `AI_ENABLED=true`, provide `OPENAI_API_KEY`, and select the approved model
+through `OPENAI_MODEL`. Never put a real key in `.env.example`, source control, logs, or
+screenshots. The qualification input is a minimal saved CRM snapshot; sensitive SDK tracing
+is disabled.
 
 ## 6. Start the applications
 
@@ -102,8 +108,9 @@ cd apps/api
 .venv/bin/python -m sari_api.worker
 ```
 
-Without an API key the worker records a safe failed status. Manual lead, task, and activity
-work remains available.
+With the default `AI_ENABLED=false`, the worker returns a repeatable demo assessment. When
+`AI_ENABLED=true`, startup requires `OPENAI_API_KEY`; provider failures are stored as safe run
+failures while manual lead, task, and activity work remains available.
 
 The backend readiness endpoint returns HTTP 503 when PostgreSQL cannot be reached. Liveness remains available so operations can distinguish a running process from a ready service.
 

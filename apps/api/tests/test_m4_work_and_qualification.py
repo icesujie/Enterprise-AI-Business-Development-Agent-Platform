@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
 from uuid import UUID, uuid4
 
 import httpx
@@ -9,8 +8,13 @@ from pydantic import ValidationError
 
 from sari_api.adapters.agent_queue import get_agent_queue
 from sari_api.adapters.qualification_executor import QualificationRunExecutor
-from sari_api.adapters.qualification_provider import QualificationProvider
+from sari_api.adapters.qualification_provider import (
+    AgentsSdkQualificationProvider,
+    MockQualificationProvider,
+    build_qualification_provider,
+)
 from sari_api.api.dependencies import get_token_identity
+from sari_api.core.config import Settings
 from sari_api.domain.identity import TokenIdentity
 from sari_api.domain.qualification import QualificationOutput
 from sari_api.main import app
@@ -29,26 +33,6 @@ class RecordingQueue:
 
     async def enqueue(self, run_id: UUID, tenant_id: UUID) -> None:
         self.messages.append((run_id, tenant_id))
-
-
-class StubQualificationProvider(QualificationProvider):
-    provider_type = "test"
-    model_id = "synthetic-qualification-model"
-
-    async def qualify(self, snapshot: dict[str, Any]) -> QualificationOutput:
-        assert snapshot["lead"]["project_type"] == "Hotel central kitchen"
-        return QualificationOutput(
-            score=82,
-            tier="hot",
-            need_summary="A defined hotel central-kitchen project.",
-            budget_status="unknown",
-            authority_status="partial",
-            need_status="confirmed",
-            timeline_status="confirmed",
-            missing_information=["Approved budget", "Decision committee"],
-            recommended_action="Schedule discovery and request the floor plan.",
-            confidence=0.82,
-        )
 
 
 @pytest.mark.parametrize(
@@ -88,6 +72,52 @@ def test_qualification_schema_rejects_inconsistent_tier() -> None:
             recommended_action="Review manually.",
             confidence=0.5,
         )
+
+
+@pytest.mark.asyncio
+async def test_mock_provider_returns_repeatable_business_output() -> None:
+    snapshot = {
+        "lead": {
+            "project_type": "School central kitchen",
+            "expected_capacity": "2,000 meals/day",
+            "inquiry_summary": "A new school campus requires a production kitchen.",
+            "target_timeline": "Opening in Q3 2027",
+            "estimated_value": "250000",
+            "currency": "USD",
+            "project_country_code": "ID",
+            "project_city": "Surabaya",
+            "requirements": {"decision_maker": "School board"},
+        },
+        "organization": {"name": "Synthetic Education Group", "industry": "Education"},
+        "contact": {"name": "Demo Contact", "job_title": "Project Director"},
+    }
+    provider = MockQualificationProvider()
+
+    first = await provider.qualify(snapshot)
+    second = await provider.qualify(snapshot)
+
+    assert first == second
+    assert first.score == 100
+    assert first.qualification_level() == "A"
+    assert first.need_summary == (
+        "Synthetic Education Group in the Education sector submitted an inquiry for a School "
+        "central kitchen with a stated size or capacity of 2,000 meals/day in Surabaya."
+    )
+    assert first.key_qualification_factors()[0] == {
+        "key": "budget",
+        "label": "Budget",
+        "status": "confirmed",
+    }
+
+
+def test_provider_factory_uses_mock_unless_real_ai_is_enabled() -> None:
+    mock_provider = build_qualification_provider(Settings(ai_enabled=False))
+    real_provider = build_qualification_provider(
+        Settings(ai_enabled=True, openai_api_key="test-key")
+    )
+
+    assert isinstance(mock_provider, MockQualificationProvider)
+    assert isinstance(real_provider, AgentsSdkQualificationProvider)
 
 
 @pytest.mark.asyncio
@@ -211,7 +241,7 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
 
             run_id, tenant_id = queue.messages[0]
             assert tenant_id == SARI_ARTA_ID
-            await QualificationRunExecutor(StubQualificationProvider()).execute(
+            await QualificationRunExecutor(MockQualificationProvider()).execute(
                 run_id,
                 tenant_id,
             )
@@ -219,7 +249,14 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
             run = await client.get(f"/api/v1/agent-runs/{run_id}")
             assert run.status_code == 200, run.text
             assert run.json()["status"] == "succeeded"
-            assert run.json()["result"]["tier"] == "hot"
+            assert run.json()["provider_type"] == "mock"
+            assert run.json()["result"]["tier"] == "warm"
+            assert run.json()["result"]["qualification_level"] == "B"
+            assert run.json()["result"]["business_summary"] == (
+                "An unassigned company submitted an inquiry for a Hotel central kitchen with "
+                "a stated size or capacity of 1,500 meals/day."
+            )
+            assert len(run.json()["result"]["key_qualification_factors"]) == 4
 
             assessments = await client.get(
                 f"/api/v1/leads/{lead_body['id']}/qualification-assessments"
@@ -227,6 +264,9 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
             assert assessments.status_code == 200, assessments.text
             assessment = assessments.json()[0]
             assert assessment["review_status"] == "pending"
+            assert assessment["qualification_level"] == "B"
+            assert assessment["business_summary"] == assessment["need_summary"]
+            assert len(assessment["key_qualification_factors"]) == 4
 
             unchanged_lead = await client.get(f"/api/v1/leads/{lead_body['id']}")
             assert unchanged_lead.json()["qualification_score"] is None
@@ -240,7 +280,7 @@ async def test_qualification_run_is_idempotent_and_requires_human_review() -> No
             assert approved.json()["review_status"] == "approved"
 
             reviewed_lead = await client.get(f"/api/v1/leads/{lead_body['id']}")
-            assert reviewed_lead.json()["qualification_score"] == "82.00"
+            assert reviewed_lead.json()["qualification_score"] == "60.00"
             assert reviewed_lead.json()["status"] == "new"
 
             repeated_review = await client.post(

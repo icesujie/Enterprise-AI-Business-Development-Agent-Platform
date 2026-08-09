@@ -23,6 +23,11 @@ from sari_api.adapters.qualification_repository import (
 from sari_api.adapters.work_repository import SqlAlchemyWorkRepository
 from sari_api.api.dependencies import require_permission
 from sari_api.domain.identity import Principal
+from sari_api.domain.qualification import (
+    QUALIFICATION_FACTOR_LABELS,
+    QualificationLevel,
+    qualification_level_for_score,
+)
 
 router = APIRouter(prefix="/api/v1", tags=["qualification"])
 
@@ -59,15 +64,24 @@ class QualificationRunResponse(StrictModel):
     created_at: datetime
 
 
+class QualificationFactorResponse(StrictModel):
+    key: str
+    label: str
+    status: str
+
+
 class AssessmentResponse(StrictModel):
     id: UUID
     lead_id: UUID
     assessment_version: int
     agent_run_id: UUID | None
     score: Decimal
+    qualification_level: QualificationLevel
     tier: str
     need_summary: str | None
+    business_summary: str | None
     qualification: dict[str, Any]
+    key_qualification_factors: list[QualificationFactorResponse]
     recommended_action: str
     missing_information: list[str]
     confidence: Decimal
@@ -110,10 +124,31 @@ def run_response(run: AgentRun) -> QualificationRunResponse:
 
 def assessment_response(assessment: LeadAssessment) -> AssessmentResponse:
     return AssessmentResponse(
-        **{
-            field: getattr(assessment, field)
-            for field in AssessmentResponse.model_fields
-        }
+        id=assessment.id,
+        lead_id=assessment.lead_id,
+        assessment_version=assessment.assessment_version,
+        agent_run_id=assessment.agent_run_id,
+        score=assessment.score,
+        qualification_level=qualification_level_for_score(assessment.score),
+        tier=assessment.tier,
+        need_summary=assessment.need_summary,
+        business_summary=assessment.need_summary,
+        qualification=assessment.qualification,
+        key_qualification_factors=[
+            QualificationFactorResponse(
+                key=key.removesuffix("_status"),
+                label=QUALIFICATION_FACTOR_LABELS.get(key, key.replace("_", " ").title()),
+                status=str(status),
+            )
+            for key, status in assessment.qualification.items()
+        ],
+        recommended_action=assessment.recommended_action,
+        missing_information=assessment.missing_information,
+        confidence=assessment.confidence,
+        review_status=assessment.review_status,
+        reviewed_by=assessment.reviewed_by,
+        reviewed_at=assessment.reviewed_at,
+        created_at=assessment.created_at,
     )
 
 

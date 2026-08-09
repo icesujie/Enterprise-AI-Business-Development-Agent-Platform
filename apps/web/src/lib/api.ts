@@ -1,7 +1,9 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { DEMO_SESSION_COOKIE, verifyDemoSessionToken } from "@/lib/demo-auth";
 import { createClient } from "@/lib/supabase/server";
 
 export type Organization = {
@@ -17,6 +19,7 @@ export type Organization = {
   created_at: string;
   updated_at: string;
   version: number;
+  contact_count?: number;
 };
 
 export type Contact = {
@@ -138,9 +141,16 @@ export type LeadAssessment = {
   assessment_version: number;
   agent_run_id: string | null;
   score: string;
+  qualification_level: "A" | "B" | "C";
   tier: string;
   need_summary: string | null;
+  business_summary: string | null;
   qualification: Record<string, unknown>;
+  key_qualification_factors: Array<{
+    key: string;
+    label: string;
+    status: string;
+  }>;
   recommended_action: string;
   missing_information: string[];
   confidence: string;
@@ -154,8 +164,12 @@ const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:8000";
 
 async function authenticationHeaders(): Promise<Record<string, string>> {
   const developmentSubject = process.env.DEVELOPMENT_AUTH_SUBJECT;
-  if (developmentSubject)
+  if (developmentSubject) {
+    const cookieStore = await cookies();
+    const session = cookieStore.get(DEMO_SESSION_COOKIE)?.value;
+    if (!(await verifyDemoSessionToken(session))) redirect("/login");
     return { "X-Development-Subject": developmentSubject };
+  }
 
   const supabase = await createClient();
   if (!supabase) redirect("/login");

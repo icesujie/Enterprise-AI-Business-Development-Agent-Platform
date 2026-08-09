@@ -1,13 +1,16 @@
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
+import { getLocale, getMessages } from "@/i18n/server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
-export default function MarketingLayout({
+export default async function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const { public: copy } = await getMessages();
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -25,7 +28,7 @@ export default function MarketingLayout({
         url: siteUrl,
         name: "Sari Arta",
         publisher: { "@id": `${siteUrl}/#organization` },
-        inLanguage: "en",
+        inLanguage: locale,
       },
     ],
   };
@@ -37,7 +40,7 @@ export default function MarketingLayout({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       <a href="#main-content" className="skip-link">
-        Skip to content
+        {copy.skip}
       </a>
       <MarketingHeader />
       <main id="main-content">{children}</main>

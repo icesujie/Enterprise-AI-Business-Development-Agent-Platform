@@ -95,9 +95,13 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
     environment:
+      APP_ENVIRONMENT: development
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
       API_BASE_URL: http://api:8000
       DEVELOPMENT_AUTH_SUBJECT: 30000000-0000-4000-8000-000000000001
+      DEMO_AUTH_EMAIL: ${DEMO_AUTH_EMAIL:-admin@sariarta.local}
+      DEMO_AUTH_PASSWORD: ${DEMO_AUTH_PASSWORD:-SariArtaDemo2026!}
+      DEMO_AUTH_SECRET: ${DEMO_AUTH_SECRET:-local-demo-session-secret-change-before-shared-use}
       PUBLIC_SITE_TOKEN: local-public-site-token
     ports:
       - "3000:3000"

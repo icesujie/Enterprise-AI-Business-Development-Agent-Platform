@@ -2,18 +2,20 @@ import Link from "next/link";
 
 import { WorkspaceNav } from "@/components/workspace/workspace-nav";
 import { WorkspaceTopbar } from "@/components/workspace/workspace-topbar";
+import { getMessages } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export default function WorkspaceLayout({
+export default async function WorkspaceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { workspace: copy } = await getMessages();
   return (
     <div className="min-h-screen bg-[#eef0eb] text-[var(--color-ink)]">
       <a href="#workspace-content" className="skip-link">
-        Skip to workspace content
+        {copy.skip}
       </a>
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] bg-[var(--color-brand-strong)] px-5 py-6 text-white lg:flex lg:flex-col">
         <Link
@@ -38,17 +40,17 @@ export default function WorkspaceLayout({
         </div>
       </aside>
       <div className="lg:pl-[248px]">
-        <WorkspaceTopbar />
+        <WorkspaceTopbar copy={copy} />
         <div className="border-b border-[var(--color-line)] bg-[var(--color-brand-strong)] px-4 py-3 lg:hidden">
           <div
             className="flex gap-2 overflow-x-auto"
-            aria-label="Mobile workspace navigation"
+            aria-label={copy.mobileNavigation}
           >
             {[
-              ["Dashboard", "/dashboard"],
-              ["Leads", "/leads"],
-              ["Opportunities", "/opportunities"],
-              ["Follow-up", "/follow-up"],
+              [copy.dashboard, "/dashboard"],
+              [copy.leads, "/leads"],
+              [copy.opportunities, "/opportunities"],
+              [copy.followUp, "/follow-up"],
             ].map(([label, href]) => (
               <Link
                 key={href}

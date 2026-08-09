@@ -261,6 +261,9 @@ class SqlAlchemyQualificationRepository:
         result = {
             "assessment_id": str(assessment.id),
             **output.model_dump(mode="json"),
+            "qualification_level": output.qualification_level(),
+            "business_summary": output.need_summary,
+            "key_qualification_factors": output.key_qualification_factors(),
             "review_status": "pending",
         }
         run.output_result = result

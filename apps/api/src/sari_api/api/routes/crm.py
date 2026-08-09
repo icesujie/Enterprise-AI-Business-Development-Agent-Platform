@@ -79,6 +79,10 @@ class OrganizationResponse(StrictModel):
     duplicate_warnings: list[str] = Field(default_factory=list)
 
 
+class OrganizationListItemResponse(OrganizationResponse):
+    contact_count: int
+
+
 class ContactInput(StrictModel):
     organization_id: UUID | None = None
     first_name: str | None = Field(default=None, max_length=120)
@@ -225,6 +229,15 @@ def organization_response(
     )
 
 
+def organization_list_item_response(
+    entity: Organization, contact_count: int
+) -> OrganizationListItemResponse:
+    return OrganizationListItemResponse(
+        **organization_response(entity).model_dump(),
+        contact_count=contact_count,
+    )
+
+
 def contact_response(entity: Contact, warnings: list[str] | None = None) -> ContactResponse:
     return ContactResponse(
         **{
@@ -259,15 +272,18 @@ def not_found() -> HTTPException:
     return HTTPException(status_code=404, detail="CRM record not found.")
 
 
-@router.get("/organizations", response_model=list[OrganizationResponse])
+@router.get("/organizations", response_model=list[OrganizationListItemResponse])
 async def list_organizations(
     principal: Annotated[Principal, Depends(require_permission("crm:read"))],
     session: Annotated[AsyncSession, Depends(get_session)],
     search: str | None = Query(default=None, max_length=200),
     limit: int = Query(default=50, ge=1, le=100),
-) -> list[OrganizationResponse]:
+) -> list[OrganizationListItemResponse]:
     repo = await repository(session, principal)
-    return [organization_response(item) for item in await repo.list_organizations(search, limit)]
+    return [
+        organization_list_item_response(item, contact_count)
+        for item, contact_count in await repo.list_organizations_with_contact_counts(search, limit)
+    ]
 
 
 @router.post("/organizations", response_model=OrganizationResponse, status_code=201)
@@ -360,10 +376,13 @@ async def list_contacts(
     principal: Annotated[Principal, Depends(require_permission("crm:read"))],
     session: Annotated[AsyncSession, Depends(get_session)],
     search: str | None = Query(default=None, max_length=200),
+    organization_id: UUID | None = None,
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[ContactResponse]:
     repo = await repository(session, principal)
-    return [contact_response(item) for item in await repo.list_contacts(search, limit)]
+    return [
+        contact_response(item) for item in await repo.list_contacts(search, organization_id, limit)
+    ]
 
 
 @router.post("/contacts", response_model=ContactResponse, status_code=201)

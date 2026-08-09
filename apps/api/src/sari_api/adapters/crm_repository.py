@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, TypeVar
 from uuid import UUID
 
-from sqlalchemy import Select, func, or_, select, text
+from sqlalchemy import Select, and_, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sari_api.adapters.models import Contact, Lead, Organization
@@ -50,11 +50,58 @@ class SqlAlchemyCrmRepository:
         )
         return list(result.all())
 
-    async def list_contacts(self, search: str | None, limit: int) -> list[Contact]:
-        statement = select(Contact).where(
-            Contact.tenant_id == self._tenant_id,
-            Contact.deleted_at.is_(None),
+    async def list_organizations_with_contact_counts(
+        self, search: str | None, limit: int
+    ) -> list[tuple[Organization, int]]:
+        statement = (
+            select(Organization, func.count(Contact.id))
+            .outerjoin(
+                Contact,
+                and_(
+                    Contact.organization_id == Organization.id,
+                    Contact.tenant_id == self._tenant_id,
+                    Contact.deleted_at.is_(None),
+                ),
+            )
+            .where(
+                Organization.tenant_id == self._tenant_id,
+                Organization.deleted_at.is_(None),
+            )
         )
+        if search:
+            pattern = f"%{search.strip()}%"
+            statement = statement.where(
+                or_(
+                    Organization.display_name.ilike(pattern),
+                    Organization.legal_name.ilike(pattern),
+                    Organization.domain.ilike(pattern),
+                )
+            )
+        rows = await self._session.execute(
+            statement.group_by(Organization.id).order_by(Organization.display_name).limit(limit)
+        )
+        return [(organization, int(contact_count)) for organization, contact_count in rows.all()]
+
+    async def list_contacts(
+        self, search: str | None, organization_id: UUID | None, limit: int
+    ) -> list[Contact]:
+        statement = (
+            select(Contact)
+            .outerjoin(
+                Organization,
+                and_(
+                    Organization.id == Contact.organization_id,
+                    Organization.tenant_id == self._tenant_id,
+                    Organization.deleted_at.is_(None),
+                ),
+            )
+            .where(
+                Contact.tenant_id == self._tenant_id,
+                Contact.deleted_at.is_(None),
+            )
+        )
+        if organization_id:
+            statement = statement.where(Contact.organization_id == organization_id)
         if search:
             pattern = f"%{search.strip()}%"
             statement = statement.where(
@@ -63,6 +110,8 @@ class SqlAlchemyCrmRepository:
                     Contact.last_name.ilike(pattern),
                     Contact.email.ilike(pattern),
                     Contact.phone_e164.ilike(pattern),
+                    Organization.display_name.ilike(pattern),
+                    Organization.legal_name.ilike(pattern),
                 )
             )
         result = await self._session.scalars(

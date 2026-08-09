@@ -35,6 +35,7 @@ export function QualificationCard({
   }
 
   const score = Math.round(Number(assessment.score));
+  const level = assessment.qualification_level ?? qualificationLevel(score);
   const confidence = confidenceDetails(Number(assessment.confidence));
   const dimensions = [
     {
@@ -75,7 +76,7 @@ export function QualificationCard({
         <div className="border-b border-[var(--color-line)] bg-[var(--color-brand-strong)] p-6 text-white sm:p-7">
           <div className="flex flex-wrap items-start justify-between gap-5">
             <div>
-              <AISourceLabel />
+              <AISourceLabel providerType={run?.provider_type} />
               <div className="mt-5 flex items-end gap-3">
                 <p className="text-5xl font-semibold tabular-nums">{score}</p>
                 <p className="pb-1 text-sm text-white/55">/ 100</p>
@@ -89,9 +90,7 @@ export function QualificationCard({
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <StatusBadge tone={tierTone(assessment.tier)}>
-                {capitalize(assessment.tier)}
-              </StatusBadge>
+              <StatusBadge tone={levelTone(level)}>Level {level}</StatusBadge>
               <StatusBadge tone={reviewTone(assessment.review_status)}>
                 Review {assessment.review_status.replaceAll("_", " ")}
               </StatusBadge>
@@ -116,7 +115,8 @@ export function QualificationCard({
             <div>
               <p className="eyebrow">Business summary</p>
               <p className="mt-3 text-base leading-7">
-                {assessment.need_summary ||
+                {assessment.business_summary ||
+                  assessment.need_summary ||
                   "The assessment did not provide a need summary."}
               </p>
             </div>
@@ -131,7 +131,7 @@ export function QualificationCard({
           </div>
 
           <div className="mt-8 border-t border-[var(--color-line)] pt-6">
-            <h3 className="font-semibold">Qualification dimensions</h3>
+            <h3 className="font-semibold">Key qualification factors</h3>
             <div className="mt-4 divide-y divide-[var(--color-line)]">
               {dimensions.map((dimension) => (
                 <QualificationDimensionRow
@@ -187,8 +187,9 @@ export function QualificationCard({
               >
                 <div>
                   <p className="font-semibold">
-                    Version {item.assessment_version} · {item.score}/100 ·{" "}
-                    {capitalize(item.tier)}
+                    Version {item.assessment_version} · {item.score}/100 · Level{" "}
+                    {item.qualification_level ??
+                      qualificationLevel(Number(item.score))}
                   </p>
                   <p className="mt-1 text-xs text-[var(--color-muted)]">
                     {formatDateTime(item.created_at)}
@@ -206,11 +207,18 @@ export function QualificationCard({
   );
 }
 
-export function AISourceLabel() {
+export function AISourceLabel({
+  providerType,
+}: { providerType?: string | null } = {}) {
   return (
-    <p className="text-xs font-bold uppercase tracking-[0.17em] text-[#d7a58e]">
-      AI-generated assessment · Human review required
-    </p>
+    <div>
+      <p className="text-xs font-bold uppercase tracking-[0.17em] text-[#d7a58e]">
+        AI-generated assessment · Human review required
+      </p>
+      {providerType === "mock" ? (
+        <p className="mt-2 text-xs text-white/55">Deterministic demo mode</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -308,7 +316,7 @@ export function AgentRunStatus({
   const failed = run?.status === "failed";
   return (
     <section className="card p-7" aria-live="polite">
-      <AISourceLabel />
+      <AISourceLabel providerType={run?.provider_type} />
       <h2 className="mt-4 text-2xl font-semibold">
         {inProgress
           ? "Qualification is in progress"
@@ -363,8 +371,12 @@ function confidenceDetails(value: number) {
   };
 }
 
-function tierTone(tier: string): "success" | "warning" | "neutral" {
-  return tier === "hot" ? "success" : tier === "warm" ? "warning" : "neutral";
+function qualificationLevel(score: number): "A" | "B" | "C" {
+  return score >= 75 ? "A" : score >= 45 ? "B" : "C";
+}
+
+function levelTone(level: string): "success" | "warning" | "neutral" {
+  return level === "A" ? "success" : level === "B" ? "warning" : "neutral";
 }
 
 function reviewTone(

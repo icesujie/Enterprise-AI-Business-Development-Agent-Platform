@@ -64,6 +64,30 @@ async def test_company_contact_and_lead_vertical_slice() -> None:
             )
             assert contact.status_code == 201, contact.text
 
+            company_contacts = await client.get(
+                "/api/v1/contacts",
+                params={"organization_id": organization_body["id"]},
+            )
+            assert company_contacts.status_code == 200, company_contacts.text
+            assert [item["id"] for item in company_contacts.json()] == [contact.json()["id"]]
+
+            contact_company_search = await client.get(
+                "/api/v1/contacts",
+                params={"search": f"Nusantara Kitchens {suffix}"},
+            )
+            assert contact_company_search.status_code == 200, contact_company_search.text
+            assert contact.json()["id"] in {item["id"] for item in contact_company_search.json()}
+
+            companies = await client.get(
+                "/api/v1/organizations",
+                params={"search": f"Nusantara Kitchens {suffix}"},
+            )
+            assert companies.status_code == 200, companies.text
+            company = next(
+                item for item in companies.json() if item["id"] == organization_body["id"]
+            )
+            assert company["contact_count"] == 1
+
             lead = await client.post(
                 "/api/v1/leads",
                 json={

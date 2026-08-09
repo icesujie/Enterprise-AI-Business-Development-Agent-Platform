@@ -2,25 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const primary = [
-  ["Dashboard", "/dashboard"],
-  ["Leads", "/leads"],
-  ["Opportunities", "/opportunities"],
-  ["Follow-up", "/follow-up"],
-] as const;
-const records = [
-  ["Companies", "/organizations"],
-  ["Contacts", "/contacts"],
-] as const;
+import { useI18n } from "@/i18n/context";
 
 export function WorkspaceNav() {
   const pathname = usePathname();
+  const { messages } = useI18n();
+  const copy = messages.workspace;
+  const primary = [
+    [copy.dashboard, "/dashboard"],
+    [copy.leads, "/leads"],
+    [copy.opportunities, "/opportunities"],
+    [copy.followUp, "/follow-up"],
+  ] as const;
+  const records = [
+    [copy.companies, "/organizations"],
+    [copy.contacts, "/contacts"],
+  ] as const;
   return (
-    <nav aria-label="Workspace navigation" className="flex h-full flex-col">
+    <nav aria-label={copy.navigation} className="flex h-full flex-col">
       <NavGroup items={primary} pathname={pathname} />
       <p className="mb-2 mt-8 px-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-white/35">
-        Records
+        {copy.records}
       </p>
       <NavGroup items={records} pathname={pathname} />
       <div className="mt-auto border-t border-white/10 pt-5">
@@ -28,7 +30,7 @@ export function WorkspaceNav() {
           href="/"
           className="block rounded-lg px-3 py-2.5 text-sm font-semibold text-white/55 hover:bg-white/8 hover:text-white"
         >
-          Public website
+          {copy.publicWebsite}
         </Link>
       </div>
     </nav>

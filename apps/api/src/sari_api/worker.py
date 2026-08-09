@@ -10,7 +10,7 @@ from redis.asyncio import Redis
 
 from sari_api.adapters.database import dispose_database
 from sari_api.adapters.qualification_executor import QualificationRunExecutor
-from sari_api.adapters.qualification_provider import AgentsSdkQualificationProvider
+from sari_api.adapters.qualification_provider import build_qualification_provider
 from sari_api.core.config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,13 @@ async def run_worker() -> None:
     settings = get_settings()
     logging.basicConfig(level=settings.log_level)
     redis = Redis.from_url(settings.redis_url, decode_responses=True)
-    executor = QualificationRunExecutor(AgentsSdkQualificationProvider(settings))
+    provider = build_qualification_provider(settings)
+    executor = QualificationRunExecutor(provider)
+    logger.info(
+        "Qualification provider selected: %s (%s)",
+        provider.provider_type,
+        provider.model_id,
+    )
     logger.info("Qualification worker started")
     try:
         while True:
