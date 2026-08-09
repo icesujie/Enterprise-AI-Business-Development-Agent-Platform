@@ -4,12 +4,12 @@ AI-assisted lead management for Sari Arta, an Indonesian commercial-kitchen engi
 
 ## Current delivery
 
-The project is in **Phase 1 — MVP**. **M1 — Runnable project foundation** and
-**M2 — Identity and data foundation**, **M3 — CRM lead vertical slice**, and
-**M4 — Work tracking and AI qualification**, **M5 — Opportunity conversion**, and
-**M6 — Public website and sales workspace** are complete. M7 production hardening and
-demo readiness adds bounded Agent Run retries, correlation IDs, structured logs, safe failure
-tracking, and a repeatable synthetic Sari Arta demonstration dataset.
+**Phase 1 — MVP is accepted through M8.** M1–M6 deliver the runnable application,
+identity/data foundation, CRM workflow, AI qualification, opportunity conversion, public
+website, and sales workspace. M7–M8 complete the reliability and demonstration baseline with
+durable Agent Run status, bounded retries, cancellation, interruption recovery, correlation
+IDs, structured logs, safe failures, three synthetic acceptance scenarios, and verified local
+backup/restore tooling. Phase 2 multi-domain agents have not started.
 
 M1 provides:
 
@@ -49,6 +49,13 @@ M7 makes the workflow presentation-ready: Agent Runs persist attempt and retry m
 PostgreSQL, delayed retries travel through Redis, API and Worker logs use JSON with correlation
 IDs, provider details are not exposed in saved failure messages, and `make demo-seed` loads
 four realistic but entirely synthetic business scenarios.
+
+M8 closes Phase 1 application acceptance: queued/running Agent Runs can be cancelled, the
+Worker recovers stale durable runs after an interrupted attempt or lost queue delivery, critical
+Agent actions write audit records, and the dataset includes Level A school, Level B hospital,
+and Level C low-value inquiry outcomes. `make backup` and `make verify-backup` provide a
+repeatable local restore check. Production deployment still requires the human launch gate in
+`docs/production-readiness-checklist.md`.
 
 ## Repository layout
 
@@ -110,11 +117,19 @@ make check
 
 This command runs backend lint, type checks and tests; frontend lint, type checks, tests and production build; and Docker Compose configuration validation.
 
+Create and verify a local database backup:
+
+```bash
+make backup
+make verify-backup BACKUP_FILE=/absolute/path/to/sariarta-YYYYMMDDTHHMMSSZ.dump
+```
+
 ## Project documents
 
 - [Documentation index](docs/README.md)
 - [Project roadmap](docs/roadmap.md)
 - [Phase 1 demo script](docs/demo-script.md)
+- [Production readiness checklist](docs/production-readiness-checklist.md)
 - [MVP scope](docs/mvp-scope.md)
 - [Phase 1 tasks](docs/phase-1-tasks.md)
 - [Technical architecture](docs/technical-architecture.md)

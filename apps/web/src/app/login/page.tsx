@@ -13,10 +13,7 @@ export default async function LoginPage({
   const error = (await searchParams)?.error;
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--canvas)] px-6">
-      <form
-        action={login}
-        className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-white p-8 shadow-xl"
-      >
+      <div className="w-full max-w-md rounded-3xl border border-[var(--line)] bg-white p-8 shadow-xl">
         <p className="text-xs font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
           Sari Arta
         </p>
@@ -46,32 +43,37 @@ export default async function LoginPage({
             {error === "auth_unavailable" ? copy.unavailable : copy.failed}
           </p>
         ) : null}
-        <label className="mt-8 block text-sm font-semibold" htmlFor="email">
-          {copy.email}
-        </label>
-        <input
-          className="field mt-2"
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-        />
-        <label className="mt-5 block text-sm font-semibold" htmlFor="password">
-          {copy.password}
-        </label>
-        <input
-          className="field mt-2"
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-        />
-        <button className="button-primary mt-7 w-full" type="submit">
-          {copy.signIn}
-        </button>
-      </form>
+        <form action={login}>
+          <label className="mt-8 block text-sm font-semibold" htmlFor="email">
+            {copy.email}
+          </label>
+          <input
+            className="field mt-2"
+            id="email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+          />
+          <label
+            className="mt-5 block text-sm font-semibold"
+            htmlFor="password"
+          >
+            {copy.password}
+          </label>
+          <input
+            className="field mt-2"
+            id="password"
+            name="password"
+            type="password"
+            required
+            autoComplete="current-password"
+          />
+          <button className="button-primary mt-7 w-full" type="submit">
+            {copy.signIn}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

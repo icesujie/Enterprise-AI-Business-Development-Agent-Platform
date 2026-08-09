@@ -1,23 +1,22 @@
-# Sari Arta Phase 1 MVP Demo Script
+# Sari Arta Phase 1 MVP — Five-Minute Demo
 
-**Duration:** 5–7 minutes  
 **Audience:** Business stakeholders, portfolio reviewers, and delivery partners  
-**Data policy:** Use only the included synthetic records and `.example` contact details. Do not enter real customer information.
+**Data policy:** Every named company, contact, domain, project, amount, and AI result below is synthetic. Never substitute real customer data during a demonstration.
 
-## 1. Demo objective
+## 1. Demo message
 
-Demonstrate one complete, human-controlled business-development workflow:
+Sari Arta has one controlled lead-to-opportunity workspace:
 
 ```text
 Website inquiry
-→ CRM lead
+→ CRM lead and linked company/contact
 → AI qualification
 → human review
-→ dashboard action queue
+→ follow-up task
 → opportunity conversion
 ```
 
-The key message is that AI assists commercial judgment but does not automatically qualify, reject, convert, price, or contact a customer.
+AI recommends; a salesperson remains responsible for qualification, pipeline changes, pricing, commitments, and customer contact.
 
 ## 2. Preparation
 
@@ -29,7 +28,7 @@ make demo-seed
 make api-dev
 ```
 
-In separate terminals:
+Start the web application and qualification Worker in separate terminals:
 
 ```bash
 make web-dev
@@ -40,99 +39,106 @@ cd apps/api
 .venv/bin/python -m sari_api.worker
 ```
 
-Open <http://localhost:3000>. The default demo mode uses the deterministic qualification provider and requires no OpenAI API key.
+Open <http://localhost:3000> and sign in with the local-only account:
 
-Demo workspace credentials:
+```text
+Email: admin@sariarta.local
+Password: SariArtaDemo2026!
+```
 
-- Email: `admin@sariarta.local`
-- Password: `SariArtaDemo2026!`
+The default `AI_ENABLED=false` mode is deterministic and requires no API key.
 
-The credentials are local demonstration values only and must never be used in production.
+## 3. Five-minute demonstration flow
 
-## 3. Suggested narrative and steps
+### 0:00–0:45 — Public website and inquiry
 
-### Step 1 — Submit a website inquiry (about 60 seconds)
-
-1. Open the public Sari Arta website and briefly show its positioning and consultation CTA.
+1. Show the homepage positioning: **Indonesia Commercial Kitchen Engineering Partner**.
 2. Open **Request Kitchen Consultation**.
-3. Submit a new synthetic inquiry using values such as:
-   - Name: `Jordan Demo`
-   - Company: `Demo Sunrise Academy`
-   - Country: `Indonesia`
-   - Project type: `School kitchen`
-   - Estimated kitchen size: `650 m² / 1,200 meals per service`
-   - Expected timeline: `Campus opening in September 2027`
-   - Message: `Synthetic demonstration inquiry for design, equipment, installation, and staff training. An indicative budget and floor plan are available for the discovery meeting.`
-4. Point out that the public form creates a CRM record but does not automatically run AI or contact anyone.
+3. Explain the captured fields: company, country, project type, size/capacity, timeline, and requirements.
+4. For a live submission, use only this synthetic brief:
 
-Expected result: a confirmation screen and one new website-sourced lead.
+```text
+Name: Jordan Demo
+Company: Demo Sunrise Academy
+Country: Indonesia
+Project type: School kitchen
+Kitchen size: 650 m² / 1,200 meals per service
+Timeline: Campus opening in September 2027
+Message: Synthetic inquiry for design, equipment, installation, and training. A floor plan and indicative budget are available for discovery.
+```
 
-### Step 2 — Review the created lead (about 60 seconds)
+Expected: one idempotent, rate-limited website inquiry becomes canonical CRM data. No AI run or customer message starts automatically.
 
-1. Sign in to the internal workspace.
-2. Open **Leads** and find the new project.
-3. Show its company/contact relationship, project details, source, tasks, and activity history.
-4. Add a synthetic internal note or follow-up task if time permits.
+### 0:45–1:30 — Lead creation and CRM context
 
-Expected result: the website inquiry is visible as canonical PostgreSQL CRM data.
+1. Sign in and open **Leads**.
+2. Open the new website lead, or use **Demo Nusantara Learning Foundation**.
+3. Show the linked company and contact, source, project location, capacity, timeline, tasks, and append-only activity history.
 
-### Step 3 — Run AI qualification (about 90 seconds)
+Expected: sales can work manually even when AI or Redis is unavailable.
 
-1. Open **AI Qualification** and select **Run AI qualification**.
-2. Explain that FastAPI saves the Agent Run before queueing, Redis only transports the job, and the Worker uses bounded retries.
-3. Show the correlation/reference ID connecting the request, Worker logs, and saved run.
-4. Refresh if required, then show the A/B/C level, score, summary, factors, missing information, and recommended action.
-5. Emphasize that hidden chain-of-thought is never displayed.
+### 1:30–2:40 — AI qualification and human control
 
-Expected result: a schema-validated assessment with `pending` human review.
+1. Open the **Qualification** tab.
+2. Start an assessment for the new lead, or use a seeded result.
+3. Show run status, A/B/C level, score, business summary, four qualification factors, missing information, recommended action, and review status.
+4. Explain that the durable run is stored before Redis delivery, retries are bounded, interrupted runs are recovered, and users can cancel queued/running work.
+5. Accept or reject a pending assessment. Hidden chain-of-thought is never stored or displayed.
 
-If the live run is unavailable, use **Demo Meridian Health Campus** for a pending Level B result, or **Demo Nusantara Learning Foundation** for an approved Level A result.
+Expected: the result is schema-validated and remains advisory until a human reviews it.
 
-### Step 4 — Make the human decision and review the dashboard (about 60 seconds)
+### 2:40–3:30 — Three qualification scenarios
 
-1. Accept or reject the assessment explicitly.
-2. Explain that acceptance records the score but does not change lead status automatically.
-3. If accepted, update the lead to `qualified` only after reviewing the evidence.
-4. Return to **Dashboard** and show new leads, review work, tasks, pipeline totals, and action links.
+| Scenario | Saved outcome | Demonstration point |
+|---|---|---|
+| Demo Nusantara Learning Foundation | Level A, 88, approved | School central-production kitchen with capacity, budget, timeline, decision group, and floor plan |
+| Demo Meridian Health Campus | Level B, 62, pending | Credible hospital need with budget and final authority still missing |
+| Demo Corner Bistro | Level C, 24, approved for nurture | Low-value single-equipment request without an engineering project or committed date |
 
-Expected result: the dashboard identifies the next useful sales action without AI controlling the pipeline.
+Open each assessment briefly to show that different evidence produces different actions—not merely different scores.
 
-### Step 5 — Convert to an opportunity (about 60 seconds)
+### 3:30–4:15 — Follow-up workflow
 
-1. Return to the qualified lead and select **Convert to opportunity**.
-2. Confirm the project name, estimated value, currency, and expected close date.
+1. Open **Follow-up**.
+2. Show the overdue hospital budget-owner task and the upcoming school floor-plan review.
+3. Open the low-value inquiry and show its low-priority, 14-day nurture task.
+4. Explain that task status is deterministic CRM state and external messages are not sent automatically.
+
+Expected: dashboard priorities are based on saved due dates, ownership, lead priority, and review state.
+
+### 4:15–5:00 — Opportunity conversion and pipeline
+
+1. Open the approved school lead and choose **Convert to opportunity**.
+2. Confirm the project name, amount/currency, expected close date, owner, and project requirements.
 3. Complete the conversion and open **Opportunities**.
-4. Explain that conversion reuses the company/contact and prevents duplicates transactionally.
+4. If the live record was previously converted, use **Demo Archipelago Central Kitchen Delivery** at proposal stage.
+5. Explain that conversion is transactional, reuses the company/contact, records activity, and prevents duplicate opportunities.
 
-Expected result: one source-linked opportunity appears in the `discovery` stage.
+Expected: the source lead becomes `converted` and exactly one linked opportunity appears in the pipeline.
 
-## 4. Seeded fallback scenarios
+## 4. Direct fallback records
 
-| Synthetic record | Demo purpose |
-|---|---|
-| Demo Nusantara Learning Foundation | Qualified school kitchen, approved Level A assessment |
-| Demo Meridian Health Campus | Urgent hospital kitchen, pending Level B assessment, overdue follow-up |
-| Demo Garuda Components Manufacturing | New factory cafeteria lead with missing information |
-| Demo Archipelago Food Services | Converted central-kitchen opportunity at proposal stage |
+- School assessment: <http://localhost:3000/leads/d7200000-0000-4000-8000-000000000001?tab=qualification>
+- Hospital assessment: <http://localhost:3000/leads/d7200000-0000-4000-8000-000000000002?tab=qualification>
+- Low-value assessment: <http://localhost:3000/leads/d8200000-0000-4000-8000-000000000001?tab=qualification>
+- Existing converted opportunity: <http://localhost:3000/opportunities/d7500000-0000-4000-8000-000000000001>
 
-Run `make demo-seed` safely more than once. It creates the dataset once and never deletes or overwrites existing CRM records.
+## 5. Safe fallback behavior
 
-## 5. Demo guardrails
+- Worker or Redis unavailable: continue CRM and use a seeded assessment.
+- OpenAI unavailable: keep `AI_ENABLED=false` for deterministic demo mode.
+- Run interrupted: the Worker recovery scan returns a stale durable run to the queue when attempts remain.
+- Retry limit reached: the run becomes `failed` with a safe message and CRM remains usable.
+- Cancellation requested: queued/running work becomes `cancelled`; a late provider result cannot overwrite it.
+- Duplicate conversion: return the existing opportunity instead of creating another.
 
-- Do not use real customer names, email addresses, phone numbers, drawings, budgets, or project claims.
-- Do not claim that sample projects are completed Sari Arta references.
-- Do not enable real OpenAI mode without approved environment and data-processing controls.
-- Do not send external email, WhatsApp, proposals, or notifications.
-- Keep AI output advisory and complete the human-review step.
-- If AI or Redis is unavailable, continue the CRM demo and use a seeded assessment.
+## 6. Acceptance checklist
 
-## 6. Successful demo checklist
-
-- [ ] Public inquiry submitted.
-- [ ] Lead found in the internal workspace.
-- [ ] Company/contact relationship shown.
-- [ ] AI result shown or seeded fallback used.
-- [ ] Human review performed.
-- [ ] Dashboard action queue reviewed.
-- [ ] Qualified lead converted without duplicate records.
-- [ ] No real data or external communication used.
+- [ ] Public website and consultation form shown.
+- [ ] Inquiry visible as a linked company/contact/lead.
+- [ ] Level A, B, and C scenarios shown.
+- [ ] Human qualification review explained or performed.
+- [ ] Follow-up task queue shown.
+- [ ] Qualified lead converted exactly once.
+- [ ] Dashboard and pipeline update shown.
+- [ ] No real data, live external communication, or unapproved AI processing used.

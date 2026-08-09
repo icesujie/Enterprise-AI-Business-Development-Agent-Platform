@@ -14,8 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from sari_api.adapters.agent_queue import AgentQueue, get_agent_queue
 from sari_api.adapters.database import get_session
-from sari_api.adapters.models import AgentRun, IdempotencyKey, LeadAssessment
+from sari_api.adapters.models import AgentRun, AuditEvent, IdempotencyKey, LeadAssessment
 from sari_api.adapters.qualification_repository import (
+    AgentRunNotCancellableError,
     AssessmentAlreadyReviewedError,
     QualificationNotFoundError,
     SqlAlchemyQualificationRepository,
@@ -176,6 +177,29 @@ def not_found() -> HTTPException:
     return HTTPException(status_code=404, detail="Qualification record not found.")
 
 
+def add_audit_event(
+    session: AsyncSession,
+    principal: Principal,
+    *,
+    action: str,
+    target_type: str,
+    target_id: UUID,
+    details: dict[str, Any] | None = None,
+) -> None:
+    session.add(
+        AuditEvent(
+            tenant_id=principal.tenant_id,
+            actor_user_id=principal.user_id,
+            action=action,
+            target_type=target_type,
+            target_id=target_id,
+            result="success",
+            request_id=get_correlation_id(),
+            details=details or {},
+        )
+    )
+
+
 @router.post(
     "/leads/{lead_id}/qualification-runs",
     response_model=QualificationRunStartResponse,
@@ -252,6 +276,14 @@ async def start_qualification(
             actor_membership_id=principal.membership_id,
             metadata={"agent_run_id": str(run.id)},
         )
+        add_audit_event(
+            session,
+            principal,
+            action="agent_run.requested",
+            target_type="agent_run",
+            target_id=run.id,
+            details={"lead_id": str(lead_id), "workflow_type": run.workflow_type},
+        )
         await session.commit()
     except QualificationNotFoundError as exc:
         raise not_found() from exc
@@ -287,6 +319,48 @@ async def get_agent_run(
         return run_response(await repo.get_run(run_id))
     except QualificationNotFoundError as exc:
         raise not_found() from exc
+
+
+@router.post(
+    "/agent-runs/{run_id}/cancellations",
+    response_model=QualificationRunResponse,
+)
+async def cancel_agent_run(
+    run_id: UUID,
+    principal: Annotated[Principal, Depends(require_permission("leads:qualify"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> QualificationRunResponse:
+    repo = await repository(session, principal)
+    try:
+        run = await repo.get_run(run_id, for_update=True)
+        await repo.cancel_run(run)
+        if run.lead_id:
+            work_repo = SqlAlchemyWorkRepository(session, principal.tenant_id)
+            await work_repo.add_activity(
+                lead_id=run.lead_id,
+                activity_type="qualification_cancelled",
+                subject="AI qualification cancelled",
+                actor_membership_id=principal.membership_id,
+                metadata={"agent_run_id": str(run.id)},
+            )
+        add_audit_event(
+            session,
+            principal,
+            action="agent_run.cancelled",
+            target_type="agent_run",
+            target_id=run.id,
+            details={"lead_id": str(run.lead_id) if run.lead_id else None},
+        )
+        await session.commit()
+        await session.refresh(run)
+        return run_response(run)
+    except QualificationNotFoundError as exc:
+        raise not_found() from exc
+    except AgentRunNotCancellableError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Only queued or running Agent Runs can be cancelled.",
+        ) from exc
 
 
 @router.get(
@@ -346,6 +420,14 @@ async def review_assessment(
             subject=f"AI qualification {payload.decision}",
             actor_membership_id=principal.membership_id,
             metadata={"assessment_id": str(assessment.id), "decision": payload.decision},
+        )
+        add_audit_event(
+            session,
+            principal,
+            action="lead_assessment.reviewed",
+            target_type="lead_assessment",
+            target_id=assessment.id,
+            details={"lead_id": str(assessment.lead_id), "decision": payload.decision},
         )
         await session.commit()
         await session.refresh(assessment)

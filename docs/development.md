@@ -68,9 +68,11 @@ Load the optional synthetic presentation dataset after migrations:
 make demo-seed
 ```
 
-The command creates four fixed `.example` company/contact scenarios, representative leads,
-tasks, an opportunity, and approved/pending qualification results. It is idempotent and does
-not delete or overwrite existing CRM records. Never replace it with real customer data.
+The command creates fixed `.example` company/contact scenarios, representative leads, tasks,
+an opportunity, and Level A/B/C qualification results. The M8 acceptance set covers a school
+central kitchen, hospital kitchen, and low-value single-equipment inquiry. It is idempotent and
+only maintains records with reserved synthetic IDs; it never deletes CRM records. Never replace
+it with real customer data.
 
 Protected API calls require a Supabase access token signed by an asymmetric `ES256` or
 `RS256` project key. Configure the issuer, audience and JWKS URL in `.env`; symmetric JWT
@@ -97,7 +99,11 @@ through `OPENAI_MODEL`. Never put a real key in `.env.example`, source control, 
 screenshots. The qualification input is a minimal saved CRM snapshot; sensitive SDK tracing
 is disabled. Agent Runs use `AGENT_MAX_ATTEMPTS` and exponential retry timing based on
 `AGENT_RETRY_BASE_SECONDS`. PostgreSQL stores attempt state and safe failures; Redis stores
-only immediate or delayed queue messages.
+only immediate or delayed queue messages. `AGENT_STALE_AFTER_SECONDS` defines when a queued or
+running record is considered interrupted, and the Worker checks for recovery every
+`AGENT_RECOVERY_INTERVAL_SECONDS`. Duplicate recovered queue messages are safe because execution
+locks and checks the durable run state. Users can cancel queued/running work through the API;
+provider completion after cancellation is discarded.
 
 ## 6. Start the applications
 
@@ -162,6 +168,24 @@ docker compose --profile app up --build
 
 This profile starts the web, API, qualification worker, PostgreSQL, and Redis containers for
 local verification. It is not a production deployment definition.
+
+## Backup and restore verification
+
+Create a private local custom-format dump:
+
+```bash
+make backup
+```
+
+Verify that dump by restoring it into an isolated temporary database which is removed after the
+check:
+
+```bash
+make verify-backup BACKUP_FILE=/absolute/path/to/sariarta-YYYYMMDDTHHMMSSZ.dump
+```
+
+Local `backups/` is ignored by Git. Production requires encrypted automated backups, off-host
+retention, monitoring, and an approved RPO/RTO; see `docs/production-readiness-checklist.md`.
 
 ## Dependency updates
 

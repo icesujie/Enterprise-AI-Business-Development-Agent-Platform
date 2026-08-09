@@ -51,7 +51,7 @@
 - [x] Asynchronous AI run execution and status
 - [x] AI Lead Qualification Agent
 - [x] Human acceptance or rejection of AI qualification
-- [ ] Minimum authorization, validation, audit, logging, rate limiting, backup, and health checks
+- [x] Minimum authorization, validation, audit, logging, rate limiting, backup, and health checks
 - [x] Seeded synthetic demonstration data
 - [x] Critical-path tests and a repeatable demo
 
@@ -78,9 +78,11 @@ Sign in
 - The application runs through the documented Docker-based setup.
 - A portfolio demonstration can complete the workflow in five to seven minutes.
 
-**Current status:** Functional MVP complete; M1 through M7 are implemented. Final operational
-acceptance still requires backup/restore verification, broader audit/security coverage, and a
-browser-level sign-in-to-conversion test before production use.
+**Current status:** Phase 1 application acceptance is complete through M8. The critical workflow,
+Agent Run reliability, synthetic A/B/C scenarios, five-minute demonstration, structured
+logging/audit, local backup/restore verification, and browser smoke path are complete. Real
+production launch remains a separate human-approved activity with environment-specific gates in
+`docs/production-readiness-checklist.md`.
 
 ## Phase 2 — AI Enhancement
 
@@ -130,7 +132,9 @@ browser-level sign-in-to-conversion test before production use.
 
 ## Current development focus
 
-Only **Phase 1 — MVP** is authorized for implementation.
+**M8 Phase 1 acceptance is complete.** Phase 2–4 implementation remains paused until the
+project owner explicitly authorizes the next phase. Production deployment is also not
+authorized by this roadmap update.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

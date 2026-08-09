@@ -29,6 +29,10 @@ class AssessmentAlreadyReviewedError(Exception):
     pass
 
 
+class AgentRunNotCancellableError(Exception):
+    pass
+
+
 class SqlAlchemyQualificationRepository:
     def __init__(self, session: AsyncSession, tenant_id: UUID) -> None:
         self._session = session
@@ -310,6 +314,19 @@ class SqlAlchemyQualificationRepository:
         run.next_retry_at = None
         run.error_code = code
         run.error_message_safe = message[:1000]
+        run.version += 1
+        await self._session.flush()
+
+    async def cancel_run(self, run: AgentRun) -> None:
+        if run.status not in {"queued", "running"}:
+            raise AgentRunNotCancellableError
+        now = datetime.now(UTC)
+        run.status = "cancelled"
+        run.completed_at = now
+        run.last_heartbeat_at = now
+        run.next_retry_at = None
+        run.error_code = "cancelled_by_user"
+        run.error_message_safe = "The Agent Run was cancelled by a user."
         run.version += 1
         await self._session.flush()
 

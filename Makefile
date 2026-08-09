@@ -1,6 +1,6 @@
 PYTHON := apps/api/.venv/bin
 
-.PHONY: check api-check web-check compose-check services-up services-down migrate demo-seed api-dev web-dev
+.PHONY: check api-check web-check compose-check services-up services-down migrate demo-seed api-dev web-dev backup verify-backup
 
 check: api-check web-check compose-check
 
@@ -36,3 +36,10 @@ api-dev:
 
 web-dev:
 	npm --prefix apps/web run dev
+
+backup:
+	./scripts/backup-database.sh
+
+verify-backup:
+	@test -n "$(BACKUP_FILE)" || (echo "Set BACKUP_FILE=/absolute/path/to/backup.dump" && exit 2)
+	./scripts/verify-database-restore.sh "$(BACKUP_FILE)"

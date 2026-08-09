@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import httpx
 import pytest
 from pydantic import ValidationError
+from sqlalchemy import select, text
 
 from sari_api.adapters.agent_queue import get_agent_queue
+from sari_api.adapters.agent_recovery import AgentRunRecoveryService
+from sari_api.adapters.database import session_factory
+from sari_api.adapters.models import AgentRun, AuditEvent
 from sari_api.adapters.qualification_executor import QualificationRunExecutor
 from sari_api.adapters.qualification_provider import (
     AgentsSdkQualificationProvider,
@@ -395,5 +400,98 @@ async def test_agent_run_fails_safely_after_bounded_retries() -> None:
             assert body["attempt_count"] == body["max_attempts"] == 3
             assert body["error_code"] == "provider_unavailable"
             assert "synthetic provider detail" not in body["error_message"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_queued_agent_run_can_be_cancelled_and_is_audited() -> None:
+    queue = RecordingQueue()
+    app.dependency_overrides[get_token_identity] = admin_identity
+    app.dependency_overrides[get_agent_queue] = lambda: queue
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            lead = await client.post(
+                "/api/v1/leads",
+                json={
+                    "source_channel": "manual",
+                    "inquiry_summary": "Synthetic cancelled qualification test.",
+                },
+            )
+            started = await client.post(
+                f"/api/v1/leads/{lead.json()['id']}/qualification-runs",
+                headers={"Idempotency-Key": f"cancel-{uuid4()}"},
+                json={"rubric_key": "commercial_kitchen_project_v1", "language": "en"},
+            )
+            run_id = UUID(started.json()["run_id"])
+
+            cancelled = await client.post(f"/api/v1/agent-runs/{run_id}/cancellations")
+            assert cancelled.status_code == 200, cancelled.text
+            assert cancelled.json()["status"] == "cancelled"
+            assert cancelled.json()["error_code"] == "cancelled_by_user"
+
+            repeated = await client.post(f"/api/v1/agent-runs/{run_id}/cancellations")
+            assert repeated.status_code == 409
+            assert await QualificationRunExecutor(MockQualificationProvider()).execute(
+                run_id, SARI_ARTA_ID
+            ) is None
+
+        async with session_factory() as session:
+            audit = await session.scalar(
+                select(AuditEvent).where(
+                    AuditEvent.target_id == run_id,
+                    AuditEvent.action == "agent_run.cancelled",
+                )
+            )
+            assert audit is not None
+            assert audit.request_id is not None
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_stale_running_agent_run_is_recovered_for_retry() -> None:
+    queue = RecordingQueue()
+    app.dependency_overrides[get_token_identity] = admin_identity
+    app.dependency_overrides[get_agent_queue] = lambda: queue
+    try:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            lead = await client.post(
+                "/api/v1/leads",
+                json={
+                    "source_channel": "manual",
+                    "inquiry_summary": "Synthetic interrupted worker recovery test.",
+                },
+            )
+            started = await client.post(
+                f"/api/v1/leads/{lead.json()['id']}/qualification-runs",
+                headers={"Idempotency-Key": f"recovery-{uuid4()}"},
+                json={"rubric_key": "commercial_kitchen_project_v1", "language": "en"},
+            )
+            run_id = UUID(started.json()["run_id"])
+
+        async with session_factory() as session:
+            await session.execute(
+                text("SELECT set_config('app.tenant_id', :tenant_id, true)"),
+                {"tenant_id": str(SARI_ARTA_ID)},
+            )
+            run = await session.scalar(select(AgentRun).where(AgentRun.id == run_id))
+            assert run is not None
+            run.status = "running"
+            run.attempt_count = 1
+            run.started_at = datetime.now(UTC) - timedelta(minutes=5)
+            run.last_heartbeat_at = datetime.now(UTC) - timedelta(minutes=5)
+            await session.commit()
+
+        recovered = await AgentRunRecoveryService(stale_after_seconds=30).recover()
+        assert run_id in {item.run_id for item in recovered}
+
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            status = await client.get(f"/api/v1/agent-runs/{run_id}")
+            assert status.json()["status"] == "queued"
+            assert status.json()["attempt_count"] == 1
+            assert status.json()["error_code"] == "worker_interrupted"
     finally:
         app.dependency_overrides.clear()

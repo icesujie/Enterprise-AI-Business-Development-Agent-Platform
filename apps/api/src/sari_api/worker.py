@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 
 from sari_api.adapters.agent_queue import (
     InvalidAgentQueueMessageError,
     RedisAgentQueue,
 )
+from sari_api.adapters.agent_recovery import AgentRunRecoveryService
 from sari_api.adapters.database import dispose_database
 from sari_api.adapters.qualification_executor import QualificationRunExecutor
 from sari_api.adapters.qualification_provider import build_qualification_provider
@@ -26,6 +28,8 @@ async def run_worker() -> None:
     queue = RedisAgentQueue(settings.redis_url, settings.agent_queue_name)
     provider = build_qualification_provider(settings)
     executor = QualificationRunExecutor(provider, settings.agent_retry_base_seconds)
+    recovery = AgentRunRecoveryService(settings.agent_stale_after_seconds)
+    next_recovery_at = 0.0
     logger.info(
         "Qualification provider selected",
         extra={
@@ -37,6 +41,31 @@ async def run_worker() -> None:
     logger.info("Qualification worker started", extra={"event": "agent.worker.started"})
     try:
         while True:
+            if time.monotonic() >= next_recovery_at:
+                try:
+                    recovered = await recovery.recover()
+                    for item in recovered:
+                        await queue.enqueue(
+                            item.run_id,
+                            item.tenant_id,
+                            correlation_id=item.correlation_id,
+                        )
+                    if recovered:
+                        logger.warning(
+                            "Recovered durable Agent Runs",
+                            extra={
+                                "event": "agent.run.recovered",
+                                "recovered_count": len(recovered),
+                            },
+                        )
+                except Exception:
+                    logger.exception(
+                        "Agent Run recovery scan failed",
+                        extra={"event": "agent.run.recovery_scan_failed"},
+                    )
+                next_recovery_at = (
+                    time.monotonic() + settings.agent_recovery_interval_seconds
+                )
             try:
                 message = await queue.dequeue(block_seconds=5)
             except InvalidAgentQueueMessageError:

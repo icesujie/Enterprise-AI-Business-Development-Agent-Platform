@@ -6,6 +6,7 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from sari_api.adapters.database import dispose_database, session_factory
 from sari_api.adapters.models import (
@@ -29,16 +30,19 @@ SCHOOL_ORGANIZATION_ID = UUID("d7000000-0000-4000-8000-000000000001")
 HOSPITAL_ORGANIZATION_ID = UUID("d7000000-0000-4000-8000-000000000002")
 FACTORY_ORGANIZATION_ID = UUID("d7000000-0000-4000-8000-000000000003")
 CENTRAL_KITCHEN_ORGANIZATION_ID = UUID("d7000000-0000-4000-8000-000000000004")
+LOW_VALUE_ORGANIZATION_ID = UUID("d8000000-0000-4000-8000-000000000001")
 
 SCHOOL_CONTACT_ID = UUID("d7100000-0000-4000-8000-000000000001")
 HOSPITAL_CONTACT_ID = UUID("d7100000-0000-4000-8000-000000000002")
 FACTORY_CONTACT_ID = UUID("d7100000-0000-4000-8000-000000000003")
 CENTRAL_KITCHEN_CONTACT_ID = UUID("d7100000-0000-4000-8000-000000000004")
+LOW_VALUE_CONTACT_ID = UUID("d8100000-0000-4000-8000-000000000001")
 
 SCHOOL_LEAD_ID = UUID("d7200000-0000-4000-8000-000000000001")
 HOSPITAL_LEAD_ID = UUID("d7200000-0000-4000-8000-000000000002")
 FACTORY_LEAD_ID = UUID("d7200000-0000-4000-8000-000000000003")
 CENTRAL_KITCHEN_LEAD_ID = UUID("d7200000-0000-4000-8000-000000000004")
+LOW_VALUE_LEAD_ID = UUID("d8200000-0000-4000-8000-000000000001")
 
 
 async def seed_demo_data() -> bool:
@@ -48,11 +52,27 @@ async def seed_demo_data() -> bool:
             text("SELECT set_config('app.tenant_id', :tenant_id, true)"),
             {"tenant_id": str(TENANT_ID)},
         )
-        marker = await session.scalar(
+        base_marker = await session.scalar(
             select(Organization.id).where(Organization.id == SCHOOL_ORGANIZATION_ID)
         )
-        if marker is not None:
+        acceptance_marker = await session.scalar(
+            select(Organization.id).where(Organization.id == LOW_VALUE_ORGANIZATION_ID)
+        )
+        if base_marker is not None:
+            school_lead = await session.scalar(select(Lead).where(Lead.id == SCHOOL_LEAD_ID))
+            if school_lead is not None and school_lead.source_detail in {
+                "M7 synthetic demo",
+                "M8 synthetic acceptance demo",
+            }:
+                school_lead.project_type = "School central production kitchen"
+                school_lead.source_detail = "M8 synthetic acceptance demo"
+        if acceptance_marker is not None:
+            await session.commit()
             return False
+        if base_marker is not None:
+            await add_low_value_scenario(session, now)
+            await session.commit()
+            return True
 
         organizations = [
             Organization(
@@ -173,7 +193,7 @@ async def seed_demo_data() -> bool:
                 organization_id=SCHOOL_ORGANIZATION_ID,
                 contact_id=SCHOOL_CONTACT_ID,
                 source_channel="website",
-                source_detail="M7 synthetic demo",
+                source_detail="M8 synthetic acceptance demo",
                 inquiry_summary=(
                     "A new bilingual school campus needs a production kitchen and dining "
                     "service for approximately 1,800 students and staff."
@@ -186,7 +206,7 @@ async def seed_demo_data() -> bool:
                 target_timeline="Campus opening in August 2027",
                 project_country_code="ID",
                 project_city="Bandung",
-                project_type="School production kitchen",
+                project_type="School central production kitchen",
                 expected_capacity="1,800 meals per service",
                 requirements={
                     "service_scope": ["design", "equipment", "installation", "training"],
@@ -471,8 +491,150 @@ async def seed_demo_data() -> bool:
         await session.flush()
         session.add_all(tasks)
         session.add_all(activities)
+        await add_low_value_scenario(session, now)
         await session.commit()
         return True
+
+
+async def add_low_value_scenario(session: AsyncSession, now: datetime) -> None:
+    organization = Organization(
+        id=LOW_VALUE_ORGANIZATION_ID,
+        tenant_id=TENANT_ID,
+        legal_name="Demo Corner Bistro",
+        display_name="Demo Corner Bistro",
+        website_url="https://corner-bistro.example",
+        domain="corner-bistro.example",
+        industry="Independent restaurant",
+        country_code="ID",
+        city="Jakarta",
+        preferred_language="en",
+        lifecycle_stage="prospect",
+        owner_membership_id=None,
+    )
+    contact = Contact(
+        id=LOW_VALUE_CONTACT_ID,
+        tenant_id=TENANT_ID,
+        organization_id=LOW_VALUE_ORGANIZATION_ID,
+        first_name="Nadia",
+        last_name="Demo",
+        job_title="Restaurant Owner",
+        email="nadia@corner-bistro.example",
+        preferred_language="en",
+        marketing_consent_status="unknown",
+        do_not_contact=False,
+        owner_membership_id=None,
+    )
+    lead = Lead(
+        id=LOW_VALUE_LEAD_ID,
+        tenant_id=TENANT_ID,
+        organization_id=LOW_VALUE_ORGANIZATION_ID,
+        contact_id=LOW_VALUE_CONTACT_ID,
+        source_channel="website",
+        source_detail="M8 synthetic acceptance demo",
+        inquiry_summary=(
+            "An independent restaurant asks for one replacement undercounter chiller and "
+            "requests a price only, without design, installation, or project scope."
+        ),
+        status="nurture",
+        priority="low",
+        owner_membership_id=SALES_MEMBERSHIP_ID,
+        estimated_value=Decimal("18000000"),
+        currency="IDR",
+        target_timeline="No committed purchase date",
+        project_country_code="ID",
+        project_city="Jakarta",
+        project_type="Single equipment replacement",
+        expected_capacity=None,
+        requirements={"equipment_count": 1, "engineering_scope": False},
+        qualification_score=Decimal("24"),
+    )
+    result = qualification_result(
+        assessment_id="d8400000-0000-4000-8000-000000000001",
+        score=24,
+        level="C",
+        tier="cold",
+        summary=(
+            "This is a low-value single-equipment request with no confirmed engineering "
+            "scope, decision schedule, or wider kitchen project."
+        ),
+        missing_information=["Purchase date", "Potential wider renovation scope"],
+        recommended_action=(
+            "Send to low-touch nurture and confirm whether a future renovation project exists."
+        ),
+        timeline_status="unknown",
+        review_status="approved",
+    )
+    run = AgentRun(
+        id=UUID("d8300000-0000-4000-8000-000000000001"),
+        tenant_id=TENANT_ID,
+        agent_configuration_id=AGENT_CONFIGURATION_ID,
+        workflow_type="lead_qualification",
+        status="succeeded",
+        initiated_by_user_id=ADMIN_USER_ID,
+        lead_id=LOW_VALUE_LEAD_ID,
+        input_snapshot={"schema_version": "lead_qualification_input_v1", "synthetic": True},
+        output_result=result,
+        provider_type="mock",
+        model_id="deterministic-rubric-v1",
+        started_at=now - timedelta(hours=1, minutes=1),
+        completed_at=now - timedelta(hours=1),
+        correlation_id="demo-low-value-qualification-001",
+        attempt_count=1,
+        max_attempts=3,
+        last_heartbeat_at=now - timedelta(hours=1),
+    )
+    assessment = LeadAssessment(
+        id=UUID("d8400000-0000-4000-8000-000000000001"),
+        tenant_id=TENANT_ID,
+        lead_id=LOW_VALUE_LEAD_ID,
+        assessment_version=1,
+        agent_run_id=run.id,
+        score=Decimal("24"),
+        tier="cold",
+        need_summary=result["business_summary"],
+        qualification=result["qualification"],
+        recommended_action=result["recommended_action"],
+        missing_information=result["missing_information"],
+        confidence=Decimal("0.8500"),
+        review_status="approved",
+        reviewed_by=ADMIN_USER_ID,
+        reviewed_at=now - timedelta(minutes=45),
+    )
+    task = Task(
+        id=UUID("d8600000-0000-4000-8000-000000000001"),
+        tenant_id=TENANT_ID,
+        lead_id=LOW_VALUE_LEAD_ID,
+        title="Confirm whether a wider renovation is planned",
+        description="Use a low-touch discovery step; do not prepare an engineering proposal.",
+        status="open",
+        priority="low",
+        assigned_to=SALES_MEMBERSHIP_ID,
+        due_at=now + timedelta(days=14),
+    )
+    activity = Activity(
+        id=UUID("d8700000-0000-4000-8000-000000000001"),
+        tenant_id=TENANT_ID,
+        lead_id=LOW_VALUE_LEAD_ID,
+        organization_id=LOW_VALUE_ORGANIZATION_ID,
+        contact_id=LOW_VALUE_CONTACT_ID,
+        activity_type="qualification_reviewed",
+        occurred_at=now - timedelta(minutes=45),
+        subject="Low-value inquiry assigned to nurture",
+        description="Synthetic Level C assessment approved for low-touch follow-up.",
+        actor_membership_id=ADMIN_MEMBERSHIP_ID,
+        metadata_json={"synthetic": True, "score": 24},
+    )
+
+    # Flush each dependency layer in foreign-key order.
+    session.add(organization)
+    await session.flush()
+    session.add(contact)
+    await session.flush()
+    session.add(lead)
+    await session.flush()
+    session.add(run)
+    await session.flush()
+    session.add_all([assessment, task, activity])
 
 
 def qualification_result(
@@ -484,12 +646,14 @@ def qualification_result(
     summary: str,
     missing_information: list[str],
     recommended_action: str,
+    timeline_status: str = "confirmed",
+    review_status: str | None = None,
 ) -> dict[str, object]:
     qualification = {
         "budget_status": "confirmed" if score >= 75 else "unknown",
         "authority_status": "confirmed" if score >= 75 else "partial",
         "need_status": "confirmed",
-        "timeline_status": "confirmed",
+        "timeline_status": timeline_status,
     }
     return {
         "assessment_id": assessment_id,
@@ -506,7 +670,7 @@ def qualification_result(
         "recommended_action": recommended_action,
         "missing_information": missing_information,
         "confidence": 0.9 if score >= 75 else 0.7,
-        "review_status": "approved" if score >= 75 else "pending",
+        "review_status": review_status or ("approved" if score >= 75 else "pending"),
     }
 
 
@@ -514,9 +678,9 @@ async def main() -> None:
     try:
         created = await seed_demo_data()
         print(
-            "Synthetic M7 demo data created."
+            "Synthetic M8 acceptance data created."
             if created
-            else "Synthetic M7 demo data already exists."
+            else "Synthetic M8 acceptance data already exists."
         )
     finally:
         await dispose_database()

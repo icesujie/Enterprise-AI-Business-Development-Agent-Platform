@@ -41,6 +41,8 @@ class Settings(BaseSettings):
     agent_max_output_tokens: int = Field(default=1200, ge=200, le=4000)
     agent_max_attempts: int = Field(default=3, ge=1, le=5)
     agent_retry_base_seconds: int = Field(default=2, ge=1, le=60)
+    agent_stale_after_seconds: int = Field(default=120, ge=30, le=3600)
+    agent_recovery_interval_seconds: int = Field(default=30, ge=10, le=300)
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:
