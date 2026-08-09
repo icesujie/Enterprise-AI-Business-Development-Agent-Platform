@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,6 +27,18 @@ class Settings(BaseSettings):
     auth_audience: str = "authenticated"
     auth_jwks_url: str = "https://local.supabase.example/auth/v1/.well-known/jwks.json"
     auth_jwks_cache_seconds: int = Field(default=600, ge=60, le=1200)
+    development_auth_subject: str | None = None
+    public_site_token: str = "local-public-site-token"
+    public_tenant_id: str = "10000000-0000-4000-8000-000000000001"
+    public_rate_limit: int = Field(default=10, ge=1, le=1000)
+    public_rate_window_seconds: int = Field(default=60, ge=10, le=3600)
+    ai_enabled: bool = False
+    openai_api_key: SecretStr | None = None
+    openai_model: str = "gpt-5-mini"
+    agent_queue_name: str = "sari-arta:agent-runs"
+    agent_timeout_seconds: int = Field(default=45, ge=5, le=180)
+    agent_max_turns: int = Field(default=3, ge=1, le=8)
+    agent_max_output_tokens: int = Field(default=1200, ge=200, le=4000)
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:
@@ -38,6 +50,12 @@ class Settings(BaseSettings):
                 raise ValueError("production REDIS_URL must not use local development values")
             if ".example" in self.auth_issuer or ".example" in self.auth_jwks_url:
                 raise ValueError("production Supabase Auth endpoints must be configured")
+            if self.development_auth_subject is not None:
+                raise ValueError("production must disable development authentication")
+            if self.public_site_token == "local-public-site-token":
+                raise ValueError("production PUBLIC_SITE_TOKEN must be configured")
+        if self.ai_enabled and self.openai_api_key is None:
+            raise ValueError("AI_ENABLED requires OPENAI_API_KEY")
         return self
 
 

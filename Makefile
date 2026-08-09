@@ -10,6 +10,7 @@ api-check:
 	$(PYTHON)/pytest apps/api/tests
 
 web-check:
+	npm --prefix apps/web run format:check
 	npm --prefix apps/web run lint
 	npm --prefix apps/web run typecheck
 	npm --prefix apps/web run test:ci
@@ -32,4 +33,3 @@ api-dev:
 
 web-dev:
 	npm --prefix apps/web run dev
-

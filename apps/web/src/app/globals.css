@@ -9,6 +9,7 @@
   --accent: #b14d24;
   --accent-soft: #f4e7df;
   --success: #2d7652;
+  --success-soft: #e5f1e9;
 }
 
 @theme inline {
@@ -36,4 +37,131 @@ body {
 ::selection {
   background: #d7e4db;
   color: var(--ink);
+}
+
+.card {
+  border: 1px solid var(--line);
+  border-radius: 1.25rem;
+  background: white;
+  box-shadow: 0 14px 38px rgb(24 34 28 / 5%);
+}
+
+.field {
+  display: block;
+  width: 100%;
+  border: 1px solid #cfd7d0;
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.72rem 0.85rem;
+  color: var(--ink);
+  font: inherit;
+}
+
+.field:focus {
+  border-color: var(--success);
+  outline: 3px solid rgb(45 118 82 / 14%);
+}
+
+.label {
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.button-primary {
+  border: 0;
+  border-radius: 0.75rem;
+  background: var(--panel);
+  padding: 0.78rem 1.15rem;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button-primary:hover {
+  background: #22503a;
+}
+
+.button-secondary {
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: white;
+  padding: 0.6rem 0.85rem;
+  color: var(--ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button-secondary:hover {
+  border-color: #aebbb1;
+  background: var(--canvas);
+}
+
+.timeline {
+  margin-left: 0.45rem;
+  border-left: 1px solid var(--line);
+  padding-left: 1.5rem;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+  position: absolute;
+  top: 0.35rem;
+  left: -1.79rem;
+  width: 0.55rem;
+  height: 0.55rem;
+  border: 2px solid white;
+  border-radius: 999px;
+  background: var(--success);
+  box-shadow: 0 0 0 1px var(--success);
+  content: "";
+}
+
+.eyebrow {
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+}
+
+.page-title {
+  margin-top: 0.35rem;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+
+.status-chip {
+  border-radius: 999px;
+  background: #eef2ed;
+  padding: 0.35rem 0.65rem;
+  color: #506058;
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.priority-dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  flex: none;
+  border-radius: 999px;
+  background: #9aa49d;
+}
+
+.priority-high {
+  background: #d17b2f;
+}
+.priority-urgent {
+  background: #b33b2e;
+}
+.priority-low {
+  background: #6e927b;
 }

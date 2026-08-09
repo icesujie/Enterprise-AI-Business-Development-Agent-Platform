@@ -5,13 +5,13 @@
 **Project:** Enterprise AI Business Development Agent Platform  
 **Reference business:** Sari Arta  
 **Current phase:** Phase 1 — MVP  
-**Current state:** M2 implemented and validated on 2026-08-08
+**Current state:** M4 implemented and validated on 2026-08-09
 **Scope sources:** `docs/roadmap.md`, then `docs/mvp-scope.md`, then the enterprise design documents  
 **Coding gate:** Ordinary Phase 1 milestones may proceed autonomously within `AGENTS.md` safety boundaries.
 
 ## Milestone history and current priority
 
-The next highest-priority milestone is **M3 — CRM lead vertical slice**. M1 and M2
+The next highest-priority milestone is **M5 — Opportunity conversion**. M1 through M4
 are retained below as implementation and validation history.
 
 ### M1 — Runnable project foundation
@@ -82,77 +82,86 @@ authorization denial paths, and database row-security policy inspection.
 
 **Depends on:** M2
 
-- [ ] CRM-001 Implement organization create, read, update, list and search.
-- [ ] CRM-002 Implement contact create, read, update, list and search.
-- [ ] CRM-003 Implement authenticated manual lead creation.
-- [ ] CRM-004 Implement lead list, filters, cursor pagination and detail.
-- [ ] CRM-005 Implement version-protected lead editing, ownership, priority and status.
-- [ ] CRM-006 Implement duplicate warnings by email, phone and company domain.
-- [ ] CRM-007 Implement public inquiry endpoint with validation, idempotency and rate limiting.
-- [ ] WEB-001 Build company, contact, lead-list and lead-detail interfaces.
-- [ ] WEB-002 Add loading, empty, validation, conflict and safe-error states.
-- [ ] TEST-001 Add API and end-to-end coverage for lead capture and management.
+- [x] CRM-001 Implement organization create, read, update, list and search.
+- [x] CRM-002 Implement contact create, read, update, list and search.
+- [x] CRM-003 Implement authenticated manual lead creation.
+- [x] CRM-004 Implement lead list, filters, cursor pagination and detail.
+- [x] CRM-005 Implement version-protected lead editing, ownership, priority and status.
+- [x] CRM-006 Implement duplicate warnings by email, phone and company domain.
+- [x] CRM-007 Implement public inquiry endpoint with validation, idempotency and rate limiting.
+- [x] WEB-001 Build company, contact, lead-list and lead-detail interfaces.
+- [x] WEB-002 Add loading, empty, validation, conflict and safe-error states.
+- [x] TEST-001 Add API and end-to-end coverage for lead capture and management.
 
 **Exit:** A user can capture and manage a lead entirely through the application, while duplicate retries and stale updates are handled safely.
 
-### M4 — Tasks, activity and opportunity conversion
+**Status:** Complete. Validation includes 25 backend tests, production frontend build,
+Docker image builds, browser creation/edit flows, public inquiry submission, stale-write
+rejection, API idempotency, database rate-limit integration boundary, and schema-drift checks.
+
+### M4 — Tasks, activity and AI lead qualification
 
 **Depends on:** M3
 
-- [ ] WORK-001 Implement task create, assign, reschedule, complete and list.
-- [ ] WORK-002 Implement manual notes and append-only activity history.
-- [ ] WORK-003 Emit automatic activity events for important lead changes.
+- [x] WORK-001 Implement task create, assign, reschedule, complete and list.
+- [x] WORK-002 Implement manual notes and append-only activity history.
+- [x] WORK-003 Emit automatic activity events for important lead changes.
+- [x] RUN-001 Persist canonical queued, running, succeeded and failed agent-run states.
+- [x] RUN-002 Add Redis-backed job enqueueing and an independent worker.
+- [x] AI-001 Define a versioned rubric and schema-validated qualification output.
+- [x] AI-002 Build a minimal read-only CRM snapshot for the qualification Agent.
+- [x] AI-003 Integrate the OpenAI Agents SDK behind a provider boundary.
+- [x] AI-004 Apply time, output-token and turn limits with sensitive tracing disabled.
+- [x] AI-005 Persist assessments and require explicit human accept or reject.
+- [x] AI-006 Prevent AI output from changing lead status or causing external effects.
+- [x] WEB-003 Add task, activity, run-status and qualification-review interfaces.
+- [x] TEST-002 Test task transitions, idempotent runs, structured output and human control.
+
+**Exit:** A salesperson can plan follow-up, inspect history, run a reviewable AI
+qualification, and continue manual CRM work when the provider is unavailable.
+
+**Status:** Complete. Validation includes 31 backend tests, migration downgrade/upgrade,
+Docker API/web/worker builds, browser task and timeline checks, persisted synthetic AI
+results, human review, and the no-key safe-failure path.
+
+### M5 — Opportunity conversion
+
+**Depends on:** M4
+
 - [ ] OPP-001 Implement transactional qualified-lead conversion.
 - [ ] OPP-002 Prevent duplicate conversion and reuse the existing company/contact.
 - [ ] OPP-003 Implement opportunity list, detail and validated stage transitions.
-- [ ] WEB-003 Add task, activity and opportunity interfaces.
-- [ ] TEST-002 Test status transitions, conversion idempotency and transaction rollback.
+- [ ] WEB-004 Add opportunity list and detail interfaces.
+- [ ] TEST-003 Test conversion idempotency, transitions and transaction rollback.
 
-**Exit:** A salesperson can plan follow-up, inspect history and convert a qualified lead without duplicating business records.
+**Exit:** A salesperson can convert a qualified lead without duplicating business records.
 
-### M5 — Actionable dashboard
+### M6 — Actionable dashboard
 
-**Depends on:** M4
+**Depends on:** M5
 
 - [ ] DASH-001 Define dashboard aggregation queries.
 - [ ] DASH-002 Show new/unassigned leads and qualification-review queue.
 - [ ] DASH-003 Show overdue/upcoming tasks.
 - [ ] DASH-004 Show lead counts and opportunity counts/value by stage.
 - [ ] DASH-005 Show recent activity and links to filtered work lists.
-- [ ] TEST-003 Validate dashboard totals against seeded records.
+- [ ] TEST-004 Validate dashboard totals against seeded records.
 
 **Exit:** A salesperson can identify the next useful action from the dashboard.
 
-### M6 — Asynchronous agent runtime
+### M7 — Agent runtime hardening
 
-**Depends on:** M3; may proceed after the lead read model is stable
+**Depends on:** M4
 
-- [ ] RUN-001 Implement canonical PostgreSQL agent-run records.
-- [ ] RUN-002 Add Redis-backed job enqueueing and worker execution.
-- [ ] RUN-003 Implement queued/running/succeeded/failed/cancelled transitions.
-- [ ] RUN-004 Add timeout, bounded retry, cancellation and correlation IDs.
-- [ ] RUN-005 Add status API and frontend progress/retry view.
-- [ ] RUN-006 Ensure Redis contains no unique business result.
-- [ ] TEST-004 Test browser refresh, provider failure, worker retry and terminal-state behavior.
+- [x] RUN-001 Implement canonical PostgreSQL agent-run records.
+- [x] RUN-002 Add Redis-backed job enqueueing and worker execution.
+- [ ] RUN-003 Add cancellation and bounded automatic retry transitions.
+- [ ] RUN-004 Add correlation IDs and stale-running recovery.
+- [x] RUN-005 Add status API and frontend progress/manual-rerun view.
+- [x] RUN-006 Ensure Redis contains no unique business result.
+- [ ] TEST-005 Test worker retry, cancellation and stale-run recovery.
 
 **Exit:** A synthetic job survives browser refresh, records its canonical state in PostgreSQL and fails safely.
-
-### M7 — AI Lead Qualification Agent
-
-**Depends on:** M6 and stable M3 lead data
-
-- [ ] AI-001 Define versioned qualification instructions, rubric and structured output schema.
-- [ ] AI-002 Implement narrow read-only tools for lead, company, contact, task and activity data.
-- [ ] AI-003 Integrate the OpenAI Agents SDK through a small provider boundary.
-- [ ] AI-004 Enforce time, token, tool-call and retry budgets.
-- [ ] AI-005 Persist validated assessments and safe run metadata.
-- [ ] AI-006 Implement accept, reject and rerun actions with human identity and timestamps.
-- [ ] AI-007 Prevent AI output from changing lead status or creating external effects.
-- [ ] AI-008 Build representative synthetic evaluation cases for hot, warm, cold and insufficient-data leads.
-- [ ] WEB-004 Build qualification action, result, confidence, missing-data and review interfaces.
-- [ ] TEST-005 Test schema validity, tool permissions, safe failure and human-control rules.
-
-**Exit:** Representative leads produce reviewable structured results without automatic CRM state changes.
 
 ### M8 — Hardening and MVP demonstration
 
@@ -176,18 +185,14 @@ authorization denial paths, and database row-security policy inspection.
 M1 Foundation
   → M2 Identity and data
   → M3 CRM lead slice
-  → M4 Tasks and conversion
-  → M5 Dashboard
-
-M3 CRM lead slice
-  → M6 Agent runtime
-  → M7 Lead Qualification Agent
-
-M4 + M5 + M7
+  → M4 Tasks, activity and AI qualification
+  → M5 Opportunity conversion
+  → M6 Dashboard
+  → M7 Agent runtime hardening
   → M8 Hardening and demonstration
 ```
 
-M5 and M6 may run in parallel only if more than one developer is available. For one developer, complete them in the listed order to maintain a usable non-AI system before adding AI.
+For one developer, complete the remaining milestones in the listed order.
 
 ## Autonomous development boundary
 
@@ -200,5 +205,5 @@ The project owner authorized autonomous execution of ordinary Phase 1 milestones
 - Phase 2–4 implementation.
 - Destructive operations against non-synthetic data, commits, pushes or publication.
 
-M3 is the next milestone. Real data, paid or production resources, external communication,
+M5 is the next milestone. Real data, paid or production resources, external communication,
 and irreversible operations remain explicit safety boundaries.

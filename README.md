@@ -5,8 +5,9 @@ AI-assisted lead management for Sari Arta, an Indonesian commercial-kitchen engi
 ## Current delivery
 
 The project is in **Phase 1 — MVP**. **M1 — Runnable project foundation** and
-**M2 — Identity and data foundation** are complete. The next milestone is the
-CRM lead vertical slice.
+**M2 — Identity and data foundation**, **M3 — CRM lead vertical slice**, and
+**M4 — Work tracking and AI qualification** are complete. The next milestone is
+transactional lead-to-opportunity conversion.
 
 M1 provides:
 
@@ -24,6 +25,15 @@ M2 adds Supabase-compatible asymmetric JWT verification, protected identity APIs
 synthetic `admin` and `sales` memberships, core PostgreSQL business tables, tenant
 row-security policies, and authorization/integration tests. It still uses no live
 Supabase project or real customer data.
+
+M3 adds authenticated company, contact, and lead management; optimistic concurrency;
+duplicate warnings; a rate-limited, idempotent public inquiry endpoint; Supabase SSR
+session support; and an operational Next.js sales workspace.
+
+M4 adds follow-up tasks, append-only activity history, automatic lead-change events,
+a Redis-backed qualification worker, OpenAI Agents SDK structured output, saved agent
+runs and assessments, and explicit human acceptance or rejection. AI is disabled by
+default and does not change lead status or perform external actions.
 
 ## Repository layout
 
@@ -45,7 +55,8 @@ compose.yaml             Local services and application containers
 Makefile                 Common development and validation commands
 ```
 
-The frontend calls FastAPI for business behavior. PostgreSQL is the canonical data store. Redis will support asynchronous jobs but holds no unique business state.
+The frontend calls FastAPI for business behavior. PostgreSQL is the canonical data store.
+Redis transports asynchronous jobs but holds no unique business state.
 
 ## Quick start
 

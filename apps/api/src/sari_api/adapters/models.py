@@ -165,6 +165,11 @@ class Lead(TenantMutableMixin, Base):
             name="leads_estimated_value_check",
         ),
         CheckConstraint(
+            "(estimated_value IS NULL AND currency IS NULL) OR "
+            "(estimated_value IS NOT NULL AND currency IS NOT NULL)",
+            name="leads_money_pair_check",
+        ),
+        CheckConstraint(
             "qualification_score IS NULL OR qualification_score BETWEEN 0 AND 100",
             name="leads_qualification_score_check",
         ),
@@ -181,6 +186,7 @@ class Lead(TenantMutableMixin, Base):
     contact_id: Mapped[UUID | None] = mapped_column(ForeignKey("contacts.id"))
     organization_id: Mapped[UUID | None] = mapped_column(ForeignKey("organizations.id"))
     source_channel: Mapped[str] = mapped_column(String(30))
+    source_detail: Mapped[str | None] = mapped_column(String(200))
     inquiry_summary: Mapped[str] = mapped_column(Text)
     status: Mapped[str] = mapped_column(String(30), server_default="new")
     priority: Mapped[str] = mapped_column(String(20), server_default="normal")
@@ -189,6 +195,9 @@ class Lead(TenantMutableMixin, Base):
     currency: Mapped[str | None] = mapped_column(String(3))
     target_timeline: Mapped[str | None] = mapped_column(String(100))
     project_country_code: Mapped[str | None] = mapped_column(String(2))
+    project_city: Mapped[str | None] = mapped_column(String(120))
+    project_type: Mapped[str | None] = mapped_column(String(120))
+    expected_capacity: Mapped[str | None] = mapped_column(String(120))
     requirements: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     qualification_score: Mapped[Decimal | None] = mapped_column(Numeric(5, 2))
 
@@ -241,6 +250,11 @@ class Task(TenantMutableMixin, Base):
             "lead_id IS NOT NULL OR opportunity_id IS NOT NULL OR organization_id IS NOT NULL",
             name="tasks_check",
         ),
+        CheckConstraint(
+            "(status = 'completed' AND completed_at IS NOT NULL) OR "
+            "(status <> 'completed' AND completed_at IS NULL)",
+            name="tasks_completion_check",
+        ),
         Index("ix_tasks_tenant_assignee_due", "tenant_id", "assigned_to", "status", "due_at"),
     )
 
@@ -266,6 +280,7 @@ class Activity(Base):
             name="activities_check",
         ),
         Index("ix_activities_tenant_occurred", "tenant_id", "occurred_at"),
+        Index("ix_activities_tenant_lead_occurred", "tenant_id", "lead_id", "occurred_at"),
     )
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
@@ -336,6 +351,7 @@ class LeadAssessment(Base):
     __table_args__ = (
         UniqueConstraint("lead_id", "assessment_version"),
         CheckConstraint("score BETWEEN 0 AND 100", name="lead_assessments_score_check"),
+        CheckConstraint("tier IN ('hot','warm','cold')", name="lead_assessments_tier_check"),
         CheckConstraint("confidence BETWEEN 0 AND 1", name="lead_assessments_confidence_check"),
         CheckConstraint(
             "review_status IN ('not_required','pending','approved','rejected','superseded')",
@@ -352,6 +368,7 @@ class LeadAssessment(Base):
     score: Mapped[Decimal] = mapped_column(Numeric(5, 2))
     tier: Mapped[str] = mapped_column(String(20))
     need_summary: Mapped[str | None] = mapped_column(Text)
+    qualification: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     recommended_action: Mapped[str] = mapped_column(Text)
     missing_information: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
     confidence: Mapped[Decimal] = mapped_column(Numeric(5, 4))
@@ -374,4 +391,22 @@ class AuditEvent(Base):
     result: Mapped[str] = mapped_column(String(30))
     request_id: Mapped[str | None] = mapped_column(String(100))
     details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class IdempotencyKey(Base):
+    __tablename__ = "idempotency_keys"
+    __table_args__ = (
+        UniqueConstraint("scope", "idempotency_key"),
+        Index("ix_idempotency_expires", "expires_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID | None] = mapped_column(ForeignKey("tenants.id"))
+    scope: Mapped[str] = mapped_column(String(100))
+    idempotency_key: Mapped[str] = mapped_column(String(200))
+    request_hash: Mapped[str] = mapped_column(String(64))
+    response_status: Mapped[int] = mapped_column(Integer)
+    response_body: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

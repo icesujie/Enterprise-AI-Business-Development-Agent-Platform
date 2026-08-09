@@ -44,6 +44,12 @@ services:
       AUTH_ISSUER: https://local.supabase.example/auth/v1
       AUTH_AUDIENCE: authenticated
       AUTH_JWKS_URL: https://local.supabase.example/auth/v1/.well-known/jwks.json
+      DEVELOPMENT_AUTH_SUBJECT: 30000000-0000-4000-8000-000000000001
+      PUBLIC_SITE_TOKEN: local-public-site-token
+      PUBLIC_TENANT_ID: 10000000-0000-4000-8000-000000000001
+      AI_ENABLED: ${AI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
     ports:
       - "8000:8000"
     depends_on:
@@ -64,6 +70,25 @@ services:
       retries: 5
       start_period: 10s
 
+  worker:
+    profiles: ["app"]
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    command: ["python", "-m", "sari_api.worker"]
+    environment:
+      APP_ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://sariarta:sariarta_dev@postgres:5432/sariarta
+      REDIS_URL: redis://redis:6379/0
+      AI_ENABLED: ${AI_ENABLED:-false}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-mini}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
   web:
     profiles: ["app"]
     build:
@@ -71,6 +96,9 @@ services:
       dockerfile: Dockerfile
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+      API_BASE_URL: http://api:8000
+      DEVELOPMENT_AUTH_SUBJECT: 30000000-0000-4000-8000-000000000001
+      PUBLIC_SITE_TOKEN: local-public-site-token
     ports:
       - "3000:3000"
     depends_on:

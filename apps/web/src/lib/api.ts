@@ -1,0 +1,154 @@
+import "server-only";
+
+import { redirect } from "next/navigation";
+
+import { createClient } from "@/lib/supabase/server";
+
+export type Organization = {
+  id: string;
+  legal_name: string;
+  display_name: string;
+  domain: string | null;
+  industry: string | null;
+  country_code: string | null;
+  city: string | null;
+  lifecycle_stage: string;
+  version: number;
+};
+
+export type Contact = {
+  id: string;
+  organization_id: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  phone_e164: string | null;
+  job_title: string | null;
+  version: number;
+};
+
+export type Lead = {
+  id: string;
+  organization_id: string | null;
+  contact_id: string | null;
+  inquiry_summary: string;
+  status: string;
+  priority: string;
+  project_country_code: string | null;
+  project_city: string | null;
+  project_type: string | null;
+  expected_capacity: string | null;
+  target_timeline: string | null;
+  estimated_value: string | null;
+  currency: string | null;
+  qualification_score: string | null;
+  created_at: string;
+  updated_at: string;
+  version: number;
+};
+
+export type LeadList = { items: Lead[]; next_cursor: string | null };
+
+export type Task = {
+  id: string;
+  lead_id: string | null;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  assigned_to: string;
+  due_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  version: number;
+};
+
+export type Activity = {
+  id: string;
+  lead_id: string | null;
+  activity_type: string;
+  occurred_at: string;
+  subject: string;
+  description: string | null;
+  actor_membership_id: string;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+export type QualificationRun = {
+  id: string;
+  workflow_type: string;
+  status: string;
+  lead_id: string | null;
+  result: Record<string, unknown> | null;
+  provider_type: string | null;
+  model_id: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  error_code: string | null;
+  error_message: string | null;
+  created_at: string;
+};
+
+export type LeadAssessment = {
+  id: string;
+  lead_id: string;
+  assessment_version: number;
+  agent_run_id: string | null;
+  score: string;
+  tier: string;
+  need_summary: string | null;
+  qualification: Record<string, string>;
+  recommended_action: string;
+  missing_information: string[];
+  confidence: string;
+  review_status: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+};
+
+const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:8000";
+
+async function authenticationHeaders(): Promise<Record<string, string>> {
+  const developmentSubject = process.env.DEVELOPMENT_AUTH_SUBJECT;
+  if (developmentSubject)
+    return { "X-Development-Subject": developmentSubject };
+
+  const supabase = await createClient();
+  if (!supabase) redirect("/login");
+  const { error: claimsError } = await supabase.auth.getClaims();
+  if (claimsError) redirect("/login");
+  const { data } = await supabase.auth.getSession();
+  if (!data.session?.access_token) redirect("/login");
+  return { Authorization: `Bearer ${data.session.access_token}` };
+}
+
+export async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const headers = new Headers(init.headers);
+  const authHeaders = await authenticationHeaders();
+  Object.entries(authHeaders).forEach(([name, value]) =>
+    headers.set(name, value),
+  );
+  if (init.body && !headers.has("Content-Type"))
+    headers.set("Content-Type", "application/json");
+  const response = await fetch(`${apiBaseUrl}${path}`, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as {
+      detail?: string;
+    } | null;
+    throw new Error(
+      problem?.detail ?? `API request failed (${response.status})`,
+    );
+  }
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}

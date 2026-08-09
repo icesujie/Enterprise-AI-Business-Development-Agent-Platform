@@ -38,7 +38,15 @@ def get_jwt_verifier() -> SupabaseJwtVerifier:
 async def get_token_identity(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
     verifier: Annotated[SupabaseJwtVerifier, Depends(get_jwt_verifier)],
+    development_subject: Annotated[str | None, Header(alias="X-Development-Subject")] = None,
 ) -> TokenIdentity:
+    settings = get_settings()
+    if (
+        settings.app_environment in {"development", "test"}
+        and settings.development_auth_subject is not None
+        and development_subject == settings.development_auth_subject
+    ):
+        return TokenIdentity(subject=development_subject, email=None)
     if credentials is None or credentials.scheme.lower() != "bearer":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -85,6 +93,19 @@ def require_role(
     ) -> Principal:
         if principal.role is not required_role:
             raise HTTPException(status_code=403, detail="This action requires a different role.")
+        return principal
+
+    return dependency
+
+
+def require_permission(
+    permission: str,
+) -> Callable[[Principal], Coroutine[Any, Any, Principal]]:
+    async def dependency(
+        principal: Annotated[Principal, Depends(get_current_principal)],
+    ) -> Principal:
+        if permission not in principal.permissions:
+            raise HTTPException(status_code=403, detail="This action is not permitted.")
         return principal
 
     return dependency

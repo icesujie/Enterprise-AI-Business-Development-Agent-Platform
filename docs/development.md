@@ -64,6 +64,20 @@ Protected API calls require a Supabase access token signed by an asymmetric `ES2
 secrets are intentionally unsupported. The local test suite uses generated keys and never
 requires a live Supabase project.
 
+The Next.js application uses Supabase SSR cookie sessions when
+`NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` are configured.
+For local Docker development only, the server-side `DEVELOPMENT_AUTH_SUBJECT` selects the
+seeded synthetic administrator. FastAPI rejects this development path in production.
+
+The public inquiry form requires `PUBLIC_SITE_TOKEN`; the local value is synthetic. Its
+FastAPI endpoint applies a Redis fixed-window rate limit and PostgreSQL idempotency. Redis
+unavailability causes a safe `503` instead of accepting an unbounded public write.
+
+AI qualification is disabled by default. To use the approved OpenAI provider path, set
+`AI_ENABLED=true`, provide `OPENAI_API_KEY`, and select the approved deployment through
+`OPENAI_MODEL`. Never put a real key in `.env.example`, source control, logs, or screenshots.
+The qualification input is a minimal saved CRM snapshot; sensitive SDK tracing is disabled.
+
 ## 6. Start the applications
 
 Terminal one:
@@ -77,6 +91,16 @@ Terminal two:
 ```bash
 make web-dev
 ```
+
+Terminal three, when testing asynchronous qualification:
+
+```bash
+cd apps/api
+.venv/bin/python -m sari_api.worker
+```
+
+Without an API key the worker records a safe failed status. Manual lead, task, and activity
+work remains available.
 
 The backend readiness endpoint returns HTTP 503 when PostgreSQL cannot be reached. Liveness remains available so operations can distinguish a running process from a ready service.
 
@@ -114,7 +138,8 @@ After local validation, build and run the application containers with:
 docker compose --profile app up --build
 ```
 
-This profile is for local verification. It is not a production deployment definition.
+This profile starts the web, API, qualification worker, PostgreSQL, and Redis containers for
+local verification. It is not a production deployment definition.
 
 ## Dependency updates
 

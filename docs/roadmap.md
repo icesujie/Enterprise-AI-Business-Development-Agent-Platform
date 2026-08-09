@@ -41,16 +41,16 @@
 - [x] Project foundation and local Docker environment
 - [x] Authentication for `admin` and `sales`
 - [x] PostgreSQL schema and migrations
-- [ ] FastAPI backend API
-- [ ] Manual and website lead capture
-- [ ] Customer-company and contact records
-- [ ] Lead list, detail, filtering, ownership, status, priority, and notes
-- [ ] Follow-up tasks and activity history
+- [x] FastAPI backend API
+- [x] Manual and website lead capture
+- [x] Customer-company and contact records
+- [x] Lead list, detail, filtering, ownership, status, priority, and notes
+- [x] Follow-up tasks and activity history
 - [ ] Lead-to-opportunity conversion with a simple opportunity list
 - [ ] Dashboard with actionable sales metrics
-- [ ] Asynchronous AI run execution and status
-- [ ] AI Lead Qualification Agent
-- [ ] Human acceptance or rejection of AI qualification
+- [x] Asynchronous AI run execution and status
+- [x] AI Lead Qualification Agent
+- [x] Human acceptance or rejection of AI qualification
 - [ ] Minimum authorization, validation, audit, logging, rate limiting, backup, and health checks
 - [ ] Seeded synthetic demonstration data
 - [ ] Critical-path tests and a repeatable demo
@@ -78,7 +78,8 @@ Sign in
 - The application runs through the documented Docker-based setup.
 - A portfolio demonstration can complete the workflow in five to seven minutes.
 
-**Current status:** In progress — M1 and M2 complete; M3 CRM lead slice is next.
+**Current status:** In progress — M1 through M4 are complete; transactional
+lead-to-opportunity conversion is next.
 
 ## Phase 2 — AI Enhancement
 
