@@ -39,7 +39,7 @@ def test_domain_manifests_are_valid_and_multilingual() -> None:
     knowledge = next(
         item for item in ivc.required_capabilities if item.key == "approved_knowledge_retrieval"
     )
-    assert knowledge.required is True
+    assert knowledge.required is False
     assert knowledge.status == "planned"
 
 
@@ -75,7 +75,7 @@ async def test_admin_can_browse_localized_registry() -> None:
         row for row in agents.json() if row["domain_key"] == "laboratory_animal_facility"
     )
     assert sari_summary["activation_status"] == "active"
-    assert ivc_summary["activation_status"] is None
+    assert ivc_summary["activation_status"] == "active"
 
     assert sari.status_code == 200, sari.text
     assert sari.json()["versions"][0]["status"] == "active"
@@ -83,12 +83,12 @@ async def test_admin_can_browse_localized_registry() -> None:
 
     assert ivc.status_code == 200, ivc.text
     assert ivc.json()["name"] == "IVC 设施商务拓展智能体"
-    assert ivc.json()["versions"][0]["status"] == "draft"
+    assert ivc.json()["versions"][0]["status"] == "active"
     capabilities = {row["key"]: row for row in ivc.json()["versions"][0]["capabilities"]}
     assert capabilities["approved_knowledge_retrieval"] == {
         "key": "approved_knowledge_retrieval",
         "name": "批准知识检索",
-        "required": True,
+        "required": False,
         "status": "planned",
     }
 

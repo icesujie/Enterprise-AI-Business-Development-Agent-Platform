@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Protocol, cast
+from typing import Any, Protocol
 from uuid import UUID
 
 import jwt
@@ -62,7 +62,7 @@ class SupabaseJwtVerifier:
                 raise InvalidAccessTokenError("access token has no valid subject")
             UUID(subject)
             email_claim = claims.get("email")
-            email = cast(str, email_claim) if isinstance(email_claim, str) else None
+            email = email_claim if isinstance(email_claim, str) else None
             return TokenIdentity(subject=subject, email=email)
         except InvalidAccessTokenError:
             raise

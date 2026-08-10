@@ -433,9 +433,12 @@ async def test_queued_agent_run_can_be_cancelled_and_is_audited() -> None:
 
             repeated = await client.post(f"/api/v1/agent-runs/{run_id}/cancellations")
             assert repeated.status_code == 409
-            assert await QualificationRunExecutor(MockQualificationProvider()).execute(
-                run_id, SARI_ARTA_ID
-            ) is None
+            assert (
+                await QualificationRunExecutor(MockQualificationProvider()).execute(
+                    run_id, SARI_ARTA_ID
+                )
+                is None
+            )
 
         async with session_factory() as session:
             audit = await session.scalar(

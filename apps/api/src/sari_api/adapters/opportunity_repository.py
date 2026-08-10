@@ -83,13 +83,14 @@ class SqlAlchemyOpportunityRepository:
         return lead
 
     async def get_by_source_lead(self, lead_id: UUID) -> Opportunity | None:
-        return await self._session.scalar(
+        opportunity: Opportunity | None = await self._session.scalar(
             select(Opportunity).where(
                 Opportunity.tenant_id == self._tenant_id,
                 Opportunity.source_lead_id == lead_id,
                 Opportunity.deleted_at.is_(None),
             )
         )
+        return opportunity
 
     async def require_membership(self, membership_id: UUID) -> None:
         exists = await self._session.scalar(

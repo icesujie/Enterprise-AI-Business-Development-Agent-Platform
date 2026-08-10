@@ -51,6 +51,7 @@ export default async function WorkspaceLayout({
               [copy.leads, "/leads"],
               [copy.opportunities, "/opportunities"],
               [copy.followUp, "/follow-up"],
+              [copy.agentPlayground, "/agent-playground"],
             ].map(([label, href]) => (
               <Link
                 key={href}

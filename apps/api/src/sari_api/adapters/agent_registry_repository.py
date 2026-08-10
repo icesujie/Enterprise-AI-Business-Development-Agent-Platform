@@ -78,7 +78,7 @@ class SqlAlchemyAgentRegistryRepository:
         )
 
     async def get_activation(self, agent_id: UUID) -> TenantAgentActivation | None:
-        return await self._session.scalar(
+        activation: TenantAgentActivation | None = await self._session.scalar(
             select(TenantAgentActivation)
             .where(
                 TenantAgentActivation.tenant_id == self._tenant_id,
@@ -87,6 +87,7 @@ class SqlAlchemyAgentRegistryRepository:
             .order_by(TenantAgentActivation.created_at.desc())
             .limit(1)
         )
+        return activation
 
     async def list_capabilities(
         self, configuration_id: UUID

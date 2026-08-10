@@ -377,7 +377,7 @@ LABORATORY_ANIMAL_FACILITY_PACKAGE = DomainAgentManifest(
         ),
         CapabilityRequirement(
             key="approved_knowledge_retrieval",
-            required=True,
+            required=False,
             status="planned",
             description=text(
                 "Future cited retrieval from approved IVC and facility knowledge; not implemented in this package release.",

@@ -26,6 +26,7 @@
 9. [Production Readiness Checklist](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/production-readiness-checklist.md>)：M8 权限、运行可靠性、审计、备份恢复和生产上线门槛。
 10. [Phase 2 智能体框架设计（中文）](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.zh-CN.md>)：多领域 Agent Registry、知识、工具、数据库和迁移方案。
 11. [IVC 领域包说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/domain-packages/laboratory-animal-facility.md>)：实验动物设施领域目标、资格字段、知识分类、能力和激活边界。
+12. [Agent Playground](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/agent-playground.md>)：多领域智能体演示界面、运行方式与隔离边界。
 
 其余文档主要供开发使用：
 
@@ -44,6 +45,7 @@
 | [Phase 2 Agent Framework Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.md>) | Phase 2 多领域智能体框架英文技术基线 |
 | [Phase 2 智能体框架设计（中文）](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.zh-CN.md>) | Phase 2 中文审核版本 |
 | [IVC Domain Package](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/domain-packages/laboratory-animal-facility.md>) | IVC 领域包三语结构、范围和未启用边界 |
+| [Agent Playground](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/agent-playground.md>) | Commercial Kitchen 与 IVC 统一演示入口和安全边界 |
 
 ## 什么时候需要你确认
 

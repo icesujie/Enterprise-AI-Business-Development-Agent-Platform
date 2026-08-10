@@ -13,6 +13,7 @@ export function WorkspaceNav() {
     [copy.leads, "/leads"],
     [copy.opportunities, "/opportunities"],
     [copy.followUp, "/follow-up"],
+    [copy.agentPlayground, "/agent-playground"],
   ] as const;
   const records = [
     [copy.companies, "/organizations"],

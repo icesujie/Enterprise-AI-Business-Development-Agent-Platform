@@ -543,6 +543,57 @@ class LeadAssessment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class IvcQualificationAssessment(Base):
+    __tablename__ = "ivc_qualification_assessments"
+    __table_args__ = (
+        UniqueConstraint("agent_run_id"),
+        CheckConstraint(
+            "score BETWEEN 0 AND 100",
+            name="ivc_qualification_assessments_score_check",
+        ),
+        CheckConstraint(
+            "qualification_level IN ('A','B','C')",
+            name="ivc_qualification_assessments_level_check",
+        ),
+        CheckConstraint(
+            "response_locale IN ('en','zh-CN','id')",
+            name="ivc_qualification_assessments_locale_check",
+        ),
+        CheckConstraint(
+            "confidence BETWEEN 0 AND 1",
+            name="ivc_qualification_assessments_confidence_check",
+        ),
+        CheckConstraint(
+            "review_status IN ('pending','approved','rejected')",
+            name="ivc_qualification_assessments_review_status_check",
+        ),
+        Index(
+            "ix_ivc_assessments_tenant_review_created",
+            "tenant_id",
+            "review_status",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    agent_run_id: Mapped[UUID] = mapped_column(ForeignKey("agent_runs.id", ondelete="RESTRICT"))
+    response_locale: Mapped[str] = mapped_column(String(20))
+    score: Mapped[Decimal] = mapped_column(Numeric(5, 2))
+    qualification_level: Mapped[str] = mapped_column(String(1))
+    business_summary: Mapped[str] = mapped_column(Text)
+    key_qualification_factors: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)
+    recommended_next_actions: Mapped[list[str]] = mapped_column(JSONB)
+    missing_information: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
+    risk_flags: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
+    confidence: Mapped[Decimal] = mapped_column(Numeric(5, 4))
+    expert_review_required: Mapped[bool] = mapped_column(Boolean, server_default="true")
+    review_status: Mapped[str] = mapped_column(String(30), server_default="pending")
+    reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AuditEvent(Base):
     __tablename__ = "audit_events"
     __table_args__ = (Index("ix_audit_tenant_created", "tenant_id", "created_at"),)

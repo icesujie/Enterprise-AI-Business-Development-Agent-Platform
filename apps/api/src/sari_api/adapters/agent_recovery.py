@@ -118,9 +118,7 @@ class AgentRunRecoveryService:
                     run.last_heartbeat_at = now
                     run.completed_at = None
                     run.version += 1
-                    recovered.append(
-                        RecoveredAgentRun(run.id, tenant_id, run.correlation_id)
-                    )
+                    recovered.append(RecoveredAgentRun(run.id, tenant_id, run.correlation_id))
                 await session.commit()
 
         return recovered
