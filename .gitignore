@@ -22,4 +22,5 @@ coverage/
 
 # Local runtime data
 .data/
+.local/
 backups/

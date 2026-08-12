@@ -1,0 +1,390 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+from uuid import UUID
+
+from sqlalchemy import func, or_, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from sari_api.adapters.models import (
+    Agent,
+    DomainPackage,
+    KnowledgeCollection,
+    KnowledgeDocumentAgentBinding,
+    KnowledgeDocumentVersion,
+    ManagedKnowledgeDocument,
+)
+
+
+class EnterpriseKnowledgeNotFoundError(Exception):
+    pass
+
+
+class EnterpriseKnowledgeStateError(Exception):
+    pass
+
+
+class EnterpriseKnowledgeAccessError(Exception):
+    pass
+
+
+class EnterpriseKnowledgeRepository:
+    def __init__(self, session: AsyncSession, tenant_id: UUID) -> None:
+        self._session = session
+        self._tenant_id = tenant_id
+
+    async def set_tenant_context(self) -> None:
+        await self._session.execute(
+            text("SELECT set_config('app.tenant_id', :tenant_id, true)"),
+            {"tenant_id": str(self._tenant_id)},
+        )
+
+    async def get_domain(self, domain_key: str) -> DomainPackage:
+        domain = await self._session.scalar(
+            select(DomainPackage).where(DomainPackage.domain_key == domain_key)
+        )
+        if domain is None:
+            raise EnterpriseKnowledgeNotFoundError
+        return domain
+
+    async def create_collection(
+        self,
+        *,
+        domain_key: str,
+        collection_key: str,
+        name: str,
+        description: str | None,
+        collection_metadata: dict[str, Any],
+        created_by: UUID,
+    ) -> tuple[KnowledgeCollection, DomainPackage]:
+        domain = await self.get_domain(domain_key)
+        collection = KnowledgeCollection(
+            tenant_id=self._tenant_id,
+            domain_package_id=domain.id,
+            collection_key=collection_key,
+            name=name,
+            description=description,
+            collection_metadata=collection_metadata,
+            created_by=created_by,
+        )
+        self._session.add(collection)
+        await self._session.flush()
+        return collection, domain
+
+    async def get_collection(
+        self, collection_id: UUID, *, lock: bool = False
+    ) -> tuple[KnowledgeCollection, DomainPackage]:
+        statement = (
+            select(KnowledgeCollection, DomainPackage)
+            .join(DomainPackage, DomainPackage.id == KnowledgeCollection.domain_package_id)
+            .where(
+                KnowledgeCollection.id == collection_id,
+                KnowledgeCollection.tenant_id == self._tenant_id,
+            )
+        )
+        if lock:
+            statement = statement.with_for_update(of=KnowledgeCollection)
+        row = (await self._session.execute(statement)).tuples().one_or_none()
+        if row is None:
+            raise EnterpriseKnowledgeNotFoundError
+        return row
+
+    async def list_collections(
+        self, *, domain_key: str | None = None, search: str | None = None
+    ) -> list[tuple[KnowledgeCollection, DomainPackage, int]]:
+        document_count = (
+            select(
+                ManagedKnowledgeDocument.collection_id,
+                func.count().label("document_count"),
+            )
+            .where(ManagedKnowledgeDocument.tenant_id == self._tenant_id)
+            .group_by(ManagedKnowledgeDocument.collection_id)
+            .subquery()
+        )
+        statement = (
+            select(
+                KnowledgeCollection,
+                DomainPackage,
+                func.coalesce(document_count.c.document_count, 0),
+            )
+            .join(DomainPackage, DomainPackage.id == KnowledgeCollection.domain_package_id)
+            .outerjoin(document_count, document_count.c.collection_id == KnowledgeCollection.id)
+            .where(KnowledgeCollection.tenant_id == self._tenant_id)
+        )
+        if domain_key:
+            statement = statement.where(DomainPackage.domain_key == domain_key)
+        if search:
+            pattern = f"%{search}%"
+            statement = statement.where(
+                or_(
+                    KnowledgeCollection.name.ilike(pattern),
+                    KnowledgeCollection.description.ilike(pattern),
+                )
+            )
+        rows = (await self._session.execute(statement.order_by(KnowledgeCollection.name))).all()
+        return [(collection, domain, int(count)) for collection, domain, count in rows]
+
+    async def create_document(
+        self,
+        *,
+        collection_id: UUID,
+        title: str,
+        document_type: str,
+        language: str,
+        original_filename: str,
+        media_type: str,
+        object_key: str,
+        content_sha256: str,
+        byte_size: int,
+        document_metadata: dict[str, Any],
+        created_by: UUID,
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        collection, _ = await self.get_collection(collection_id)
+        if collection.status != "active":
+            raise EnterpriseKnowledgeStateError
+        document = ManagedKnowledgeDocument(
+            tenant_id=self._tenant_id,
+            domain_package_id=collection.domain_package_id,
+            collection_id=collection.id,
+            title=title,
+            document_type=document_type,
+            language=language,
+            lifecycle_status="uploaded",
+            document_metadata=document_metadata,
+            created_by=created_by,
+        )
+        self._session.add(document)
+        await self._session.flush()
+        version = KnowledgeDocumentVersion(
+            tenant_id=self._tenant_id,
+            document_id=document.id,
+            version_number=1,
+            original_filename=original_filename,
+            media_type=media_type,
+            object_key=object_key,
+            content_sha256=content_sha256,
+            byte_size=byte_size,
+            version_metadata=document_metadata,
+            created_by=created_by,
+        )
+        self._session.add(version)
+        await self._session.flush()
+        return document, version
+
+    async def list_documents(
+        self,
+        *,
+        collection_id: UUID | None = None,
+        domain_key: str | None = None,
+        agent_key: str | None = None,
+        lifecycle_status: str | None = None,
+        search: str | None = None,
+    ) -> list[tuple[ManagedKnowledgeDocument, KnowledgeCollection, DomainPackage]]:
+        statement = (
+            select(ManagedKnowledgeDocument, KnowledgeCollection, DomainPackage)
+            .join(
+                KnowledgeCollection,
+                KnowledgeCollection.id == ManagedKnowledgeDocument.collection_id,
+            )
+            .join(DomainPackage, DomainPackage.id == ManagedKnowledgeDocument.domain_package_id)
+            .where(ManagedKnowledgeDocument.tenant_id == self._tenant_id)
+        )
+        if collection_id:
+            statement = statement.where(ManagedKnowledgeDocument.collection_id == collection_id)
+        if domain_key:
+            statement = statement.where(DomainPackage.domain_key == domain_key)
+        if lifecycle_status:
+            statement = statement.where(
+                ManagedKnowledgeDocument.lifecycle_status == lifecycle_status
+            )
+        if search:
+            pattern = f"%{search}%"
+            statement = statement.where(
+                or_(
+                    ManagedKnowledgeDocument.title.ilike(pattern),
+                    ManagedKnowledgeDocument.document_type.ilike(pattern),
+                )
+            )
+        if agent_key:
+            statement = (
+                statement.join(
+                    KnowledgeDocumentAgentBinding,
+                    KnowledgeDocumentAgentBinding.document_id == ManagedKnowledgeDocument.id,
+                )
+                .join(Agent, Agent.id == KnowledgeDocumentAgentBinding.agent_id)
+                .where(
+                    Agent.agent_key == agent_key,
+                    KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                    KnowledgeDocumentAgentBinding.status == "enabled",
+                )
+            )
+        return list(
+            (
+                await self._session.execute(
+                    statement.order_by(ManagedKnowledgeDocument.updated_at.desc())
+                )
+            )
+            .tuples()
+            .all()
+        )
+
+    async def get_document(
+        self, document_id: UUID, *, lock: bool = False
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeCollection, DomainPackage]:
+        statement = (
+            select(ManagedKnowledgeDocument, KnowledgeCollection, DomainPackage)
+            .join(
+                KnowledgeCollection,
+                KnowledgeCollection.id == ManagedKnowledgeDocument.collection_id,
+            )
+            .join(DomainPackage, DomainPackage.id == ManagedKnowledgeDocument.domain_package_id)
+            .where(
+                ManagedKnowledgeDocument.id == document_id,
+                ManagedKnowledgeDocument.tenant_id == self._tenant_id,
+            )
+        )
+        if lock:
+            statement = statement.with_for_update(of=ManagedKnowledgeDocument)
+        row = (await self._session.execute(statement)).tuples().one_or_none()
+        if row is None:
+            raise EnterpriseKnowledgeNotFoundError
+        return row
+
+    async def current_version(self, document: ManagedKnowledgeDocument) -> KnowledgeDocumentVersion:
+        version = await self._session.scalar(
+            select(KnowledgeDocumentVersion).where(
+                KnowledgeDocumentVersion.tenant_id == self._tenant_id,
+                KnowledgeDocumentVersion.document_id == document.id,
+                KnowledgeDocumentVersion.version_number == document.current_version_number,
+            )
+        )
+        if version is None:
+            raise EnterpriseKnowledgeNotFoundError
+        return version
+
+    async def list_versions(self, document_id: UUID) -> list[KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id)
+        return list(
+            (
+                await self._session.scalars(
+                    select(KnowledgeDocumentVersion)
+                    .where(
+                        KnowledgeDocumentVersion.tenant_id == self._tenant_id,
+                        KnowledgeDocumentVersion.document_id == document.id,
+                    )
+                    .order_by(KnowledgeDocumentVersion.version_number.desc())
+                )
+            ).all()
+        )
+
+    async def submit_for_review(
+        self, document_id: UUID
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        if document.lifecycle_status != "uploaded":
+            raise EnterpriseKnowledgeStateError
+        version = await self.current_version(document)
+        document.lifecycle_status = "processing"
+        version.status = "processing"
+        await self._session.flush()
+        document.lifecycle_status = "review"
+        document.approval_status = "pending"
+        version.status = "review"
+        return document, version
+
+    async def review_document(
+        self,
+        document_id: UUID,
+        *,
+        reviewer_id: UUID,
+        decision: str,
+        note: str | None,
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        if document.lifecycle_status != "review" or document.approval_status != "pending":
+            raise EnterpriseKnowledgeStateError
+        version = await self.current_version(document)
+        document.review_note = note
+        if decision == "approved":
+            document.lifecycle_status = "approved"
+            document.approval_status = "approved"
+            document.approved_by = reviewer_id
+            document.approved_at = datetime.now(UTC)
+            version.status = "approved"
+        else:
+            document.approval_status = "rejected"
+            version.status = "rejected"
+        return document, version
+
+    async def activate_document(
+        self, document_id: UUID
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        if document.lifecycle_status != "approved" or document.approval_status != "approved":
+            raise EnterpriseKnowledgeStateError
+        binding = await self._session.scalar(
+            select(KnowledgeDocumentAgentBinding.id).where(
+                KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                KnowledgeDocumentAgentBinding.document_id == document.id,
+                KnowledgeDocumentAgentBinding.status == "enabled",
+            )
+        )
+        if binding is None:
+            raise EnterpriseKnowledgeAccessError
+        version = await self.current_version(document)
+        document.lifecycle_status = "active"
+        version.status = "active"
+        return document, version
+
+    async def archive_document(
+        self, document_id: UUID
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        if document.lifecycle_status not in {"approved", "active"}:
+            raise EnterpriseKnowledgeStateError
+        version = await self.current_version(document)
+        document.lifecycle_status = "archived"
+        version.status = "archived"
+        return document, version
+
+    async def bind_document(
+        self, document_id: UUID, *, agent_key: str, created_by: UUID
+    ) -> tuple[KnowledgeDocumentAgentBinding, Agent]:
+        document, _, _ = await self.get_document(document_id)
+        agent = await self._session.scalar(select(Agent).where(Agent.agent_key == agent_key))
+        if agent is None:
+            raise EnterpriseKnowledgeNotFoundError
+        if agent.domain_package_id != document.domain_package_id:
+            raise EnterpriseKnowledgeAccessError
+        binding = KnowledgeDocumentAgentBinding(
+            tenant_id=self._tenant_id,
+            document_id=document.id,
+            agent_id=agent.id,
+            status="enabled",
+            created_by=created_by,
+        )
+        document.agent_id = agent.id
+        self._session.add(binding)
+        await self._session.flush()
+        return binding, agent
+
+    async def list_bindings(
+        self, document_id: UUID
+    ) -> list[tuple[KnowledgeDocumentAgentBinding, Agent]]:
+        await self.get_document(document_id)
+        return list(
+            (
+                await self._session.execute(
+                    select(KnowledgeDocumentAgentBinding, Agent)
+                    .join(Agent, Agent.id == KnowledgeDocumentAgentBinding.agent_id)
+                    .where(
+                        KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                        KnowledgeDocumentAgentBinding.document_id == document_id,
+                    )
+                    .order_by(Agent.agent_key)
+                )
+            )
+            .tuples()
+            .all()
+        )

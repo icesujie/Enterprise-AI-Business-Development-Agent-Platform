@@ -30,6 +30,7 @@ Design documents are maintained as complete bilingual pairs:
 | Sari Arta UI specification / Sari Arta UI 规格 | [sari-arta-ui-specification.en.md](sari-arta-ui-specification.en.md) | [sari-arta-ui-specification.zh-CN.md](sari-arta-ui-specification.zh-CN.md) |
 | IVC domain package / IVC 领域包 | [laboratory-animal-facility.en.md](domain-packages/laboratory-animal-facility.en.md) | [laboratory-animal-facility.zh-CN.md](domain-packages/laboratory-animal-facility.zh-CN.md) |
 | Knowledge foundation / 知识基础 | [knowledge-foundation-design.en.md](knowledge-foundation-design.en.md) | [knowledge-foundation-design.zh-CN.md](knowledge-foundation-design.zh-CN.md) |
+| Enterprise knowledge management / 企业知识管理 | [enterprise-knowledge-management-design.en.md](enterprise-knowledge-management-design.en.md) | [enterprise-knowledge-management-design.zh-CN.md](enterprise-knowledge-management-design.zh-CN.md) |
 
 ## Project and operational documents / 项目与运行文档
 

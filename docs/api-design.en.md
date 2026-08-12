@@ -961,3 +961,7 @@ FastAPI-generated OpenAPI is reviewed as a product contract, not treated as inci
 8. Privacy workflows, advanced exports, and tenant administration.
 
 Each release requires OpenAPI review, authorization matrix tests, tenant-isolation tests, idempotency/concurrency tests, and operational dashboards before production promotion.
+
+## Phase 2.5.1 knowledge management API
+
+The `/api/v1/knowledge-management` control-plane API supports collection creation/listing, version-1 upload, document search/detail, review submission, approve/reject, same-domain agent binding, activation, and archive. Read operations require `knowledge:retrieve`; mutations require `knowledge:manage`. These endpoints never call embeddings or vector retrieval.

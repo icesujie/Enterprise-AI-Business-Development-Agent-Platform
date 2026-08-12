@@ -80,6 +80,13 @@ Bahasa Indonesia output, and compare normalized qualification results. Playgroun
 durable Worker but do not create or alter CRM records. See
 [Agent Playground](docs/agent-playground.md).
 
+Phase 2.5.1 adds the authenticated `/knowledge` workspace and a tenant/domain-scoped knowledge
+control plane. Administrators can create collections, upload synthetic or approved files, submit
+exact versions for review, approve or reject them, bind them to a same-domain agent, and activate or
+archive them. This management layer does not enable a conversational Knowledge Assistant or
+automatically publish documents to vector retrieval. See the bilingual
+[enterprise knowledge management design](docs/enterprise-knowledge-management-design.en.md).
+
 ## Repository layout
 
 ```text

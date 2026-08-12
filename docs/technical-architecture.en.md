@@ -841,3 +841,7 @@ Dashboards distinguish platform health from tenant business analytics. Alerts ha
 8. Advanced analytics, model optimization, additional tenants, and regional resilience.
 
 Each phase must include authorization tests, tenant-isolation tests, audit coverage, operational dashboards, backup verification, and agent evaluations where applicable.
+
+## Phase 2.5.1 knowledge management control plane
+
+Enterprise knowledge management uses `knowledge_collections`, logical managed documents, immutable document versions, and explicit document-agent bindings. This control plane is separate from the Phase 2.5 retrieval data plane. Its UI and APIs do not generate embeddings or invoke retrieval; a future explicit publication boundary may transfer only approved/active, tenant-scoped, same-domain bound versions. See `enterprise-knowledge-management-design.en.md`.

@@ -169,6 +169,7 @@ test("renders the M6 workspace navigation and live dashboard", async () => {
     2,
   );
   expect(screen.getAllByRole("link", { name: "Follow-up" })).toHaveLength(2);
+  expect(screen.getAllByRole("link", { name: "Knowledge" })).toHaveLength(2);
   expect(
     screen.getByRole("heading", { name: "Sales command centre" }),
   ).toBeDefined();

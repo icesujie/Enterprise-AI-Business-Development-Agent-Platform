@@ -726,3 +726,7 @@ Migration, break-glass, and data-repair roles are separate, non-application role
 - Recovery procedures verify RLS, secrets, background workers, outbox replay, and provider reconciliation.
 - Audit partitions and legal-hold data follow separately approved retention schedules.
 - Derived data such as embeddings can be rebuilt, but source versions and model/config metadata must be retained long enough to reproduce them.
+
+## Phase 2.5.1 knowledge management tables
+
+The knowledge control plane adds `knowledge_collections`, `managed_knowledge_documents`, `knowledge_document_versions`, and `knowledge_document_agent_bindings`. Every table is tenant-scoped with forced RLS. The logical document owns lifecycle and approval state; version rows preserve exact file metadata and SHA-256; binding rows form the deny-by-default agent allow-list. The existing Phase 2.5 retrieval tables remain unchanged.

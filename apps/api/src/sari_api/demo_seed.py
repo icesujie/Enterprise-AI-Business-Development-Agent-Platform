@@ -19,6 +19,7 @@ from sari_api.adapters.models import (
     Organization,
     Task,
 )
+from sari_api.enterprise_knowledge_demo_seed import seed_enterprise_knowledge_demo
 
 TENANT_ID = UUID("10000000-0000-4000-8000-000000000001")
 ADMIN_USER_ID = UUID("20000000-0000-4000-8000-000000000001")
@@ -677,10 +678,16 @@ def qualification_result(
 async def main() -> None:
     try:
         created = await seed_demo_data()
+        knowledge_created = await seed_enterprise_knowledge_demo()
         print(
             "Synthetic M8 acceptance data created."
             if created
             else "Synthetic M8 acceptance data already exists."
+        )
+        print(
+            "Synthetic enterprise knowledge data created."
+            if knowledge_created
+            else "Synthetic enterprise knowledge data already exists."
         )
     finally:
         await dispose_database()

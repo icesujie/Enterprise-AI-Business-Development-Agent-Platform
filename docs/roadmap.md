@@ -96,6 +96,7 @@ production launch remains a separate human-approved activity with environment-sp
 - [x] Add the unified Agent Playground for Commercial Kitchen and IVC demonstrations
 - [x] Knowledge-document upload and approval foundation
 - [x] Text extraction, chunking, embeddings, pgvector retrieval, and citation foundation
+- [x] Enterprise collections, document versions, lifecycle approval, and agent bindings
 - [ ] RAG Knowledge Assistant with citations and insufficient-evidence behavior
 - [ ] Content Generation Agent with human approval
 - [ ] Proposal Assistant with structured editable drafts
@@ -138,12 +139,13 @@ production launch remains a separate human-approved activity with environment-sp
 
 ## Current development focus
 
-**M8 Phase 1 acceptance and the Phase 2.3 Agent Playground are complete. Phase 2.5 Knowledge
-Foundation is implemented.** Approved Sari Arta synthetic documents can be uploaded, bound to the
-Commercial Kitchen agent, reviewed, extracted, chunked, embedded, stored in pgvector, and retrieved
-as cited evidence. This foundation does not generate answers and is not connected to the existing
-qualification workflows. IVC production knowledge retrieval, external actions, and production
-activation remain disabled.
+**M8 Phase 1 acceptance, Phase 2.3 Agent Playground, Phase 2.5 Knowledge Foundation, and Phase
+2.5.1 Enterprise Knowledge Management are implemented.** The new control plane manages tenant- and
+domain-scoped collections, exact document versions, human approval, explicit agent bindings, and
+activation through `/knowledge`. It remains separated from the existing retrieval data plane: no
+management action creates embeddings or invokes retrieval, no Knowledge Assistant generates answers,
+and existing CRM and Playground workflows are unchanged. IVC production retrieval, external actions,
+and production activation remain disabled.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

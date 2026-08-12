@@ -167,6 +167,41 @@ export type LeadAssessment = {
   created_at: string;
 };
 
+export type KnowledgeCollection = {
+  id: string;
+  domain_key: string;
+  collection_key: string;
+  name: string;
+  description: string | null;
+  status: string;
+  collection_metadata: Record<string, unknown>;
+  document_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ManagedKnowledgeDocument = {
+  id: string;
+  tenant_id: string;
+  domain_key: string;
+  agent_id: string | null;
+  collection_id: string;
+  collection_name: string;
+  title: string;
+  document_type: string;
+  language: string;
+  lifecycle_status: string;
+  approval_status: string;
+  current_version_number: number;
+  document_metadata: Record<string, unknown>;
+  approved_by: string | null;
+  approved_at: string | null;
+  review_note: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
 const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:8000";
 
 async function authenticationHeaders(): Promise<Record<string, string>> {
@@ -196,7 +231,11 @@ export async function apiFetch<T>(
   Object.entries(authHeaders).forEach(([name, value]) =>
     headers.set(name, value),
   );
-  if (init.body && !headers.has("Content-Type"))
+  if (
+    init.body &&
+    !(init.body instanceof FormData) &&
+    !headers.has("Content-Type")
+  )
     headers.set("Content-Type", "application/json");
   const response = await fetch(`${apiBaseUrl}${path}`, {
     ...init,

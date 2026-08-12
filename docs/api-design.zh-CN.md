@@ -956,3 +956,7 @@ Link: <https://docs.example.com/migrations/v1-old-endpoint>; rel="deprecation"
 8. 隐私工作流程、高级导出功能和租户管理。
 
 每个发布都需要进行 OpenAPI 审查、授权矩阵测试、租户隔离测试、幂等性/并发性测试，以及在发布到生产环境之前，需要创建运营仪表盘。
+
+## Phase 2.5.1 知识管理 API
+
+`/api/v1/knowledge-management` 控制面 API 支持创建和列出集合、上传版本 1、文档查找和详情、提交审核、批准或拒绝、绑定同业务域智能体、启用和归档。读取操作需要 `knowledge:retrieve`，修改操作需要 `knowledge:manage`。这些端点不会调用嵌入或向量检索。

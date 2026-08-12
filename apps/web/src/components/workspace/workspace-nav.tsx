@@ -14,6 +14,7 @@ export function WorkspaceNav() {
     [copy.opportunities, "/opportunities"],
     [copy.followUp, "/follow-up"],
     [copy.agentPlayground, "/agent-playground"],
+    [copy.knowledge, "/knowledge"],
   ] as const;
   const records = [
     [copy.companies, "/organizations"],

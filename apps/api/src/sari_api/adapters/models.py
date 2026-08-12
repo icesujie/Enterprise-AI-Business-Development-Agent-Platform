@@ -630,6 +630,149 @@ class KnowledgeChunk(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class KnowledgeCollection(TimestampVersionMixin, Base):
+    __tablename__ = "knowledge_collections"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "collection_key"),
+        CheckConstraint(
+            "status IN ('active','archived')", name="knowledge_collections_status_check"
+        ),
+        Index(
+            "ix_knowledge_collections_tenant_domain",
+            "tenant_id",
+            "domain_package_id",
+            "status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    domain_package_id: Mapped[UUID] = mapped_column(
+        ForeignKey("domain_packages.id", ondelete="RESTRICT")
+    )
+    collection_key: Mapped[str] = mapped_column(String(120))
+    name: Mapped[str] = mapped_column(String(250))
+    description: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), server_default="active")
+    collection_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+
+
+class ManagedKnowledgeDocument(TimestampVersionMixin, Base):
+    __tablename__ = "managed_knowledge_documents"
+    __table_args__ = (
+        CheckConstraint(
+            "lifecycle_status IN "
+            "('draft','uploaded','processing','review','approved','active','archived')",
+            name="managed_knowledge_documents_lifecycle_check",
+        ),
+        CheckConstraint(
+            "approval_status IN ('pending','approved','rejected')",
+            name="managed_knowledge_documents_approval_check",
+        ),
+        CheckConstraint(
+            "current_version_number > 0", name="managed_knowledge_documents_version_check"
+        ),
+        Index(
+            "ix_managed_knowledge_documents_tenant_collection",
+            "tenant_id",
+            "collection_id",
+            "lifecycle_status",
+        ),
+        Index(
+            "ix_managed_knowledge_documents_tenant_search",
+            "tenant_id",
+            "domain_package_id",
+            "agent_id",
+            "updated_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    domain_package_id: Mapped[UUID] = mapped_column(
+        ForeignKey("domain_packages.id", ondelete="RESTRICT")
+    )
+    agent_id: Mapped[UUID | None] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    collection_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_collections.id", ondelete="RESTRICT")
+    )
+    title: Mapped[str] = mapped_column(String(300))
+    document_type: Mapped[str] = mapped_column(String(80))
+    language: Mapped[str] = mapped_column(String(20), server_default="en")
+    lifecycle_status: Mapped[str] = mapped_column(String(20), server_default="draft")
+    approval_status: Mapped[str] = mapped_column(String(20), server_default="pending")
+    current_version_number: Mapped[int] = mapped_column(Integer, server_default="1")
+    document_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    approved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+
+
+class KnowledgeDocumentVersion(Base):
+    __tablename__ = "knowledge_document_versions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "document_id", "version_number"),
+        UniqueConstraint("tenant_id", "object_key"),
+        CheckConstraint("byte_size > 0", name="knowledge_document_versions_size_check"),
+        CheckConstraint(
+            "status IN "
+            "('uploaded','processing','review','approved','active','archived','rejected')",
+            name="knowledge_document_versions_status_check",
+        ),
+        Index(
+            "ix_knowledge_document_versions_tenant_document",
+            "tenant_id",
+            "document_id",
+            "version_number",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("managed_knowledge_documents.id", ondelete="CASCADE")
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    original_filename: Mapped[str] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(120))
+    object_key: Mapped[str] = mapped_column(String(500))
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    byte_size: Mapped[int] = mapped_column(Integer)
+    version_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeDocumentAgentBinding(Base):
+    __tablename__ = "knowledge_document_agent_bindings"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "document_id", "agent_id"),
+        CheckConstraint(
+            "status IN ('enabled','disabled')",
+            name="knowledge_document_agent_bindings_status_check",
+        ),
+        Index(
+            "ix_knowledge_document_agent_bindings_access",
+            "tenant_id",
+            "agent_id",
+            "status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("managed_knowledge_documents.id", ondelete="CASCADE")
+    )
+    agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    status: Mapped[str] = mapped_column(String(20), server_default="enabled")
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AgentRun(TimestampVersionMixin, Base):
     __tablename__ = "agent_runs"
     __table_args__ = (

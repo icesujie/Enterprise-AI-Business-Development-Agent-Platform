@@ -722,3 +722,7 @@ tenant_id = current_setting('app.tenant_id', true)::uuid
 - 恢复程序验证 RLS、密钥、后台工作进程、Outbox 重新播放以及提供商重置。
 - 审计分区和法律保留数据分别遵循已批准的保留计划。
 - 派生数据，如嵌入，可以重建，但原始版本和模型/配置元数据必须保留足够长的时间，以便能够重建它们。
+
+## Phase 2.5.1 知识管理数据表
+
+知识控制面新增 `knowledge_collections`、`managed_knowledge_documents`、`knowledge_document_versions` 和 `knowledge_document_agent_bindings`。每张表都限定租户并强制执行 RLS。逻辑文档保存生命周期和审批状态；版本行保存准确文件元数据与 SHA-256；绑定行组成默认拒绝的智能体允许清单。已有 Phase 2.5 检索表保持不变。
