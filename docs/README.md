@@ -1,62 +1,49 @@
-# 企业级 AI 商务拓展智能体平台文档
+# Enterprise AI Business Development Agent Platform Documentation
 
-## Documentation Index / 文档索引
+## Documentation standard / 文档标准
 
-这套文档采用“英文技术基线 + 中文说明”的方式维护：
+Design documents are maintained as complete bilingual pairs:
 
-- **英文技术文档**是后续开发、接口联调、数据库建模和架构验收的正式依据。
-- **中文说明**用于解释业务含义和设计结果。
-- 技术方案、MVP 取舍和开发顺序由 AI 工程代理负责决定并验证。
-- 如果中英文理解存在冲突，以英文技术基线中的字段、状态、接口和约束为准。
+- `*.en.md` is the primary engineering baseline.
+- `*.zh-CN.md` is the complete Simplified Chinese translation for internal review.
+- Headings, diagrams, tables, code blocks, identifiers, API paths, database fields, and terminology are preserved across both versions.
+- If the two versions conflict, the English engineering baseline controls implementation.
 
-你不需要逐份审核这些技术文档。
+设计文档采用完整的中英文双语配对：
 
-## 你只需要看什么
+- `*.en.md` 是正式工程基线。
+- `*.zh-CN.md` 是供内部审核使用的完整简体中文译本。
+- 两个版本保持标题、图表、表格、代码块、标识符、API 路径、数据库字段和术语一致。
+- 如两个版本存在冲突，以英文工程基线为准。
 
-如果想了解项目，直接看：
+## Bilingual design documents / 双语设计文档
 
-1. [Project Roadmap](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/roadmap.md>)：项目分几期、目前做到哪里。
-2. [MVP Scope](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/mvp-scope.md>)：第一版具体做什么。
-3. [Phase 1 Tasks](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-1-tasks.md>)：第一阶段任务、依赖和验收标准。
-4. [中文架构说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)：系统整体如何工作。
-5. [UI/UX Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/ui-design.md>)：官网和内部销售工作台的产品体验与视觉设计基线。
-6. [Website Design Reference](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/design-reference.md>)：Nayati 参考分析与 Sari Arta 原创官网方向。
-7. [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>)：M6 前端页面、组件、响应式和实施范围的最终规格。
-8. [Phase 1 Demo Script](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/demo-script.md>)：使用纯合成数据完成 5 分钟业务演示。
-9. [Production Readiness Checklist](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/production-readiness-checklist.md>)：M8 权限、运行可靠性、审计、备份恢复和生产上线门槛。
-10. [Phase 2 智能体框架设计（中文）](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.zh-CN.md>)：多领域 Agent Registry、知识、工具、数据库和迁移方案。
-11. [IVC 领域包说明](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/domain-packages/laboratory-animal-facility.md>)：实验动物设施领域目标、资格字段、知识分类、能力和激活边界。
-12. [Agent Playground](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/agent-playground.md>)：多领域智能体演示界面、运行方式与隔离边界。
-
-其余文档主要供开发使用：
-
-| 文档 | 用途 |
+| Design area / 设计领域 | English engineering baseline | 中文完整译本 |
 |---|---|---|
-| [Technical Architecture](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/technical-architecture.md>) | 系统、前后端、AI、集成、部署和安全架构 |
-| [Database Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/database-design.md>) | 实体关系、表、字段、关系和索引 |
-| [API Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.md>) | REST API、接口清单、示例和认证 |
-| [UI/UX Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/ui-design.md>) | 官网、内部工作台、组件、视觉、响应式和实施建议 |
-| [Website Design Reference](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/design-reference.md>) | 商用厨房参考站分析、Sari Arta 网站结构、获客与 SEO 方向 |
-| [Sari Arta UI Specification](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/sari-arta-ui-specification.md>) | M6 可实施的官网、内部工作台、设计系统、路由与阶段范围 |
-| [Project Rules](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/AGENTS.md>) | AI 工程代理必须遵守的开发规则 |
-| [Local Development](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/development.md>) | 本地安装、运行、验证和故障排查 |
-| [Phase 1 Demo Script](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/demo-script.md>) | 网站询盘、AI 资格评估、Dashboard 和商机转换演示流程 |
-| [Production Readiness Checklist](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/production-readiness-checklist.md>) | Phase 1 最终验收证据与生产上线前置条件 |
-| [Phase 2 Agent Framework Design](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.md>) | Phase 2 多领域智能体框架英文技术基线 |
-| [Phase 2 智能体框架设计（中文）](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/phase-2-agent-framework-design.zh-CN.md>) | Phase 2 中文审核版本 |
-| [IVC Domain Package](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/domain-packages/laboratory-animal-facility.md>) | IVC 领域包三语结构、范围和未启用边界 |
-| [Agent Playground](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/agent-playground.md>) | Commercial Kitchen 与 IVC 统一演示入口和安全边界 |
+| Technical architecture / 技术架构 | [technical-architecture.en.md](technical-architecture.en.md) | [technical-architecture.zh-CN.md](technical-architecture.zh-CN.md) |
+| REST API design / REST API 设计 | [api-design.en.md](api-design.en.md) | [api-design.zh-CN.md](api-design.zh-CN.md) |
+| Database design / 数据库设计 | [database-design.en.md](database-design.en.md) | [database-design.zh-CN.md](database-design.zh-CN.md) |
+| Phase 2 agent framework / Phase 2 智能体框架 | [phase-2-agent-framework-design.en.md](phase-2-agent-framework-design.en.md) | [phase-2-agent-framework-design.zh-CN.md](phase-2-agent-framework-design.zh-CN.md) |
+| Multi-tenant security / 多租户安全 | [multi-tenant-security-design.en.md](multi-tenant-security-design.en.md) | [multi-tenant-security-design.zh-CN.md](multi-tenant-security-design.zh-CN.md) |
+| Frontend UI/UX / 前端 UI/UX | [ui-design.en.md](ui-design.en.md) | [ui-design.zh-CN.md](ui-design.zh-CN.md) |
+| Website design reference / 网站设计参考 | [design-reference.en.md](design-reference.en.md) | [design-reference.zh-CN.md](design-reference.zh-CN.md) |
+| Sari Arta UI specification / Sari Arta UI 规格 | [sari-arta-ui-specification.en.md](sari-arta-ui-specification.en.md) | [sari-arta-ui-specification.zh-CN.md](sari-arta-ui-specification.zh-CN.md) |
+| IVC domain package / IVC 领域包 | [laboratory-animal-facility.en.md](domain-packages/laboratory-animal-facility.en.md) | [laboratory-animal-facility.zh-CN.md](domain-packages/laboratory-animal-facility.zh-CN.md) |
+| Knowledge foundation / 知识基础 | [knowledge-foundation-design.en.md](knowledge-foundation-design.en.md) | [knowledge-foundation-design.zh-CN.md](knowledge-foundation-design.zh-CN.md) |
 
-## 什么时候需要你确认
+## Project and operational documents / 项目与运行文档
 
-AI 工程代理会自行决定技术实现。只有以下情况会请你确认：
+These documents are not currently classified as design baselines and retain their existing filenames:
 
-- 使用真实客户数据。
-- 向真实客户发送邮件、WhatsApp、提案或营销内容。
-- 对价格、折扣、交期、技术保证或合同作出商业承诺。
-- 购买付费服务或产生明显费用。
-- 部署到正式生产环境。
-- 执行不可恢复的数据删除或高风险变更。
-- 现有设计与 Sari Arta 的真实业务事实明显冲突。
+| Document / 文档 | Purpose / 用途 |
+|---|---|
+| [roadmap.md](roadmap.md) | Delivery phases and current project status / 交付阶段和当前状态 |
+| [mvp-scope.md](mvp-scope.md) | MVP scope and implementation priorities / MVP 范围和实施优先级 |
+| [phase-1-tasks.md](phase-1-tasks.md) | Phase 1 milestones and acceptance criteria / 第一阶段任务和验收标准 |
+| [demo-script.md](demo-script.md) | Synthetic five-minute product demonstration / 合成数据五分钟演示 |
+| [production-readiness-checklist.md](production-readiness-checklist.md) | Production acceptance controls / 生产验收控制项 |
+| [development.md](development.md) | Local development and validation / 本地开发与验证 |
+| [agent-playground.md](agent-playground.md) | Multi-domain demonstration-layer behavior / 多领域演示层说明 |
+| [review-guide.zh-CN.md](review-guide.zh-CN.md) | Chinese business review guide / 中文业务审核指南 |
 
-其他技术选择、页面结构、数据库字段、API、测试和开发顺序由 AI 工程代理自行完成。
+Project-wide autonomous engineering and approval rules are defined in [AGENTS.md](../AGENTS.md).

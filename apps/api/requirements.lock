@@ -76,9 +76,13 @@ markupsafe==3.0.3
     # via mako
 mcp==1.29.0
     # via openai-agents
+numpy==2.5.2
+    # via pgvector
 openai==2.53.0
     # via openai-agents
 openai-agents==0.14.8
+    # via sari-arta-api (apps/api/pyproject.toml)
+pgvector==0.4.2
     # via sari-arta-api (apps/api/pyproject.toml)
 pycparser==3.0
     # via cffi
@@ -99,12 +103,16 @@ pyjwt==2.13.0
     # via
     #   mcp
     #   sari-arta-api (apps/api/pyproject.toml)
+pypdf==6.15.0
+    # via sari-arta-api (apps/api/pyproject.toml)
 python-dotenv==1.2.2
     # via
     #   pydantic-settings
     #   uvicorn
 python-multipart==0.0.32
-    # via mcp
+    # via
+    #   mcp
+    #   sari-arta-api (apps/api/pyproject.toml)
 pyyaml==6.0.3
     # via uvicorn
 redis==6.4.0

@@ -12,6 +12,7 @@ from sari_api.adapters.qualification_provider import AiProviderUnavailableError
 from sari_api.core.config import Settings
 from sari_api.domain.ivc_qualification import (
     IvcQualificationFactor,
+    IvcQualificationFactorCategory,
     IvcQualificationInput,
     IvcQualificationOutput,
     ReadinessStatus,
@@ -207,7 +208,7 @@ class MockIvcQualificationProvider:
 
     @staticmethod
     def _factor(
-        category: str,
+        category: IvcQualificationFactorCategory,
         status: ReadinessStatus,
         locale: SupportedLocale,
     ) -> IvcQualificationFactor:

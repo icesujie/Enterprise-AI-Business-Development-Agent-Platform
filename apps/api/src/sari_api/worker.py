@@ -18,6 +18,13 @@ from sari_api.adapters.agent_recovery import AgentRunRecoveryService
 from sari_api.adapters.database import dispose_database, session_factory
 from sari_api.adapters.ivc_qualification_executor import IvcQualificationRunExecutor
 from sari_api.adapters.ivc_qualification_provider import build_ivc_qualification_provider
+from sari_api.adapters.knowledge_embedding import build_knowledge_embedding_provider
+from sari_api.adapters.knowledge_ingestion import KnowledgeIngestionExecutor
+from sari_api.adapters.knowledge_queue import (
+    InvalidKnowledgeQueueMessageError,
+    RedisKnowledgeQueue,
+)
+from sari_api.adapters.knowledge_storage import LocalKnowledgeStorage
 from sari_api.adapters.models import AgentRun
 from sari_api.adapters.qualification_executor import QualificationRunExecutor, RetrySchedule
 from sari_api.adapters.qualification_provider import build_qualification_provider
@@ -56,6 +63,12 @@ async def run_worker() -> None:
     settings = get_settings()
     configure_logging(settings.log_level)
     queue = RedisAgentQueue(settings.redis_url, settings.agent_queue_name)
+    knowledge_queue = RedisKnowledgeQueue(settings.redis_url, settings.knowledge_queue_name)
+    knowledge_executor = KnowledgeIngestionExecutor(
+        LocalKnowledgeStorage(settings.knowledge_storage_path),
+        build_knowledge_embedding_provider(settings),
+        settings,
+    )
     provider = build_qualification_provider(settings)
     executor = QualificationRunExecutor(provider, settings.agent_retry_base_seconds)
     ivc_provider = build_ivc_qualification_provider(settings)
@@ -120,6 +133,34 @@ async def run_worker() -> None:
                         extra={"event": "agent.run.recovery_scan_failed"},
                     )
                 next_recovery_at = time.monotonic() + settings.agent_recovery_interval_seconds
+            try:
+                knowledge_message = await knowledge_queue.dequeue(block_seconds=1)
+            except InvalidKnowledgeQueueMessageError:
+                logger.warning(
+                    "Discarded an invalid knowledge queue message",
+                    extra={"event": "knowledge.queue.invalid_message"},
+                )
+                knowledge_message = None
+            if knowledge_message is not None:
+                knowledge_token = set_correlation_id(
+                    knowledge_message.correlation_id or str(knowledge_message.ingestion_run_id)
+                )
+                try:
+                    await knowledge_executor.execute(
+                        knowledge_message.ingestion_run_id,
+                        knowledge_message.tenant_id,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Knowledge ingestion message failed unexpectedly",
+                        extra={
+                            "event": "knowledge.ingestion.unexpected_failure",
+                            "knowledge_ingestion_run_id": str(knowledge_message.ingestion_run_id),
+                            "tenant_id": str(knowledge_message.tenant_id),
+                        },
+                    )
+                finally:
+                    reset_correlation_id(knowledge_token)
             try:
                 message = await queue.dequeue(block_seconds=5)
             except InvalidAgentQueueMessageError:
@@ -188,6 +229,7 @@ async def run_worker() -> None:
                 reset_correlation_id(token)
     finally:
         await queue.close()
+        await knowledge_queue.close()
         await dispose_database()
 
 

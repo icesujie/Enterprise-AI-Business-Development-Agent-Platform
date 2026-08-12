@@ -2,10 +2,12 @@
 
 ## Implementation-ready frontend baseline for M6
 
+> Chinese translation: [sari-arta-ui-specification.zh-CN.md](sari-arta-ui-specification.zh-CN.md). This English document is the primary engineering baseline.
+
 **Product:** Enterprise AI Business Development Agent Platform  
 **Reference business:** Sari Arta, Indonesia commercial-kitchen engineering  
 **Applications:** Public B2B website and internal AI business dashboard  
-**Source documents:** `docs/ui-design.md`, `docs/design-reference.md`  
+**Source documents:** `docs/ui-design.en.md`, `docs/design-reference.en.md`  
 **Status:** Final UI specification; no frontend implementation  
 **Version:** 1.0
 

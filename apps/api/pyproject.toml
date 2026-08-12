@@ -8,7 +8,10 @@ dependencies = [
   "asyncpg>=0.30,<1",
   "fastapi>=0.116,<1",
   "openai-agents>=0.14,<0.15",
+  "pgvector>=0.4,<0.5",
+  "pypdf>=6,<7",
   "pyjwt[crypto]>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
   "pydantic-settings>=2.8,<3",
   "redis>=6,<7",
   "sqlalchemy[asyncio]>=2.0.38,<3",
@@ -50,3 +53,7 @@ plugins = ["pydantic.mypy"]
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["pgvector", "pgvector.*"]
+ignore_missing_imports = true

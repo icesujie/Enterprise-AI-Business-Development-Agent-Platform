@@ -2,12 +2,25 @@
 
 ## Technical Architecture Design
 
+> Chinese translation: [technical-architecture.zh-CN.md](technical-architecture.zh-CN.md). This English document is the primary engineering baseline.
+
 **Reference business:** Sari Arta, Indonesia commercial kitchen engineering  
 **Status:** Enterprise architecture baseline with Phase 1 M8 acceptance status
 **Primary stack:** Next.js, FastAPI, PostgreSQL, OpenAI Agents SDK with multi-model provider adapters, n8n, Docker  
 **Document version:** 1.0
 
 > 中文审阅入口：[中文架构审阅指南](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)。本英文文档是正式技术基线，中文指南提供逐主题解释、术语对照和审核问题。
+
+## Phase 2.5 implementation status
+
+The Knowledge Foundation is implemented as an additive module. FastAPI owns source, binding,
+document, approval, ingestion-run, and retrieval contracts. A separate Redis knowledge queue carries
+durable ingestion-run references to the existing Worker process. Private storage retains file bytes;
+PostgreSQL retains metadata, approval, lineage, chunks, 1,536-dimensional pgvector embeddings, and
+citations. Retrieval is deny-by-default and requires tenant RLS, an enabled source/domain/agent
+binding, an active tenant agent configuration with the approved retrieval capability, and an approved
+ready document. It returns evidence candidates only and does not change Sari Arta or IVC qualification
+workflows. See `docs/knowledge-foundation-design.en.md`.
 
 ## Current implementation status — Phase 1 M8
 
@@ -349,7 +362,7 @@ Apply queue-specific concurrency, timeout, retry, and dead-letter policies. Retr
 
 ### 5.6 API conventions
 
-The detailed contract is in `api-design.md`. Globally:
+The detailed contract is in `api-design.en.md`. Globally:
 
 - REST under `/api/v1`.
 - JSON uses `snake_case`.
@@ -538,7 +551,7 @@ Sensitive trace payloads are disabled or redacted by default. Access to trace co
 
 ## 7. Database and storage architecture
 
-PostgreSQL is the authoritative relational store. The detailed logical design is in `database-design.md`.
+PostgreSQL is the authoritative relational store. The detailed logical design is in `database-design.en.md`.
 
 ### 7.1 PostgreSQL topology
 

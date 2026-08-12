@@ -2,6 +2,8 @@
 
 ## Nayati UX Analysis and Original Adaptation Direction
 
+> Chinese translation: [design-reference.zh-CN.md](design-reference.zh-CN.md). This English document is the primary engineering baseline.
+
 **Reference reviewed:** [nayati.com](https://www.nayati.com/)  
 **Review date:** 2026-08-09  
 **Target brand:** Sari Arta  
@@ -440,7 +442,7 @@ Near the form, explain:
 
 ### 5.1 Original creative direction
 
-Use the design direction defined in `docs/ui-design.md`: **Precision workshop, tropical context**.
+Use the design direction defined in `docs/ui-design.en.md`: **Precision workshop, tropical context**.
 
 Nayati’s authentic industrial evidence inspires the use of real manufacturing and installation content. Sari Arta’s execution must differ through:
 

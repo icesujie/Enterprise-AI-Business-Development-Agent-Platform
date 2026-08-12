@@ -94,8 +94,8 @@ production launch remains a separate human-approved activity with environment-sp
 - [x] Define English, Chinese, and Bahasa Indonesia agent-localization contracts
 - [x] Implement the IVC qualification demo workflow with three synthetic multilingual cases
 - [x] Add the unified Agent Playground for Commercial Kitchen and IVC demonstrations
-- [ ] Knowledge-document upload and approval
-- [ ] Text extraction, chunking, embeddings, and pgvector retrieval
+- [x] Knowledge-document upload and approval foundation
+- [x] Text extraction, chunking, embeddings, pgvector retrieval, and citation foundation
 - [ ] RAG Knowledge Assistant with citations and insufficient-evidence behavior
 - [ ] Content Generation Agent with human approval
 - [ ] Proposal Assistant with structured editable drafts
@@ -138,12 +138,12 @@ production launch remains a separate human-approved activity with environment-sp
 
 ## Current development focus
 
-**M8 Phase 1 acceptance is complete. Phase 2.3 Agent Playground is implemented.** The Agent
-Registry contains two domain packages. The Sari Arta runtime continues using its unchanged Phase 1
-lookup. The IVC package has a development-only qualification demo, and the authenticated Playground
-can run either registered agent with structured English, Chinese, or Bahasa Indonesia output without
-creating CRM records. Knowledge retrieval, external actions, and production activation remain
-disabled.
+**M8 Phase 1 acceptance and the Phase 2.3 Agent Playground are complete. Phase 2.5 Knowledge
+Foundation is implemented.** Approved Sari Arta synthetic documents can be uploaded, bound to the
+Commercial Kitchen agent, reviewed, extracted, chunked, embedded, stored in pgvector, and retrieved
+as cited evidence. This foundation does not generate answers and is not connected to the existing
+qualification workflows. IVC production knowledge retrieval, external actions, and production
+activation remain disabled.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

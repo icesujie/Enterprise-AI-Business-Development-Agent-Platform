@@ -13,6 +13,12 @@ backup/restore tooling. Phase 2 now includes an additive Agent Registry, a devel
 qualification workflow, and a unified multi-domain Agent Playground; the accepted Phase 1 Sari Arta
 runtime remains the operational baseline.
 
+Phase 2.5 adds the deny-by-default Knowledge Foundation: tenant-scoped sources, explicit
+domain/agent bindings, private document metadata, human approval, asynchronous PDF/text/Markdown
+extraction, deterministic chunking, embedding-provider abstraction, pgvector retrieval, and complete
+citation metadata. It returns evidence candidates only; no conversational Knowledge Assistant is
+enabled, and IVC knowledge retrieval remains disabled.
+
 M1 provides:
 
 - A Next.js 16 frontend shell.
@@ -149,5 +155,6 @@ make verify-backup BACKUP_FILE=/absolute/path/to/sariarta-YYYYMMDDTHHMMSSZ.dump
 - [Production readiness checklist](docs/production-readiness-checklist.md)
 - [MVP scope](docs/mvp-scope.md)
 - [Phase 1 tasks](docs/phase-1-tasks.md)
-- [Technical architecture](docs/technical-architecture.md)
+- [Technical architecture](docs/technical-architecture.en.md)
+- [Knowledge foundation](docs/knowledge-foundation-design.en.md)
 - [Development rules](AGENTS.md)

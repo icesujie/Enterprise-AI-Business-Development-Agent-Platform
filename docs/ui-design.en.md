@@ -2,6 +2,8 @@
 
 ## Frontend UI/UX Design
 
+> Chinese translation: [ui-design.zh-CN.md](ui-design.zh-CN.md). This English document is the primary engineering baseline.
+
 **Reference business:** Sari Arta, Indonesia commercial-kitchen engineering  
 **Applications:** Public B2B website and internal AI business dashboard  
 **Design status:** Product and experience baseline; no frontend implementation  

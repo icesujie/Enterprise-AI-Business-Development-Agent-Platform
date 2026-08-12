@@ -9,6 +9,15 @@
 
 > 中文审阅版：[Phase 2 智能体框架设计（中文）](phase-2-agent-framework-design.zh-CN.md)。本英文文档保留为字段、表名、接口和后续实施的正式技术基线。
 
+## Phase 2.5 implementation note
+
+The reusable Knowledge Foundation described by this framework is now implemented for explicitly
+bound, approved Sari Arta documents. It includes tenant-scoped sources, exact domain/agent bindings,
+durable ingestion, extraction, chunking, embedding adapters, pgvector evidence retrieval, and citation
+metadata. It is infrastructure only: no conversational Knowledge Assistant is enabled. The IVC
+agent retains `knowledge_enabled = false` and its retrieval capability remains planned. See
+`docs/knowledge-foundation-design.en.md`.
+
 ## 1. Purpose
 
 Phase 2 turns the working Sari Arta lead-to-opportunity assistant into a reusable framework for several business-development domains without replacing or destabilizing the Phase 1 application.
@@ -632,7 +641,7 @@ Phase 2 should introduce administrative resources gradually:
 - `POST /api/v1/agent-configurations/{id}/evaluation-runs` — evaluate a draft.
 - `POST /api/v1/agent-configurations/{id}/activations` — activate after gates pass.
 - `POST /api/v1/agent-activations/{id}/suspensions` — emergency or planned stop.
-- Knowledge and tool endpoints follow `docs/api-design.md`.
+- Knowledge and tool endpoints follow `docs/api-design.en.md`.
 
 The generic `POST /api/v1/agent-runs` accepts only an allowlisted workflow and typed business input. Existing domain-specific endpoints remain preferred and can call the same resolver internally.
 

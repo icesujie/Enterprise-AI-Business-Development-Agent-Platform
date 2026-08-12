@@ -19,6 +19,8 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
             "leads:assign",
             "leads:convert",
             "leads:qualify",
+            "knowledge:manage",
+            "knowledge:retrieve",
             "memberships:manage",
             "memberships:read",
             "opportunities:manage",
@@ -31,6 +33,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
             "crm:write",
             "leads:convert",
             "leads:qualify",
+            "knowledge:retrieve",
             "opportunities:manage",
             "tasks:manage",
         }

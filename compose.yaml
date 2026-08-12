@@ -2,7 +2,7 @@ name: sari-arta-ai-bd
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: sariarta
       POSTGRES_USER: sariarta
@@ -54,6 +54,12 @@ services:
       AGENT_RETRY_BASE_SECONDS: ${AGENT_RETRY_BASE_SECONDS:-2}
       AGENT_STALE_AFTER_SECONDS: ${AGENT_STALE_AFTER_SECONDS:-120}
       AGENT_RECOVERY_INTERVAL_SECONDS: ${AGENT_RECOVERY_INTERVAL_SECONDS:-30}
+      KNOWLEDGE_STORAGE_PATH: /app/data/knowledge
+      KNOWLEDGE_EMBEDDING_PROVIDER: ${KNOWLEDGE_EMBEDDING_PROVIDER:-mock}
+      KNOWLEDGE_EMBEDDING_MODEL: ${KNOWLEDGE_EMBEDDING_MODEL:-text-embedding-3-small}
+      KNOWLEDGE_QUEUE_NAME: ${KNOWLEDGE_QUEUE_NAME:-sari-arta:knowledge-ingestion}
+    volumes:
+      - knowledge_data:/app/data/knowledge
     ports:
       - "8000:8000"
     depends_on:
@@ -91,6 +97,12 @@ services:
       AGENT_RETRY_BASE_SECONDS: ${AGENT_RETRY_BASE_SECONDS:-2}
       AGENT_STALE_AFTER_SECONDS: ${AGENT_STALE_AFTER_SECONDS:-120}
       AGENT_RECOVERY_INTERVAL_SECONDS: ${AGENT_RECOVERY_INTERVAL_SECONDS:-30}
+      KNOWLEDGE_STORAGE_PATH: /app/data/knowledge
+      KNOWLEDGE_EMBEDDING_PROVIDER: ${KNOWLEDGE_EMBEDDING_PROVIDER:-mock}
+      KNOWLEDGE_EMBEDDING_MODEL: ${KNOWLEDGE_EMBEDDING_MODEL:-text-embedding-3-small}
+      KNOWLEDGE_QUEUE_NAME: ${KNOWLEDGE_QUEUE_NAME:-sari-arta:knowledge-ingestion}
+    volumes:
+      - knowledge_data:/app/data/knowledge
     depends_on:
       postgres:
         condition: service_healthy
@@ -120,3 +132,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  knowledge_data:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal, Self
 
 from pydantic import Field, SecretStr, model_validator
@@ -43,6 +44,14 @@ class Settings(BaseSettings):
     agent_retry_base_seconds: int = Field(default=2, ge=1, le=60)
     agent_stale_after_seconds: int = Field(default=120, ge=30, le=3600)
     agent_recovery_interval_seconds: int = Field(default=30, ge=10, le=300)
+    knowledge_storage_path: Path = Path(".local/knowledge")
+    knowledge_max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=50 * 1024 * 1024)
+    knowledge_chunk_size: int = Field(default=1200, ge=200, le=4000)
+    knowledge_chunk_overlap: int = Field(default=200, ge=0, le=1000)
+    knowledge_embedding_provider: Literal["mock", "openai"] = "mock"
+    knowledge_embedding_model: str = "text-embedding-3-small"
+    knowledge_embedding_dimensions: int = Field(default=1536, ge=128, le=3072)
+    knowledge_queue_name: str = "sari-arta:knowledge-ingestion"
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:
@@ -60,6 +69,12 @@ class Settings(BaseSettings):
                 raise ValueError("production PUBLIC_SITE_TOKEN must be configured")
         if self.ai_enabled and self.openai_api_key is None:
             raise ValueError("AI_ENABLED requires OPENAI_API_KEY")
+        if self.knowledge_embedding_provider == "openai" and self.openai_api_key is None:
+            raise ValueError("OpenAI knowledge embeddings require OPENAI_API_KEY")
+        if self.knowledge_chunk_overlap >= self.knowledge_chunk_size:
+            raise ValueError("KNOWLEDGE_CHUNK_OVERLAP must be smaller than KNOWLEDGE_CHUNK_SIZE")
+        if self.knowledge_embedding_dimensions != 1536:
+            raise ValueError("Phase 2.5 knowledge embeddings require 1536 dimensions")
         return self
 
 

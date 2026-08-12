@@ -24,9 +24,9 @@ Use these documents as the design baseline:
 
 - `docs/roadmap.md` — authoritative phase boundaries and progress.
 - `docs/mvp-scope.md` — current delivery boundary and implementation order.
-- `docs/technical-architecture.md` — long-term architecture direction.
-- `docs/database-design.md` — long-term data model.
-- `docs/api-design.md` — long-term API design.
+- `docs/technical-architecture.en.md` — long-term architecture direction.
+- `docs/database-design.en.md` — long-term data model.
+- `docs/api-design.en.md` — long-term API design.
 - `docs/review-guide.zh-CN.md` — Chinese business review guidance.
 
 When the enterprise documents conflict with the roadmap or MVP scope, follow `docs/roadmap.md` and then `docs/mvp-scope.md` unless a human explicitly changes the current scope.
@@ -230,7 +230,10 @@ These standards apply once application implementation begins.
 ### 5.8 Documentation
 
 - Update design or operational documentation when behavior, data, API contracts, deployment, or security assumptions change.
-- Keep English technical documents as the implementation baseline.
+- Maintain every design document as a bilingual pair: `*.en.md` and `*.zh-CN.md`.
+- Keep the English `*.en.md` document as the primary implementation baseline.
+- Keep the Chinese `*.zh-CN.md` document as a complete translation for internal review; preserve headings, diagrams, tables, code blocks, identifiers, and terminology.
+- Update both language versions in the same change whenever a design baseline changes.
 - Update the Chinese review guide when a change materially affects business review.
 - Record important architecture decisions and tradeoffs rather than relying on chat history.
 

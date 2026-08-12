@@ -2,12 +2,24 @@
 
 ## Database Design
 
+> Chinese translation: [database-design.zh-CN.md](database-design.zh-CN.md). This English document is the primary engineering baseline.
+
 **Reference business:** Sari Arta, Indonesia commercial kitchen engineering  
 **Database:** PostgreSQL 16+  
 **Extensions:** `pgvector`, `pg_trgm`, and optionally `citext`  
 **Document version:** 1.0
 
 > 中文审阅入口：[中文架构审阅指南](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)。重点参考其中“数据库设计怎么审核”和“业务方必须确认的事项”。
+
+## Phase 2.5 schema addendum
+
+Migration `9f31c6a7d2b4` implements `knowledge_sources`, `knowledge_bindings`,
+`knowledge_documents`, `knowledge_ingestion_runs`, and `knowledge_chunks`. Every table has a non-null
+`tenant_id`, forced RLS, and the `tenant_isolation` policy. Document bytes remain outside PostgreSQL.
+Chunks store `vector(1536)` embeddings, source/document/ingestion lineage, page and section location,
+and citation fingerprints. HNSW cosine indexing accelerates candidate retrieval while relational
+tenant, agent-binding, source, approval, readiness, provider, and model filters remain authoritative.
+See `docs/knowledge-foundation-design.en.md` for the complete state and relationship design.
 
 ## 1. Design goals
 

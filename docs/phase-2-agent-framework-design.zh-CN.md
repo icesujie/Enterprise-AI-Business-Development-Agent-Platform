@@ -7,7 +7,15 @@
 **主要技术栈：** Next.js、FastAPI、PostgreSQL/pgvector、Redis Worker、OpenAI Agents SDK、n8n、Docker  
 **文档版本：** 1.0
 
-> 英文技术基线：[Phase 2 Agent Framework Design](phase-2-agent-framework-design.md)。中文版本用于业务和架构审核；数据库表名、字段名、接口和状态值以英文技术基线为准。
+> 英文技术基线：[Phase 2 Agent Framework Design](phase-2-agent-framework-design.en.md)。中文版本用于业务和架构审核；数据库表名、字段名、接口和状态值以英文技术基线为准。
+
+## Phase 2.5 实现说明
+
+本框架描述的可复用知识基础现已用于明确绑定并批准的 Sari Arta 文档。它包括租户范围的
+来源、精确领域/智能体绑定、持久化摄取、提取、分块、Embedding 适配器、pgvector 证据
+检索和引用元数据。这仍然只是基础设施：尚未启用对话式知识助手。IVC 智能体继续保持
+`knowledge_enabled = false`，其检索能力仍为计划状态。参见
+`docs/knowledge-foundation-design.zh-CN.md`。
 
 ## 1. 设计目的
 
@@ -630,7 +638,7 @@ erDiagram
 - `POST /api/v1/agent-configurations/{id}/evaluation-runs`：评估 Draft。
 - `POST /api/v1/agent-configurations/{id}/activations`：通过门槛后启用。
 - `POST /api/v1/agent-activations/{id}/suspensions`：计划暂停或紧急停止。
-- 知识和工具 API 沿用 `docs/api-design.md` 的方向。
+- 知识和工具 API 沿用 `docs/api-design.en.md` 的方向。
 
 通用 `POST /api/v1/agent-runs` 只能接受白名单 `workflow_type` 和强类型业务输入，不能接受任意 Prompt、工具或模型。领域专用接口仍然优先，内部可以调用相同解析器。
 

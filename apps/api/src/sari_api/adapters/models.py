@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
+from pgvector.sqlalchemy import VECTOR  # type: ignore[import-untyped]
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -467,6 +468,165 @@ class AgentConfiguration(Base):
         String(80), server_default="requested_then_tenant_default"
     )
     runtime_config: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeSource(TimestampVersionMixin, Base):
+    __tablename__ = "knowledge_sources"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "source_key"),
+        CheckConstraint(
+            "source_type IN ('manual_upload','approved_import')",
+            name="knowledge_sources_type_check",
+        ),
+        CheckConstraint(
+            "status IN ('active','disabled')",
+            name="knowledge_sources_status_check",
+        ),
+        Index("ix_knowledge_sources_tenant_status", "tenant_id", "status"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    source_key: Mapped[str] = mapped_column(String(120))
+    name: Mapped[str] = mapped_column(String(250))
+    description: Mapped[str | None] = mapped_column(Text)
+    source_type: Mapped[str] = mapped_column(String(30), server_default="manual_upload")
+    status: Mapped[str] = mapped_column(String(20), server_default="active")
+    source_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+
+
+class KnowledgeBinding(Base):
+    __tablename__ = "knowledge_bindings"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "source_id", "domain_package_id", "agent_id"),
+        CheckConstraint(
+            "status IN ('enabled','disabled')",
+            name="knowledge_bindings_status_check",
+        ),
+        Index(
+            "ix_knowledge_bindings_access",
+            "tenant_id",
+            "agent_id",
+            "domain_package_id",
+            "status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    source_id: Mapped[UUID] = mapped_column(ForeignKey("knowledge_sources.id", ondelete="CASCADE"))
+    domain_package_id: Mapped[UUID] = mapped_column(
+        ForeignKey("domain_packages.id", ondelete="RESTRICT")
+    )
+    agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    knowledge_category: Mapped[str] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(20), server_default="disabled")
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeDocument(TimestampVersionMixin, Base):
+    __tablename__ = "knowledge_documents"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "source_id", "content_sha256"),
+        UniqueConstraint("tenant_id", "object_key"),
+        CheckConstraint(
+            "approval_status IN ('pending','approved','rejected','retired')",
+            name="knowledge_documents_approval_check",
+        ),
+        CheckConstraint(
+            "ingestion_status IN ('not_started','queued','processing','ready','failed')",
+            name="knowledge_documents_ingestion_check",
+        ),
+        CheckConstraint("byte_size > 0", name="knowledge_documents_size_check"),
+        Index(
+            "ix_knowledge_documents_tenant_source_status",
+            "tenant_id",
+            "source_id",
+            "approval_status",
+            "ingestion_status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    source_id: Mapped[UUID] = mapped_column(ForeignKey("knowledge_sources.id", ondelete="RESTRICT"))
+    title: Mapped[str] = mapped_column(String(300))
+    original_filename: Mapped[str] = mapped_column(String(255))
+    media_type: Mapped[str] = mapped_column(String(120))
+    language: Mapped[str] = mapped_column(String(20), server_default="en")
+    object_key: Mapped[str] = mapped_column(String(500))
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    byte_size: Mapped[int] = mapped_column(Integer)
+    source_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    approval_status: Mapped[str] = mapped_column(String(20), server_default="pending")
+    ingestion_status: Mapped[str] = mapped_column(String(20), server_default="not_started")
+    approved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    rejected_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+
+
+class KnowledgeIngestionRun(Base):
+    __tablename__ = "knowledge_ingestion_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('queued','processing','succeeded','failed')",
+            name="knowledge_ingestion_runs_status_check",
+        ),
+        Index("ix_knowledge_ingestion_runs_tenant_status", "tenant_id", "status", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_documents.id", ondelete="CASCADE")
+    )
+    status: Mapped[str] = mapped_column(String(20), server_default="queued")
+    extraction_version: Mapped[str] = mapped_column(String(40), server_default="extract_v1")
+    chunking_version: Mapped[str] = mapped_column(String(40), server_default="chunk_v1")
+    embedding_provider: Mapped[str] = mapped_column(String(80))
+    embedding_model: Mapped[str] = mapped_column(String(120))
+    chunk_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    error_message_safe: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeChunk(Base):
+    __tablename__ = "knowledge_chunks"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "document_id", "chunk_index"),
+        Index("ix_knowledge_chunks_tenant_document", "tenant_id", "document_id", "chunk_index"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    source_id: Mapped[UUID] = mapped_column(ForeignKey("knowledge_sources.id", ondelete="RESTRICT"))
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_documents.id", ondelete="CASCADE")
+    )
+    ingestion_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_ingestion_runs.id", ondelete="RESTRICT")
+    )
+    chunk_index: Mapped[int] = mapped_column(Integer)
+    content: Mapped[str] = mapped_column(Text)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    character_count: Mapped[int] = mapped_column(Integer)
+    page_number: Mapped[int | None] = mapped_column(Integer)
+    section_title: Mapped[str | None] = mapped_column(String(300))
+    citation_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    embedding: Mapped[list[float]] = mapped_column(VECTOR(1536))
+    embedding_provider: Mapped[str] = mapped_column(String(80))
+    embedding_model: Mapped[str] = mapped_column(String(120))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

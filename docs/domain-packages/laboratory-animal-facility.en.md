@@ -1,18 +1,13 @@
 # Laboratory Animal Facility / IVC Domain Package
 
-## Status / 状态 / Status
+> Chinese translation: [laboratory-animal-facility.zh-CN.md](laboratory-animal-facility.zh-CN.md). This English document is the primary engineering baseline.
 
-**English:** Phase 2.2 functional demonstration agent. The qualification workflow is active only
+## Status
+
+Phase 2.2 functional demonstration agent. The qualification workflow is active only
 for the seeded development tenant. It supports deterministic mock execution and optional OpenAI
 Agents SDK execution. Human review is mandatory. Knowledge retrieval and external actions remain
 disabled.
-
-**中文：** Phase 2.2 功能演示智能体。资格评估工作流只在预置开发租户中激活，可使用确定性
-Mock 模式，也可选择 OpenAI Agents SDK 实模式。结果必须人工审核；知识检索和外部动作仍未启用。
-
-**Bahasa Indonesia:** Agen demo fungsional Phase 2.2. Alur kualifikasi hanya aktif untuk tenant
-pengembangan bawaan. Eksekusi mendukung mode mock deterministik dan OpenAI Agents SDK opsional.
-Tinjauan manusia wajib; pengambilan pengetahuan dan tindakan eksternal tetap dinonaktifkan.
 
 ## Identity
 
@@ -31,7 +26,7 @@ Tinjauan manusia wajib; pengambilan pengetahuan dan tindakan eksternal tetap din
 | Knowledge retrieval | Planned, optional, and disabled |
 | External tools/actions | None |
 
-## Business qualification workflow / 业务资格评估流程
+## Business qualification workflow
 
 ```text
 Select a synthetic case or submit structured project data
@@ -47,10 +42,7 @@ The workflow is commercial discovery, not a scientific or facility-design approv
 summarize evidence and recommend discovery actions. It must not declare regulatory compliance,
 scientific suitability, animal-welfare suitability, HVAC performance, price, or delivery dates.
 
-该流程用于商务需求发现，不等同于科研或设施设计审批。智能体可以总结现有信息并建议下一步，但
-不得自行认定法规合规性、科研适用性、动物福利适用性、HVAC 性能、价格或交期。
-
-## Qualification input / 资格评估输入
+## Qualification input
 
 The request is divided into five business sections:
 
@@ -67,7 +59,7 @@ The request is divided into five business sections:
 All input is validated before the run is queued. The original structured snapshot is saved in
 PostgreSQL so a later reviewer can see exactly what the agent evaluated.
 
-## Qualification rubric / 评分规则
+## Qualification rubric
 
 | Category | Points | Evidence reviewed |
 |---|---:|---|
@@ -85,7 +77,7 @@ PostgreSQL so a later reviewer can see exactly what the agent evaluated.
 Missing data reduces the score and is returned explicitly. The score does not automatically create,
 convert, reject, or contact a CRM lead.
 
-## Structured output / 结构化输出
+## Structured output
 
 The saved result contains only business-facing fields:
 
@@ -101,7 +93,7 @@ The saved result contains only business-facing fields:
 Hidden chain-of-thought is neither requested nor exposed. Stable schema keys and enum values remain
 in English; human-facing text is returned in the requested locale.
 
-## Prompt template / 提示模板
+## Prompt template
 
 The versioned implementation template is:
 
@@ -111,7 +103,7 @@ It fixes the rubric and language contract, prohibits invented facts and commitme
 qualified review, and allows no tools. OpenAI mode uses `IvcQualificationOutput` as the structured
 output schema. Mock mode applies the same business contract deterministically without an API key.
 
-## Synthetic demo cases / 合成演示案例
+## Synthetic demo cases
 
 All names, contacts, locations, amounts, and project descriptions are synthetic.
 
@@ -140,7 +132,7 @@ Run creation requires `leads:qualify` and an `Idempotency-Key`. The shared runti
 retry, safe failure messages, correlation IDs, structured logging, cancellation, recovery, and audit
 events.
 
-## Database changes / 数据库变更
+## Database changes
 
 Migration `4a68c3d2f901`:
 
@@ -152,7 +144,7 @@ Migration `4a68c3d2f901`:
 - Keeps `approved_knowledge_retrieval` optional and planned.
 - Leaves the Sari Arta configuration ID, `lead_qualification` key, workflow, tables, and APIs unchanged.
 
-## Knowledge boundary / 知识边界
+## Knowledge boundary
 
 The domain taxonomy still defines IVC systems, facility workflow, environmental control, biosafety,
 installation/validation, lifecycle service, and approved capabilities/cases. These are category

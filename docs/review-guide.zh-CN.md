@@ -3,7 +3,8 @@
 ## 中文架构说明与项目决策
 
 **参考业务：** 印度尼西亚 Sari Arta 商用厨房工程业务  
-**对应英文基线：** `technical-architecture.md`、`database-design.md`、`api-design.md`  
+**对应英文基线：** `technical-architecture.en.md`、`database-design.en.md`、`api-design.en.md`
+
 **用途：** 用中文说明整体设计和已经采用的项目决策；不要求项目负责人审核技术细节
 
 ## 1. 先看结论
@@ -152,7 +153,7 @@ queued → running → awaiting_approval → succeeded / failed / cancelled
 
 ## 3. 系统架构怎么审核
 
-对应英文文档：[technical-architecture.md](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/technical-architecture.md>)
+对应英文文档：[technical-architecture.en.md](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/technical-architecture.en.md>)
 
 ### 3.1 系统组件
 
@@ -391,7 +392,7 @@ PostgreSQL、Redis、对象存储和密钥管理在生产环境优先使用托�
 
 ## 4. 数据库设计怎么审核
 
-对应英文文档：[database-design.md](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/database-design.md>)
+对应英文文档：[database-design.en.md](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/database-design.en.md>)
 
 ### 4.1 数据分为九组
 
@@ -504,7 +505,7 @@ AI 可以起草产品描述和提案文字，但价格合计、税额、折扣�
 
 ## 5. API 设计怎么审核
 
-对应英文文档：[api-design.md](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.md>)
+对应英文文档：[api-design.en.md](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/api-design.en.md>)
 
 ### 5.1 API 基本规则
 
@@ -652,7 +653,7 @@ n8n 和后台服务使用服务账户和短期访问 Token。每个服务账户�
 - 第一版只实现线索资格智能体；知识、内容和提案智能体属于第二阶段。
 - WhatsApp、邮件和 n8n 自动化属于第三阶段。
 - 客户研究、多智能体、MCP、Qwen 和本地模型的生产接入属于第四阶段。
-- 技术实现、字段、API、页面和测试由 AI 工程代理负责决定。
+- 技术实现、字段、API、页面和测试由 AI 工程智能体负责决定。
 
 ### 7.1 真实运营前才需要确认的内容
 
@@ -685,7 +686,7 @@ n8n、Webhook、检索、提案审批、多模型和本地模型的验证在对�
 
 ## 9. 后续执行方式
 
-不再安排正式技术审核。AI 工程代理按照 `docs/mvp-scope.md` 和根目录 `AGENTS.md` 自主完成：
+不再安排正式技术审核。AI 工程智能体按照 `docs/mvp-scope.md` 和根目录 `AGENTS.md` 自主完成：
 
 - 页面和交互设计。
 - 数据库字段和迁移。
@@ -713,4 +714,4 @@ n8n、Webhook、检索、提案审批、多模型和本地模型的验证在对�
 - 批准付费服务和正式生产部署。
 - 指出系统流程与真实业务明显不符的地方。
 
-除此之外，AI 工程代理直接决定并继续实施。
+除此之外，AI 工程智能体直接决定并继续实施。

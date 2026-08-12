@@ -105,6 +105,25 @@ running record is considered interrupted, and the Worker checks for recovery eve
 locks and checks the durable run state. Users can cancel queued/running work through the API;
 provider completion after cancellation is discarded.
 
+Phase 2.5 knowledge ingestion uses the private local directory configured by
+`KNOWLEDGE_STORAGE_PATH`, a separate Redis queue, and PostgreSQL with the pgvector extension. The
+default `KNOWLEDGE_EMBEDDING_PROVIDER=mock` produces deterministic API-key-free vectors. Set it to
+`openai` only with an approved `OPENAI_API_KEY`; changing provider or model requires re-ingestion.
+Only PDF, UTF-8 text, and Markdown are accepted. Documents remain unavailable to retrieval until an
+administrator creates an exact Commercial Kitchen agent binding and approves the uploaded content.
+IVC knowledge retrieval remains disabled.
+
+To exercise the API through the interactive documentation, open <http://localhost:8000/docs> and:
+
+1. Create a source with `POST /api/v1/knowledge/sources`.
+2. Bind it to `commercial_kitchen` and `commercial_kitchen.lead_qualification`.
+3. Upload `demo-data/knowledge/sari-arta-school-kitchen-synthetic.md`.
+4. Approve the returned document ID and note the ingestion run ID.
+5. Start the Worker, poll the ingestion run until `succeeded`, and call the retrieval search endpoint.
+
+The result includes the evidence text, similarity, source, document, filename, page/section location,
+chunk index, and SHA-256 fingerprint. It does not generate a business answer.
+
 ## 6. Start the applications
 
 Terminal one:

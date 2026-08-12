@@ -89,6 +89,8 @@ mypy==1.20.2
     # via sari-arta-api (apps/api/pyproject.toml)
 mypy-extensions==1.1.0
     # via mypy
+numpy==2.5.2
+    # via pgvector
 openai==2.53.0
     # via openai-agents
 openai-agents==0.14.8
@@ -100,6 +102,8 @@ packaging==26.3
     #   wheel
 pathspec==1.1.1
     # via mypy
+pgvector==0.4.2
+    # via sari-arta-api (apps/api/pyproject.toml)
 pip-tools==7.6.0
     # via sari-arta-api (apps/api/pyproject.toml)
 pluggy==1.6.0
@@ -125,6 +129,8 @@ pyjwt==2.13.0
     # via
     #   mcp
     #   sari-arta-api (apps/api/pyproject.toml)
+pypdf==6.15.0
+    # via sari-arta-api (apps/api/pyproject.toml)
 pyproject-hooks==1.2.0
     # via
     #   build
@@ -140,7 +146,9 @@ python-dotenv==1.2.2
     #   pydantic-settings
     #   uvicorn
 python-multipart==0.0.32
-    # via mcp
+    # via
+    #   mcp
+    #   sari-arta-api (apps/api/pyproject.toml)
 pyyaml==6.0.3
     # via uvicorn
 redis==6.4.0

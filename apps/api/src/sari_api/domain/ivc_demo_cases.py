@@ -30,6 +30,10 @@ class IvcDemoCase:
         }
 
 
+def _input(**payload: object) -> IvcQualificationInput:
+    return IvcQualificationInput.model_validate(payload)
+
+
 UNIVERSITY_CASE = IvcDemoCase(
     key="university_animal_facility",
     name=LocalizedText(
@@ -42,7 +46,7 @@ UNIVERSITY_CASE = IvcDemoCase(
         zh_cn="一个资金已落实、决策人明确的小鼠和大鼠新建设施项目。",
         id="Fasilitas riset tikus baru dengan dana dan pemangku kepentingan yang jelas.",
     ),
-    input=IvcQualificationInput(
+    input=_input(
         customer_profile={
             "organization_name": "Synthetic Nusantara University",
             "organization_type": "university",
@@ -110,7 +114,7 @@ PHARMA_CASE = IvcDemoCase(
         zh_cn="一个技术需求较成熟、资金仍在审批中的扩建项目。",
         id="Proyek perluasan dengan kebutuhan matang dan dana yang masih ditinjau.",
     ),
-    input=IvcQualificationInput(
+    input=_input(
         customer_profile={
             "organization_name": "Synthetic Meridian Pharma Research",
             "organization_type": "pharmaceutical_research",
@@ -179,7 +183,7 @@ UPGRADE_CASE = IvcDemoCase(
         zh_cn="一个仍缺少预算、决策人和关键技术资料的早期设备替换询盘。",
         id="Permintaan awal penggantian dengan kekurangan data anggaran, pemangku kepentingan, dan teknis.",
     ),
-    input=IvcQualificationInput(
+    input=_input(
         customer_profile={
             "organization_name": "Synthetic Regional Research Laboratory",
             "organization_type": "public_research_laboratory",

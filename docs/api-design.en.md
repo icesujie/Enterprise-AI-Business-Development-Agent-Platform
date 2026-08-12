@@ -2,6 +2,8 @@
 
 ## REST API Design
 
+> Chinese translation: [api-design.zh-CN.md](api-design.zh-CN.md). This English document is the primary engineering baseline.
+
 **Reference business:** Sari Arta, Indonesia commercial kitchen engineering  
 **Backend:** FastAPI  
 **Base path:** `/api/v1`  
@@ -9,6 +11,15 @@
 **Document version:** 1.0
 
 > 中文审阅入口：[中文架构审阅指南](</Users/sujie/Documents/ChatGPT/Enterprise AI Business Development Agent Platform/docs/review-guide.zh-CN.md>)。重点参考其中“API 设计怎么审核”、术语对照和审核清单。
+
+## Phase 2.5 API addendum
+
+The implemented `/api/v1/knowledge` surface supports tenant-scoped sources, exact domain/agent
+bindings, multipart document upload, immutable approval/rejection, durable ingestion state, retry,
+and cited vector retrieval. `knowledge:manage` is admin-only; `knowledge:retrieve` is available to
+authorized admin and sales users but still requires an enabled tenant-agent knowledge policy.
+Retrieval returns evidence candidates or `insufficient_evidence`; it is not a conversational answer
+endpoint. Complete contracts and security predicates are in `docs/knowledge-foundation-design.en.md`.
 
 ## 1. API goals
 

@@ -9,6 +9,9 @@ from sari_api.domain.packages.models import SupportedLocale
 IvcProjectType = Literal["new_facility", "expansion", "retrofit", "replacement", "feasibility"]
 ReadinessStatus = Literal["confirmed", "partial", "unknown", "risk"]
 QualificationLevel = Literal["A", "B", "C"]
+IvcQualificationFactorCategory = Literal[
+    "customer", "project", "technical", "budget", "timeline", "stakeholders"
+]
 
 
 def level_for_score(score: float) -> QualificationLevel:
@@ -84,7 +87,7 @@ class IvcQualificationInput(StrictModel):
 
 
 class IvcQualificationFactor(StrictModel):
-    category: Literal["customer", "project", "technical", "budget", "timeline", "stakeholders"]
+    category: IvcQualificationFactorCategory
     status: ReadinessStatus
     summary: str = Field(min_length=1, max_length=1000)
 
