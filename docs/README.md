@@ -32,6 +32,7 @@ Design documents are maintained as complete bilingual pairs:
 | Knowledge foundation / 知识基础 | [knowledge-foundation-design.en.md](knowledge-foundation-design.en.md) | [knowledge-foundation-design.zh-CN.md](knowledge-foundation-design.zh-CN.md) |
 | Enterprise knowledge management / 企业知识管理 | [enterprise-knowledge-management-design.en.md](enterprise-knowledge-management-design.en.md) | [enterprise-knowledge-management-design.zh-CN.md](enterprise-knowledge-management-design.zh-CN.md) |
 | Knowledge processing pipeline / 知识处理流水线 | [knowledge-processing-pipeline-design.en.md](knowledge-processing-pipeline-design.en.md) | [knowledge-processing-pipeline-design.zh-CN.md](knowledge-processing-pipeline-design.zh-CN.md) |
+| Knowledge governance gap analysis / 知识治理差距分析 | [knowledge-governance-gap-analysis.en.md](knowledge-governance-gap-analysis.en.md) | [knowledge-governance-gap-analysis.zh-CN.md](knowledge-governance-gap-analysis.zh-CN.md) |
 
 ## Project and operational documents / 项目与运行文档
 
