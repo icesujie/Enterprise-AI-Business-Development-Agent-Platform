@@ -160,7 +160,7 @@ class ManagedKnowledgeProcessingExecutor:
                 document is None
                 or version is None
                 or document.approval_status != "approved"
-                or document.lifecycle_status not in {"approved", "active"}
+                or document.lifecycle_status not in {"approved", "published", "active"}
                 or document.current_version_number != version.version_number
                 or collection_status != "active"
                 or not agent_ids
@@ -215,7 +215,7 @@ class ManagedKnowledgeProcessingExecutor:
             if (
                 persistent_run.status != "processing"
                 or persistent_document.approval_status != "approved"
-                or persistent_document.lifecycle_status not in {"approved", "active"}
+                or persistent_document.lifecycle_status not in {"approved", "published", "active"}
                 or persistent_document.current_version_number != version.version_number
                 or current_collection_status != "active"
                 or not current_agent_ids

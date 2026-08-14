@@ -206,8 +206,13 @@ async def test_approved_document_processing_creates_isolated_citable_chunks(
                     "DELETE FROM managed_knowledge_chunks WHERE collection_id = :id",
                     "DELETE FROM knowledge_processing_runs WHERE document_id IN "
                     "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
+                    "DELETE FROM knowledge_audit_logs WHERE document_id IN "
+                    "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
                     "DELETE FROM knowledge_document_agent_bindings WHERE document_id IN "
                     "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
+                    "UPDATE managed_knowledge_documents SET current_version_id = NULL, "
+                    "published_version_id = NULL, active_version_id = NULL "
+                    "WHERE collection_id = :id",
                     "DELETE FROM knowledge_document_versions WHERE document_id IN "
                     "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
                     "DELETE FROM managed_knowledge_documents WHERE collection_id = :id",

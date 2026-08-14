@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import NAMESPACE_URL, UUID, uuid5
@@ -20,7 +21,12 @@ from sari_api.adapters.models import (
 
 TENANT_ID = UUID("10000000-0000-4000-8000-000000000001")
 ADMIN_USER_ID = UUID("20000000-0000-4000-8000-000000000001")
-DEMO_ROOT = Path(__file__).resolve().parents[4] / "demo-data" / "knowledge"
+_configured_demo_root = os.getenv("KNOWLEDGE_DEMO_ROOT")
+DEMO_ROOT = (
+    Path(_configured_demo_root)
+    if _configured_demo_root
+    else Path(__file__).resolve().parents[4] / "demo-data" / "knowledge"
+)
 
 DEMO_ITEMS = (
     (
@@ -138,29 +144,38 @@ async def seed_enterprise_knowledge_demo() -> bool:
             )
             session.add(document)
             await session.flush()
-            session.add_all(
-                [
-                    KnowledgeDocumentVersion(
-                        tenant_id=TENANT_ID,
-                        document_id=document.id,
-                        version_number=1,
-                        original_filename=filename,
-                        media_type="text/markdown",
-                        object_key=object_key,
-                        content_sha256=hashlib.sha256(content).hexdigest(),
-                        byte_size=len(content),
-                        version_metadata={"synthetic": True},
-                        status="active",
-                        created_by=ADMIN_USER_ID,
-                    ),
-                    KnowledgeDocumentAgentBinding(
-                        tenant_id=TENANT_ID,
-                        document_id=document.id,
-                        agent_id=agent.id,
-                        status="enabled",
-                        created_by=ADMIN_USER_ID,
-                    ),
-                ]
+            version = KnowledgeDocumentVersion(
+                tenant_id=TENANT_ID,
+                document_id=document.id,
+                version_number=1,
+                original_filename=filename,
+                media_type="text/markdown",
+                object_key=object_key,
+                content_sha256=hashlib.sha256(content).hexdigest(),
+                byte_size=len(content),
+                version_metadata={"synthetic": True},
+                status="active",
+                review_status="approved",
+                reviewed_by=ADMIN_USER_ID,
+                reviewed_at=now,
+                review_note="Synthetic demo fixture only.",
+                created_by=ADMIN_USER_ID,
+            )
+            session.add(version)
+            await session.flush()
+            document.current_version_id = version.id
+            document.published_version_id = version.id
+            document.active_version_id = version.id
+            document.published_by = ADMIN_USER_ID
+            document.published_at = now
+            session.add(
+                KnowledgeDocumentAgentBinding(
+                    tenant_id=TENANT_ID,
+                    document_id=document.id,
+                    agent_id=agent.id,
+                    status="enabled",
+                    created_by=ADMIN_USER_ID,
+                )
             )
             created = True
         await session.commit()

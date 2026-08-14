@@ -732,3 +732,11 @@ Migration, break-glass, and data-repair roles are separate, non-application role
 The knowledge control plane adds `knowledge_collections`, `managed_knowledge_documents`, `knowledge_document_versions`, and `knowledge_document_agent_bindings`. Every table is tenant-scoped with forced RLS. The logical document owns lifecycle and approval state; version rows preserve exact file metadata and SHA-256; binding rows form the deny-by-default agent allow-list. The existing Phase 2.5 retrieval tables remain unchanged.
 
 Phase 2.5.2 adds `processing_status`, `knowledge_processing_runs`, and `managed_knowledge_chunks`. Runs snapshot exact version, extraction/chunk/embedding configuration, status, safe failure, and source metadata. Chunks reference tenant, domain, agent, collection, document, exact version, and run; contain `vector(1536)`; and preserve citation metadata. Both new tables force RLS.
+
+## Phase 2.5.3 knowledge governance schema
+
+Migration `d3e5f7a9b2c4` adds explicit `current_version_id`, `published_version_id`, and `active_version_id` foreign keys to `managed_knowledge_documents`, plus record-version and publisher/archive attribution. `knowledge_document_versions` now owns exact-version review state, reviewer attribution, and rollback origin. Agent bindings record their latest updater and update time.
+
+`knowledge_audit_logs` is a forced-RLS, tenant-scoped append-only governance ledger. Its principal fields are `tenant_id`, `document_id`, optional `document_version_id`, `actor_user_id`, `action`, `before_metadata`, `after_metadata`, `details`, `correlation_id`, and `created_at`. Indexes support `(tenant_id, document_id, created_at desc)` and exact-version history.
+
+Version numbering is protected by row locking, optimistic `record_version`, and unique `(tenant_id, document_id, version_number)`. Rollback creates version `N + 1`; it never overwrites a row or rewinds an authority pointer. See `knowledge-governance-design.en.md`.

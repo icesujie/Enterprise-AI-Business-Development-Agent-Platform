@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
 
-from pgvector.sqlalchemy import VECTOR  # type: ignore[import-untyped]
+from pgvector.sqlalchemy import VECTOR
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
@@ -663,7 +663,7 @@ class ManagedKnowledgeDocument(TimestampVersionMixin, Base):
     __table_args__ = (
         CheckConstraint(
             "lifecycle_status IN "
-            "('draft','uploaded','processing','review','approved','active','archived')",
+            "('draft','uploaded','processing','review','approved','published','active','archived')",
             name="managed_knowledge_documents_lifecycle_check",
         ),
         CheckConstraint(
@@ -708,11 +708,27 @@ class ManagedKnowledgeDocument(TimestampVersionMixin, Base):
     approval_status: Mapped[str] = mapped_column(String(20), server_default="pending")
     processing_status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
     current_version_number: Mapped[int] = mapped_column(Integer, server_default="1")
+    current_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    published_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    active_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
     document_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     approved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     review_note: Mapped[str | None] = mapped_column(Text)
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    updated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    published_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archived_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archive_reason: Mapped[str | None] = mapped_column(Text)
+    restore_reason: Mapped[str | None] = mapped_column(Text)
 
 
 class KnowledgeDocumentVersion(Base):
@@ -723,8 +739,17 @@ class KnowledgeDocumentVersion(Base):
         CheckConstraint("byte_size > 0", name="knowledge_document_versions_size_check"),
         CheckConstraint(
             "status IN "
-            "('uploaded','processing','review','approved','active','archived','rejected')",
+            "('draft','uploaded','processing','review','approved','published','active',"
+            "'archived','rejected','superseded')",
             name="knowledge_document_versions_status_check",
+        ),
+        CheckConstraint(
+            "review_status IN ('pending','approved','rejected')",
+            name="knowledge_document_versions_review_check",
+        ),
+        CheckConstraint(
+            "created_from_action IN ('upload','rollback')",
+            name="knowledge_document_versions_origin_check",
         ),
         Index(
             "ix_knowledge_document_versions_tenant_document",
@@ -747,7 +772,49 @@ class KnowledgeDocumentVersion(Base):
     byte_size: Mapped[int] = mapped_column(Integer)
     version_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
+    review_status: Mapped[str] = mapped_column(String(20), server_default="pending")
+    reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)
+    restored_from_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="RESTRICT")
+    )
+    created_from_action: Mapped[str] = mapped_column(String(30), server_default="upload")
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeAuditLog(Base):
+    __tablename__ = "knowledge_audit_logs"
+    __table_args__ = (
+        Index(
+            "ix_knowledge_audit_logs_tenant_document",
+            "tenant_id",
+            "document_id",
+            "created_at",
+        ),
+        Index(
+            "ix_knowledge_audit_logs_tenant_version",
+            "tenant_id",
+            "document_version_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("managed_knowledge_documents.id", ondelete="RESTRICT")
+    )
+    document_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="RESTRICT")
+    )
+    actor_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    action: Mapped[str] = mapped_column(String(80))
+    before_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    after_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -776,6 +843,8 @@ class KnowledgeDocumentAgentBinding(Base):
     status: Mapped[str] = mapped_column(String(20), server_default="enabled")
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class KnowledgeProcessingRun(Base):

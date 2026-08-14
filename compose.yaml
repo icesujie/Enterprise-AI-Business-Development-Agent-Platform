@@ -59,8 +59,10 @@ services:
       KNOWLEDGE_EMBEDDING_MODEL: ${KNOWLEDGE_EMBEDDING_MODEL:-text-embedding-3-small}
       KNOWLEDGE_QUEUE_NAME: ${KNOWLEDGE_QUEUE_NAME:-sari-arta:knowledge-ingestion}
       KNOWLEDGE_PROCESSING_QUEUE_NAME: ${KNOWLEDGE_PROCESSING_QUEUE_NAME:-sari-arta:knowledge-processing}
+      KNOWLEDGE_DEMO_ROOT: /app/demo-data/knowledge
     volumes:
       - knowledge_data:/app/data/knowledge
+      - ./demo-data/knowledge:/app/demo-data/knowledge:ro
     ports:
       - "8000:8000"
     depends_on:

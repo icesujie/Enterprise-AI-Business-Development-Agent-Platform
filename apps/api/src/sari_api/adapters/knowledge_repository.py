@@ -157,13 +157,14 @@ class SqlAlchemyKnowledgeRepository:
     async def find_document_by_digest(
         self, source_id: UUID, content_sha256: str
     ) -> KnowledgeDocument | None:
-        return await self._session.scalar(
+        document: KnowledgeDocument | None = await self._session.scalar(
             select(KnowledgeDocument).where(
                 KnowledgeDocument.tenant_id == self._tenant_id,
                 KnowledgeDocument.source_id == source_id,
                 KnowledgeDocument.content_sha256 == content_sha256,
             )
         )
+        return document
 
     async def create_document(
         self,

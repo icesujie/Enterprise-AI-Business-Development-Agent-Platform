@@ -829,3 +829,5 @@ flowchart TB
 企业知识管理使用 `knowledge_collections`、逻辑受管文档、不可变文档版本和明确的文档—智能体绑定。该控制面与 Phase 2.5 检索数据面分离。其 UI 和 API 不生成嵌入，也不调用检索；未来的明确发布边界只能转移已批准或已启用、属于当前租户且绑定同业务域智能体的版本。参见 `enterprise-knowledge-management-design.zh-CN.md`。
 
 Phase 2.5.2 通过专用 Redis 队列和 Worker 实现该明确处理边界。符合条件的准确版本会被提取、清洗、分块，通过提供商接口生成嵌入，并写入按智能体隔离的 `managed_knowledge_chunks`。不启用面向用户的检索或回答生成。参见 `knowledge-processing-pipeline-design.zh-CN.md`。
+
+Phase 2.5.3 通过明确的当前、已发布和已生效版本指针，分开的审批人与发布人权限，创建不可变后继版本的回滚，乐观并发控制，以及强制执行 RLS 的 `knowledge_audit_logs` 账本来治理该边界。`/knowledge/{id}` 工作台提供这些控制，但不启用检索。参见 `knowledge-governance-design.zh-CN.md`。

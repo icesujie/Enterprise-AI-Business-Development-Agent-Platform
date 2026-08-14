@@ -132,3 +132,9 @@ That service may then copy an immutable publication snapshot to the existing ext
 ## 10. Phase 2.5.2 processing integration
 
 Phase 2.5.2 adds an explicit **Process** command for approved/active, agent-bound current versions. It creates durable processing runs and agent-isolated pgvector chunks while preserving this control plane as the approval authority. It still does not implement retrieval or a conversational Knowledge Assistant. See `knowledge-processing-pipeline-design.en.md`.
+
+## 11. Phase 2.5.3 governance implementation
+
+Phase 2.5.3 supersedes the initial single-version governance limitations described above. The implemented control plane now supports metadata editing, replacement versions, explicit current/published/active pointers, exact-version review attribution, separate publication, archival restoration, immutable successor-version rollback, binding disable/re-enable, split knowledge permissions, and a document-centric `knowledge_audit_logs` timeline.
+
+The original Phase 2.5.1 lifecycle diagrams remain the historical first implementation. The authoritative current lifecycle and API matrix are in `knowledge-governance-design.en.md`. Retrieval and conversational answers remain disabled.

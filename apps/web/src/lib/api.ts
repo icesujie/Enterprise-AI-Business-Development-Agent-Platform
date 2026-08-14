@@ -180,6 +180,57 @@ export type KnowledgeCollection = {
   updated_at: string;
 };
 
+export type KnowledgeDocumentVersion = {
+  id: string;
+  version_number: number;
+  original_filename: string;
+  media_type: string;
+  content_sha256: string;
+  byte_size: number;
+  version_metadata: Record<string, unknown>;
+  status: string;
+  review_status: string;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  review_note: string | null;
+  restored_from_version_id: string | null;
+  created_from_action: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type KnowledgeDocumentBinding = {
+  id: string;
+  agent_key: string;
+  status: string;
+  created_by: string;
+  created_at: string;
+  updated_by: string | null;
+  updated_at: string;
+};
+
+export type KnowledgeAuditLog = {
+  id: string;
+  document_id: string;
+  document_version_id: string | null;
+  actor_user_id: string;
+  actor_display_name: string;
+  action: string;
+  before_metadata: Record<string, unknown>;
+  after_metadata: Record<string, unknown>;
+  details: Record<string, unknown>;
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export type CurrentIdentity = {
+  user_id: string;
+  email: string;
+  display_name: string;
+  role: string;
+  permissions: string[];
+};
+
 export type ManagedKnowledgeDocument = {
   id: string;
   tenant_id: string;
@@ -193,14 +244,27 @@ export type ManagedKnowledgeDocument = {
   lifecycle_status: string;
   approval_status: string;
   processing_status: string;
+  record_version: number;
   current_version_number: number;
+  current_version_id: string | null;
+  published_version_id: string | null;
+  active_version_id: string | null;
   document_metadata: Record<string, unknown>;
   approved_by: string | null;
   approved_at: string | null;
   review_note: string | null;
   created_by: string;
+  updated_by: string | null;
+  published_by: string | null;
+  published_at: string | null;
+  archived_by: string | null;
+  archived_at: string | null;
+  archive_reason: string | null;
+  restore_reason: string | null;
   created_at: string;
   updated_at: string;
+  current_version?: KnowledgeDocumentVersion | null;
+  bindings?: KnowledgeDocumentBinding[];
 };
 
 const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:8000";

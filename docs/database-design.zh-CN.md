@@ -728,3 +728,11 @@ tenant_id = current_setting('app.tenant_id', true)::uuid
 知识控制面新增 `knowledge_collections`、`managed_knowledge_documents`、`knowledge_document_versions` 和 `knowledge_document_agent_bindings`。每张表都限定租户并强制执行 RLS。逻辑文档保存生命周期和审批状态；版本行保存准确文件元数据与 SHA-256；绑定行组成默认拒绝的智能体允许清单。已有 Phase 2.5 检索表保持不变。
 
 Phase 2.5.2 新增 `processing_status`、`knowledge_processing_runs` 和 `managed_knowledge_chunks`。运行记录保存准确版本、提取或分块或嵌入配置、状态、安全失败和来源元数据快照。分块引用租户、业务域、智能体、集合、文档、准确版本和运行，包含 `vector(1536)`，并保存引用元数据。两张新增表都强制执行 RLS。
+
+## Phase 2.5.3 知识治理数据结构
+
+迁移 `d3e5f7a9b2c4` 为 `managed_knowledge_documents` 增加明确的 `current_version_id`、`published_version_id` 和 `active_version_id` 外键，以及记录版本和发布/归档归因字段。`knowledge_document_versions` 现在保存准确版本审核状态、审核人归因和回滚来源。智能体绑定保存最近更新人和更新时间。
+
+`knowledge_audit_logs` 是强制执行 RLS、按租户隔离的追加式治理账本。主要字段包括 `tenant_id`、`document_id`、可选的 `document_version_id`、`actor_user_id`、`action`、`before_metadata`、`after_metadata`、`details`、`correlation_id` 和 `created_at`。索引支持 `(tenant_id, document_id, created_at desc)` 和准确版本历史。
+
+行锁、乐观并发 `record_version` 和唯一约束 `(tenant_id, document_id, version_number)` 共同保护版本编号。回滚创建版本 `N + 1`，不会覆盖记录或反向移动权威指针。参见 `knowledge-governance-design.zh-CN.md`。

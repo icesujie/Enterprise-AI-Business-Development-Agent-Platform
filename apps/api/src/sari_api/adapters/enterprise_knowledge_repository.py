@@ -10,11 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sari_api.adapters.models import (
     Agent,
     DomainPackage,
+    KnowledgeAuditLog,
     KnowledgeCollection,
     KnowledgeDocumentAgentBinding,
     KnowledgeDocumentVersion,
     KnowledgeProcessingRun,
     ManagedKnowledgeDocument,
+    User,
 )
 
 
@@ -27,6 +29,10 @@ class EnterpriseKnowledgeStateError(Exception):
 
 
 class EnterpriseKnowledgeAccessError(Exception):
+    pass
+
+
+class EnterpriseKnowledgeConcurrencyError(Exception):
     pass
 
 
@@ -171,6 +177,8 @@ class EnterpriseKnowledgeRepository:
         )
         self._session.add(version)
         await self._session.flush()
+        document.current_version_id = version.id
+        document.updated_by = created_by
         return document, version
 
     async def list_documents(
@@ -246,18 +254,37 @@ class EnterpriseKnowledgeRepository:
             )
         )
         if lock:
-            statement = statement.with_for_update(of=ManagedKnowledgeDocument)
+            statement = statement.with_for_update(of=ManagedKnowledgeDocument).execution_options(
+                populate_existing=True
+            )
         row = (await self._session.execute(statement)).tuples().one_or_none()
         if row is None:
             raise EnterpriseKnowledgeNotFoundError
         return row
 
     async def current_version(self, document: ManagedKnowledgeDocument) -> KnowledgeDocumentVersion:
+        criteria = [
+            KnowledgeDocumentVersion.tenant_id == self._tenant_id,
+            KnowledgeDocumentVersion.document_id == document.id,
+        ]
+        if document.current_version_id is not None:
+            criteria.append(KnowledgeDocumentVersion.id == document.current_version_id)
+        else:
+            criteria.append(
+                KnowledgeDocumentVersion.version_number == document.current_version_number
+            )
+        version = await self._session.scalar(select(KnowledgeDocumentVersion).where(*criteria))
+        if version is None:
+            raise EnterpriseKnowledgeNotFoundError
+        return version
+
+    async def get_version(self, document_id: UUID, version_id: UUID) -> KnowledgeDocumentVersion:
+        await self.get_document(document_id)
         version = await self._session.scalar(
             select(KnowledgeDocumentVersion).where(
+                KnowledgeDocumentVersion.id == version_id,
+                KnowledgeDocumentVersion.document_id == document_id,
                 KnowledgeDocumentVersion.tenant_id == self._tenant_id,
-                KnowledgeDocumentVersion.document_id == document.id,
-                KnowledgeDocumentVersion.version_number == document.current_version_number,
             )
         )
         if version is None:
@@ -279,8 +306,109 @@ class EnterpriseKnowledgeRepository:
             ).all()
         )
 
+    @staticmethod
+    def _check_record_version(document: ManagedKnowledgeDocument, expected_version: int) -> None:
+        if document.version != expected_version:
+            raise EnterpriseKnowledgeConcurrencyError
+
+    @staticmethod
+    def _advance_record_version(document: ManagedKnowledgeDocument, actor_id: UUID) -> None:
+        document.version += 1
+        document.updated_by = actor_id
+
+    async def update_document_metadata(
+        self,
+        document_id: UUID,
+        *,
+        expected_version: int,
+        actor_id: UUID,
+        title: str | None,
+        document_type: str | None,
+        language: str | None,
+        document_metadata: dict[str, Any] | None,
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        self._check_record_version(document, expected_version)
+        if document.lifecycle_status in {"active", "archived"}:
+            raise EnterpriseKnowledgeStateError
+        if title is not None:
+            document.title = title
+        if document_type is not None:
+            document.document_type = document_type
+        if language is not None:
+            document.language = language
+        if document_metadata is not None:
+            document.document_metadata = document_metadata
+        version = await self.current_version(document)
+        if document.lifecycle_status in {"review", "approved", "published"}:
+            document.lifecycle_status = "uploaded"
+            document.approval_status = "pending"
+            document.approved_by = None
+            document.approved_at = None
+            document.published_version_id = None
+            document.published_by = None
+            document.published_at = None
+            version.status = "uploaded"
+            version.review_status = "pending"
+            version.reviewed_by = None
+            version.reviewed_at = None
+            version.review_note = None
+        document.processing_status = "uploaded"
+        self._advance_record_version(document, actor_id)
+        return document, version
+
+    async def create_new_version(
+        self,
+        document_id: UUID,
+        *,
+        expected_version: int,
+        actor_id: UUID,
+        original_filename: str,
+        media_type: str,
+        object_key: str,
+        content_sha256: str,
+        byte_size: int,
+        version_metadata: dict[str, Any],
+        restored_from_version_id: UUID | None = None,
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, collection, _ = await self.get_document(document_id, lock=True)
+        self._check_record_version(document, expected_version)
+        if collection.status != "active":
+            raise EnterpriseKnowledgeStateError
+        if restored_from_version_id is not None:
+            await self.get_version(document_id, restored_from_version_id)
+        next_number = document.current_version_number + 1
+        version = KnowledgeDocumentVersion(
+            tenant_id=self._tenant_id,
+            document_id=document.id,
+            version_number=next_number,
+            original_filename=original_filename,
+            media_type=media_type,
+            object_key=object_key,
+            content_sha256=content_sha256,
+            byte_size=byte_size,
+            version_metadata=version_metadata,
+            status="uploaded",
+            review_status="pending",
+            restored_from_version_id=restored_from_version_id,
+            created_from_action="rollback" if restored_from_version_id else "upload",
+            created_by=actor_id,
+        )
+        self._session.add(version)
+        await self._session.flush()
+        document.current_version_number = next_number
+        document.current_version_id = version.id
+        document.lifecycle_status = "uploaded"
+        document.approval_status = "pending"
+        document.processing_status = "uploaded"
+        document.approved_by = None
+        document.approved_at = None
+        document.review_note = None
+        self._advance_record_version(document, actor_id)
+        return document, version
+
     async def submit_for_review(
-        self, document_id: UUID
+        self, document_id: UUID, *, actor_id: UUID | None = None
     ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
         document, _, _ = await self.get_document(document_id, lock=True)
         if document.lifecycle_status != "uploaded":
@@ -292,6 +420,9 @@ class EnterpriseKnowledgeRepository:
         document.lifecycle_status = "review"
         document.approval_status = "pending"
         version.status = "review"
+        version.review_status = "pending"
+        if actor_id is not None:
+            self._advance_record_version(document, actor_id)
         return document, version
 
     async def review_document(
@@ -307,22 +438,46 @@ class EnterpriseKnowledgeRepository:
             raise EnterpriseKnowledgeStateError
         version = await self.current_version(document)
         document.review_note = note
+        now = datetime.now(UTC)
+        version.reviewed_by = reviewer_id
+        version.reviewed_at = now
+        version.review_note = note
         if decision == "approved":
             document.lifecycle_status = "approved"
             document.approval_status = "approved"
             document.approved_by = reviewer_id
-            document.approved_at = datetime.now(UTC)
+            document.approved_at = now
             version.status = "approved"
+            version.review_status = "approved"
         else:
             document.approval_status = "rejected"
             version.status = "rejected"
+            version.review_status = "rejected"
+        self._advance_record_version(document, reviewer_id)
         return document, version
 
-    async def activate_document(
-        self, document_id: UUID
+    async def publish_document(
+        self, document_id: UUID, *, publisher_id: UUID
     ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
         document, _, _ = await self.get_document(document_id, lock=True)
         if document.lifecycle_status != "approved" or document.approval_status != "approved":
+            raise EnterpriseKnowledgeStateError
+        version = await self.current_version(document)
+        if version.review_status != "approved":
+            raise EnterpriseKnowledgeStateError
+        document.lifecycle_status = "published"
+        document.published_version_id = version.id
+        document.published_by = publisher_id
+        document.published_at = datetime.now(UTC)
+        version.status = "published"
+        self._advance_record_version(document, publisher_id)
+        return document, version
+
+    async def activate_document(
+        self, document_id: UUID, *, publisher_id: UUID | None = None
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        if document.lifecycle_status != "published" or document.published_version_id is None:
             raise EnterpriseKnowledgeStateError
         binding = await self._session.scalar(
             select(KnowledgeDocumentAgentBinding.id).where(
@@ -333,20 +488,57 @@ class EnterpriseKnowledgeRepository:
         )
         if binding is None:
             raise EnterpriseKnowledgeAccessError
-        version = await self.current_version(document)
+        version = await self.get_version(document.id, document.published_version_id)
+        if document.active_version_id is not None and document.active_version_id != version.id:
+            previous = await self.get_version(document.id, document.active_version_id)
+            previous.status = "superseded"
         document.lifecycle_status = "active"
+        document.active_version_id = version.id
         version.status = "active"
+        if publisher_id is not None:
+            self._advance_record_version(document, publisher_id)
         return document, version
 
     async def archive_document(
-        self, document_id: UUID
+        self, document_id: UUID, *, actor_id: UUID | None = None, reason: str | None = None
     ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
         document, _, _ = await self.get_document(document_id, lock=True)
-        if document.lifecycle_status not in {"approved", "active"}:
+        if document.lifecycle_status not in {"approved", "published", "active"}:
             raise EnterpriseKnowledgeStateError
-        version = await self.current_version(document)
+        version_id = document.active_version_id or document.published_version_id
+        version = (
+            await self.get_version(document.id, version_id)
+            if version_id is not None
+            else await self.current_version(document)
+        )
         document.lifecycle_status = "archived"
+        document.active_version_id = None
+        document.archived_by = actor_id
+        document.archived_at = datetime.now(UTC)
+        document.archive_reason = reason
         version.status = "archived"
+        if actor_id is not None:
+            self._advance_record_version(document, actor_id)
+        return document, version
+
+    async def restore_document(
+        self, document_id: UUID, *, actor_id: UUID, reason: str
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeDocumentVersion]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        if document.lifecycle_status != "archived":
+            raise EnterpriseKnowledgeStateError
+        version_id = document.published_version_id or document.current_version_id
+        if version_id is None:
+            raise EnterpriseKnowledgeStateError
+        version = await self.get_version(document.id, version_id)
+        document.current_version_id = version.id
+        document.current_version_number = version.version_number
+        document.lifecycle_status = "approved" if version.review_status == "approved" else "review"
+        document.approval_status = version.review_status
+        document.active_version_id = None
+        document.restore_reason = reason
+        version.status = "approved" if version.review_status == "approved" else "review"
+        self._advance_record_version(document, actor_id)
         return document, version
 
     async def bind_document(
@@ -358,6 +550,21 @@ class EnterpriseKnowledgeRepository:
             raise EnterpriseKnowledgeNotFoundError
         if agent.domain_package_id != document.domain_package_id:
             raise EnterpriseKnowledgeAccessError
+        existing = await self._session.scalar(
+            select(KnowledgeDocumentAgentBinding).where(
+                KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                KnowledgeDocumentAgentBinding.document_id == document.id,
+                KnowledgeDocumentAgentBinding.agent_id == agent.id,
+            )
+        )
+        if existing is not None:
+            if existing.status == "enabled":
+                raise EnterpriseKnowledgeStateError
+            existing.status = "enabled"
+            existing.updated_by = created_by
+            existing.updated_at = datetime.now(UTC)
+            document.agent_id = agent.id
+            return existing, agent
         binding = KnowledgeDocumentAgentBinding(
             tenant_id=self._tenant_id,
             document_id=document.id,
@@ -369,6 +576,56 @@ class EnterpriseKnowledgeRepository:
         self._session.add(binding)
         await self._session.flush()
         return binding, agent
+
+    async def update_binding(
+        self,
+        document_id: UUID,
+        binding_id: UUID,
+        *,
+        status: str,
+        actor_id: UUID,
+    ) -> tuple[KnowledgeDocumentAgentBinding, Agent, ManagedKnowledgeDocument]:
+        document, _, _ = await self.get_document(document_id, lock=True)
+        row = (
+            (
+                await self._session.execute(
+                    select(KnowledgeDocumentAgentBinding, Agent)
+                    .join(Agent, Agent.id == KnowledgeDocumentAgentBinding.agent_id)
+                    .where(
+                        KnowledgeDocumentAgentBinding.id == binding_id,
+                        KnowledgeDocumentAgentBinding.document_id == document_id,
+                        KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                    )
+                    .with_for_update(of=KnowledgeDocumentAgentBinding)
+                )
+            )
+            .tuples()
+            .one_or_none()
+        )
+        if row is None:
+            raise EnterpriseKnowledgeNotFoundError
+        binding, agent = row
+        binding.status = status
+        binding.updated_by = actor_id
+        binding.updated_at = datetime.now(UTC)
+        if status == "disabled":
+            remaining = await self._session.scalar(
+                select(KnowledgeDocumentAgentBinding.id).where(
+                    KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                    KnowledgeDocumentAgentBinding.document_id == document.id,
+                    KnowledgeDocumentAgentBinding.id != binding.id,
+                    KnowledgeDocumentAgentBinding.status == "enabled",
+                )
+            )
+            if remaining is None:
+                document.agent_id = None
+                document.active_version_id = None
+                if document.lifecycle_status == "active":
+                    document.lifecycle_status = "published"
+        else:
+            document.agent_id = agent.id
+        self._advance_record_version(document, actor_id)
+        return binding, agent, document
 
     async def list_bindings(
         self, document_id: UUID
@@ -406,7 +663,7 @@ class EnterpriseKnowledgeRepository:
         version = await self.current_version(document)
         if (
             document.approval_status != "approved"
-            or document.lifecycle_status not in {"approved", "active"}
+            or document.lifecycle_status not in {"approved", "published", "active"}
             or collection.status != "active"
         ):
             raise EnterpriseKnowledgeStateError
@@ -474,3 +731,21 @@ class EnterpriseKnowledgeRepository:
         if run is None:
             raise EnterpriseKnowledgeNotFoundError
         return run
+
+    async def list_audit_logs(self, document_id: UUID) -> list[tuple[KnowledgeAuditLog, User]]:
+        await self.get_document(document_id)
+        return list(
+            (
+                await self._session.execute(
+                    select(KnowledgeAuditLog, User)
+                    .join(User, User.id == KnowledgeAuditLog.actor_user_id)
+                    .where(
+                        KnowledgeAuditLog.tenant_id == self._tenant_id,
+                        KnowledgeAuditLog.document_id == document_id,
+                    )
+                    .order_by(KnowledgeAuditLog.created_at.desc())
+                )
+            )
+            .tuples()
+            .all()
+        )

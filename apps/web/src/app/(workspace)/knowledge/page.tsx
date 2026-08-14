@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { PageHeader } from "@/components/workspace/page-header";
 import { getLocale } from "@/i18n/server";
 import {
@@ -12,6 +14,7 @@ import {
   bindKnowledgeDocument,
   createKnowledgeCollection,
   processKnowledgeDocument,
+  publishKnowledgeDocument,
   reviewKnowledgeDocument,
   submitKnowledgeReview,
   uploadKnowledgeDocument,
@@ -193,7 +196,14 @@ function DocumentRow({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="font-semibold">{document.title}</h3>
+            <h3 className="font-semibold">
+              <Link
+                className="hover:text-[var(--color-brand)]"
+                href={`/knowledge/${document.id}`}
+              >
+                {document.title}
+              </Link>
+            </h3>
             <span className="status-chip">
               {statusLabel(document.lifecycle_status, zh)}
             </span>
@@ -254,14 +264,22 @@ function DocumentRow({
             </>
           ) : null}
           {document.lifecycle_status === "approved" ? (
+            <form action={publishKnowledgeDocument.bind(null, document.id)}>
+              <button className="button-primary" type="submit">
+                {copy.publish}
+              </button>
+            </form>
+          ) : null}
+          {document.lifecycle_status === "published" ? (
             <form action={activateKnowledgeDocument.bind(null, document.id)}>
               <button className="button-primary" type="submit">
                 {copy.activate}
               </button>
             </form>
           ) : null}
-          {["approved", "active"].includes(document.lifecycle_status) &&
-          document.processing_status !== "processing" ? (
+          {["approved", "published", "active"].includes(
+            document.lifecycle_status,
+          ) && document.processing_status !== "processing" ? (
             <form action={processKnowledgeDocument.bind(null, document.id)}>
               <button className="button-primary" type="submit">
                 {document.processing_status === "completed"
@@ -270,7 +288,9 @@ function DocumentRow({
               </button>
             </form>
           ) : null}
-          {["approved", "active"].includes(document.lifecycle_status) ? (
+          {["approved", "published", "active"].includes(
+            document.lifecycle_status,
+          ) ? (
             <form action={archiveKnowledgeDocument.bind(null, document.id)}>
               <button className="button-tertiary" type="submit">
                 {copy.archive}
@@ -345,6 +365,7 @@ function statusLabel(status: string, zh: boolean) {
         processing: "处理中",
         review: "待审核",
         approved: "已批准",
+        published: "已发布",
         active: "已生效",
         archived: "已归档",
       } as Record<string, string>
@@ -402,6 +423,7 @@ const english = {
   submitReview: "Submit for review",
   approve: "Approve",
   reject: "Reject",
+  publish: "Publish",
   activate: "Activate",
   archive: "Archive",
   processing: "Processing",
@@ -444,6 +466,7 @@ const chinese: typeof english = {
   submitReview: "提交审核",
   approve: "批准",
   reject: "拒绝",
+  publish: "发布",
   activate: "启用",
   archive: "归档",
   processing: "处理状态",

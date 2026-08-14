@@ -98,6 +98,7 @@ production launch remains a separate human-approved activity with environment-sp
 - [x] Text extraction, chunking, embeddings, pgvector retrieval, and citation foundation
 - [x] Enterprise collections, document versions, lifecycle approval, and agent bindings
 - [x] Approved-version processing for PDF, DOCX, text, and Markdown with agent-isolated pgvector chunks
+- [x] Enterprise document governance with version history, rollback, separate approval/publication, audit timeline, and split permissions
 - [ ] RAG Knowledge Assistant with citations and insufficient-evidence behavior
 - [ ] Content Generation Agent with human approval
 - [ ] Proposal Assistant with structured editable drafts
@@ -141,12 +142,15 @@ production launch remains a separate human-approved activity with environment-sp
 ## Current development focus
 
 **M8 Phase 1 acceptance, Phase 2.3 Agent Playground, Phase 2.5 Knowledge Foundation, Phase
-2.5.1 Enterprise Knowledge Management, and Phase 2.5.2 Knowledge Processing are implemented.** The control plane manages tenant- and
-domain-scoped collections, exact document versions, human approval, explicit agent bindings, and
-activation through `/knowledge`. It remains separated from the existing retrieval data plane: no
-management action creates embeddings or invokes retrieval, no Knowledge Assistant generates answers,
-and existing CRM and Playground workflows are unchanged. IVC production retrieval, external actions,
-and production activation remain disabled. Approved/active exact document versions can now be processed into agent-isolated, citable pgvector chunks, but no conversational assistant or user-facing retrieval exists.
+2.5.1 Enterprise Knowledge Management, Phase 2.5.2 Knowledge Processing, and Phase 2.5.3
+Knowledge Governance are implemented.** The control plane manages tenant- and domain-scoped
+collections, immutable version history, explicit current/published/active pointers, human approval,
+separate publication, safe rollback, agent bindings, and a tenant-scoped audit timeline through
+`/knowledge`. It remains separated from the retrieval data plane: no Knowledge Assistant generates
+answers and existing CRM, Playground, and qualification workflows are unchanged. IVC production
+retrieval, external actions, and production activation remain disabled. Approved exact versions can
+be processed into agent-isolated, citable pgvector chunks, but no conversational assistant or
+user-facing retrieval exists.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

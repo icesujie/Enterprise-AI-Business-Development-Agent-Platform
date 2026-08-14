@@ -98,6 +98,12 @@ async def test_collection_document_lifecycle_binding_and_search(tmp_path: Path) 
             )
             assert binding.status_code == 201, binding.text
 
+            published = await client.post(
+                f"/api/v1/knowledge-management/documents/{document_id}/publish"
+            )
+            assert published.status_code == 200, published.text
+            assert published.json()["lifecycle_status"] == "published"
+
             activated = await client.post(
                 f"/api/v1/knowledge-management/documents/{document_id}/activate"
             )
@@ -118,8 +124,13 @@ async def test_collection_document_lifecycle_binding_and_search(tmp_path: Path) 
                     {"tenant_id": "10000000-0000-4000-8000-000000000001"},
                 )
                 for statement in (
+                    "DELETE FROM knowledge_audit_logs WHERE document_id IN "
+                    "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
                     "DELETE FROM knowledge_document_agent_bindings WHERE document_id IN "
                     "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
+                    "UPDATE managed_knowledge_documents SET current_version_id = NULL, "
+                    "published_version_id = NULL, active_version_id = NULL "
+                    "WHERE collection_id = :id",
                     "DELETE FROM knowledge_document_versions WHERE document_id IN "
                     "(SELECT id FROM managed_knowledge_documents WHERE collection_id = :id)",
                     "DELETE FROM managed_knowledge_documents WHERE collection_id = :id",

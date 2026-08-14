@@ -93,6 +93,12 @@ as tenant/domain/agent-isolated pgvector assets with exact citation metadata. No
 Knowledge Assistant or user-facing vector search is enabled. See the bilingual
 [knowledge processing design](docs/knowledge-processing-pipeline-design.en.md).
 
+Phase 2.5.3 adds governed replacement versions, explicit current/published/active pointers, safe
+successor-version rollback, separate approval and publication permissions, archive/restore controls,
+binding change history, optimistic concurrency, and a tenant-scoped audit timeline on
+`/knowledge/{id}`. It does not enable Knowledge Retrieval. See the bilingual
+[knowledge governance design](docs/knowledge-governance-design.en.md).
+
 ## Repository layout
 
 ```text
@@ -170,4 +176,5 @@ make verify-backup BACKUP_FILE=/absolute/path/to/sariarta-YYYYMMDDTHHMMSSZ.dump
 - [Phase 1 tasks](docs/phase-1-tasks.md)
 - [Technical architecture](docs/technical-architecture.en.md)
 - [Knowledge foundation](docs/knowledge-foundation-design.en.md)
+- [Knowledge governance](docs/knowledge-governance-design.en.md)
 - [Development rules](AGENTS.md)

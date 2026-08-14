@@ -962,3 +962,9 @@ Link: <https://docs.example.com/migrations/v1-old-endpoint>; rel="deprecation"
 `/api/v1/knowledge-management` 控制面 API 支持创建和列出集合、上传版本 1、文档查找和详情、提交审核、批准或拒绝、绑定同业务域智能体、启用和归档。读取操作需要 `knowledge:retrieve`，修改操作需要 `knowledge:manage`。这些端点不会调用嵌入或向量检索。
 
 Phase 2.5.2 新增 `POST /documents/{id}/processing-runs` 和 `GET /processing-runs/{run_id}`。该命令只接受具有已启用智能体绑定的已批准或已启用当前版本，并返回 `202`。文档响应增加 `processing_status`，上传也支持 DOCX。没有端点开放相似度检索。
+
+## Phase 2.5.3 知识治理 API
+
+控制面现在提供受治理元数据更新、替换版本上传、不可变版本历史、安全回滚、分开的发布与启用命令、归档/恢复、绑定状态变更，以及文档审计时间线。元数据更新、替换和回滚使用 `If-Match`；`record_version` 过期时返回 `412`。
+
+权限拆分为 `knowledge:upload`、`knowledge:edit`、`knowledge:submit_review`、`knowledge:approve`、`knowledge:publish`、`knowledge:archive`、`knowledge:restore`、`knowledge:process` 和 `knowledge:audit_read`。只读元数据访问仍使用 `knowledge:retrieve`。每个命令都会重新检查租户所有权和状态；审批、发布和启用是独立转换。端点矩阵参见 `knowledge-governance-design.zh-CN.md`。

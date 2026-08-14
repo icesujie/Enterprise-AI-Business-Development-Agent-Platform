@@ -967,3 +967,9 @@ Each release requires OpenAPI review, authorization matrix tests, tenant-isolati
 The `/api/v1/knowledge-management` control-plane API supports collection creation/listing, version-1 upload, document search/detail, review submission, approve/reject, same-domain agent binding, activation, and archive. Read operations require `knowledge:retrieve`; mutations require `knowledge:manage`. These endpoints never call embeddings or vector retrieval.
 
 Phase 2.5.2 adds `POST /documents/{id}/processing-runs` and `GET /processing-runs/{run_id}`. The command accepts only approved/active current versions with enabled agent bindings and returns `202`. Document responses include `processing_status`; uploads also accept DOCX. No endpoint exposes similarity search.
+
+## Phase 2.5.3 knowledge governance API
+
+The control plane now exposes governed metadata update, replacement-version upload, immutable version history, safe rollback, separate publish and activate commands, archive/restore, binding status changes, and a document audit timeline. Metadata update, replacement, and rollback use `If-Match` and return `412` for a stale `record_version`.
+
+Permissions are split into `knowledge:upload`, `knowledge:edit`, `knowledge:submit_review`, `knowledge:approve`, `knowledge:publish`, `knowledge:archive`, `knowledge:restore`, `knowledge:process`, and `knowledge:audit_read`. Read-only metadata access remains `knowledge:retrieve`. Every command rechecks tenant ownership and state; approval, publication, and activation are separate transitions. See `knowledge-governance-design.en.md` for the endpoint matrix.

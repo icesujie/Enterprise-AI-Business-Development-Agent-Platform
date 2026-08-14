@@ -57,6 +57,55 @@ async function command(documentId: string, path: string, body?: unknown) {
     },
   );
   revalidatePath("/knowledge");
+  revalidatePath(`/knowledge/${documentId}`);
+}
+
+export async function updateKnowledgeDocument(
+  documentId: string,
+  recordVersion: number,
+  formData: FormData,
+) {
+  const rawMetadata = String(formData.get("document_metadata_json") ?? "{}");
+  const documentMetadata = JSON.parse(rawMetadata) as Record<string, unknown>;
+  await apiFetch<ManagedKnowledgeDocument>(
+    `/api/v1/knowledge-management/documents/${documentId}`,
+    {
+      method: "PATCH",
+      headers: { "If-Match": `"${recordVersion}"` },
+      body: JSON.stringify({
+        title: String(formData.get("title") ?? ""),
+        document_type: String(formData.get("document_type") ?? ""),
+        language: String(formData.get("language") ?? "en"),
+        document_metadata: documentMetadata,
+      }),
+    },
+  );
+  revalidatePath("/knowledge");
+  revalidatePath(`/knowledge/${documentId}`);
+}
+
+export async function uploadKnowledgeDocumentVersion(
+  documentId: string,
+  recordVersion: number,
+  formData: FormData,
+) {
+  const payload = new FormData();
+  payload.set(
+    "version_metadata_json",
+    String(formData.get("version_metadata_json") ?? "{}"),
+  );
+  const file = formData.get("file");
+  if (file instanceof File) payload.set("file", file);
+  await apiFetch<ManagedKnowledgeDocument>(
+    `/api/v1/knowledge-management/documents/${documentId}/versions`,
+    {
+      method: "POST",
+      headers: { "If-Match": `"${recordVersion}"` },
+      body: payload,
+    },
+  );
+  revalidatePath("/knowledge");
+  revalidatePath(`/knowledge/${documentId}`);
 }
 
 export async function submitKnowledgeReview(documentId: string) {
@@ -74,8 +123,28 @@ export async function activateKnowledgeDocument(documentId: string) {
   await command(documentId, "activate");
 }
 
-export async function archiveKnowledgeDocument(documentId: string) {
-  await command(documentId, "archive");
+export async function publishKnowledgeDocument(documentId: string) {
+  await command(documentId, "publish");
+}
+
+export async function archiveKnowledgeDocument(
+  documentId: string,
+  formData?: FormData,
+) {
+  await command(documentId, "archive", {
+    reason:
+      String(formData?.get("reason") ?? "").trim() ||
+      "Archived from the knowledge workspace.",
+  });
+}
+
+export async function restoreKnowledgeDocument(
+  documentId: string,
+  formData: FormData,
+) {
+  await command(documentId, "restore", {
+    reason: String(formData.get("reason") ?? ""),
+  });
 }
 
 export async function processKnowledgeDocument(documentId: string) {
@@ -89,4 +158,46 @@ export async function bindKnowledgeDocument(
   await command(documentId, "bindings", {
     agent_key: String(formData.get("agent_key") ?? ""),
   });
+}
+
+export async function updateKnowledgeBinding(
+  documentId: string,
+  bindingId: string,
+  status: "enabled" | "disabled",
+  formData: FormData,
+) {
+  await apiFetch(
+    `/api/v1/knowledge-management/documents/${documentId}/bindings/${bindingId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({
+        status,
+        reason:
+          String(formData.get("reason") ?? "").trim() ||
+          `Binding ${status} from the knowledge workspace.`,
+      }),
+    },
+  );
+  revalidatePath("/knowledge");
+  revalidatePath(`/knowledge/${documentId}`);
+}
+
+export async function rollbackKnowledgeVersion(
+  documentId: string,
+  versionId: string,
+  recordVersion: number,
+  formData: FormData,
+) {
+  await apiFetch<ManagedKnowledgeDocument>(
+    `/api/v1/knowledge-management/documents/${documentId}/versions/${versionId}/rollback`,
+    {
+      method: "POST",
+      headers: { "If-Match": `"${recordVersion}"` },
+      body: JSON.stringify({
+        reason: String(formData.get("reason") ?? ""),
+      }),
+    },
+  );
+  revalidatePath("/knowledge");
+  revalidatePath(`/knowledge/${documentId}`);
 }
