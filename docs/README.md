@@ -31,6 +31,7 @@ Design documents are maintained as complete bilingual pairs:
 | IVC domain package / IVC 领域包 | [laboratory-animal-facility.en.md](domain-packages/laboratory-animal-facility.en.md) | [laboratory-animal-facility.zh-CN.md](domain-packages/laboratory-animal-facility.zh-CN.md) |
 | Knowledge foundation / 知识基础 | [knowledge-foundation-design.en.md](knowledge-foundation-design.en.md) | [knowledge-foundation-design.zh-CN.md](knowledge-foundation-design.zh-CN.md) |
 | Enterprise knowledge management / 企业知识管理 | [enterprise-knowledge-management-design.en.md](enterprise-knowledge-management-design.en.md) | [enterprise-knowledge-management-design.zh-CN.md](enterprise-knowledge-management-design.zh-CN.md) |
+| Knowledge processing pipeline / 知识处理流水线 | [knowledge-processing-pipeline-design.en.md](knowledge-processing-pipeline-design.en.md) | [knowledge-processing-pipeline-design.zh-CN.md](knowledge-processing-pipeline-design.zh-CN.md) |
 
 ## Project and operational documents / 项目与运行文档
 

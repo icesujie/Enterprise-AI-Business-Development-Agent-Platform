@@ -1,6 +1,6 @@
 PYTHON := apps/api/.venv/bin
 
-.PHONY: check api-check web-check compose-check services-up services-down migrate demo-seed api-dev web-dev backup verify-backup
+.PHONY: check api-check web-check compose-check services-up services-down migrate demo-seed api-dev worker-dev web-dev backup verify-backup
 
 check: api-check web-check compose-check
 
@@ -33,6 +33,9 @@ demo-seed: migrate
 
 api-dev:
 	$(PYTHON)/uvicorn sari_api.main:app --app-dir apps/api/src --reload --port 8000
+
+worker-dev:
+	PYTHONPATH=apps/api/src $(PYTHON)/python -m sari_api.worker
 
 web-dev:
 	npm --prefix apps/web run dev

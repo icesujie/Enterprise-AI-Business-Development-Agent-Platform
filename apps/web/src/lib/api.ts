@@ -192,6 +192,7 @@ export type ManagedKnowledgeDocument = {
   language: string;
   lifecycle_status: string;
   approval_status: string;
+  processing_status: string;
   current_version_number: number;
   document_metadata: Record<string, unknown>;
   approved_by: string | null;

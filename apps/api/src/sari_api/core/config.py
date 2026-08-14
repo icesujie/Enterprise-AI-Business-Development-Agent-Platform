@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     knowledge_embedding_model: str = "text-embedding-3-small"
     knowledge_embedding_dimensions: int = Field(default=1536, ge=128, le=3072)
     knowledge_queue_name: str = "sari-arta:knowledge-ingestion"
+    knowledge_processing_queue_name: str = "sari-arta:knowledge-processing"
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:

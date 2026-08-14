@@ -58,6 +58,7 @@ services:
       KNOWLEDGE_EMBEDDING_PROVIDER: ${KNOWLEDGE_EMBEDDING_PROVIDER:-mock}
       KNOWLEDGE_EMBEDDING_MODEL: ${KNOWLEDGE_EMBEDDING_MODEL:-text-embedding-3-small}
       KNOWLEDGE_QUEUE_NAME: ${KNOWLEDGE_QUEUE_NAME:-sari-arta:knowledge-ingestion}
+      KNOWLEDGE_PROCESSING_QUEUE_NAME: ${KNOWLEDGE_PROCESSING_QUEUE_NAME:-sari-arta:knowledge-processing}
     volumes:
       - knowledge_data:/app/data/knowledge
     ports:
@@ -101,6 +102,7 @@ services:
       KNOWLEDGE_EMBEDDING_PROVIDER: ${KNOWLEDGE_EMBEDDING_PROVIDER:-mock}
       KNOWLEDGE_EMBEDDING_MODEL: ${KNOWLEDGE_EMBEDDING_MODEL:-text-embedding-3-small}
       KNOWLEDGE_QUEUE_NAME: ${KNOWLEDGE_QUEUE_NAME:-sari-arta:knowledge-ingestion}
+      KNOWLEDGE_PROCESSING_QUEUE_NAME: ${KNOWLEDGE_PROCESSING_QUEUE_NAME:-sari-arta:knowledge-processing}
     volumes:
       - knowledge_data:/app/data/knowledge
     depends_on:

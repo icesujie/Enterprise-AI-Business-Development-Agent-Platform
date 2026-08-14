@@ -141,8 +141,7 @@ make web-dev
 Terminal three, when testing asynchronous qualification:
 
 ```bash
-cd apps/api
-.venv/bin/python -m sari_api.worker
+make worker-dev
 ```
 
 With the default `AI_ENABLED=false`, the worker returns a repeatable demo assessment. When
@@ -250,11 +249,15 @@ Confirm `DATABASE_URL` points to `localhost` when the API runs on the host and t
 Removing Docker volumes deletes local database and Redis data. This is destructive and should be done only when the exact local targets and recovery need are understood.
 ## Phase 2.5.1 knowledge management demo
 
-1. Run `make services-up`, `make demo-seed`, `make api-dev`, and `make web-dev` in separate terminals as needed.
+1. Run `make services-up`, `make demo-seed`, then `make api-dev`, `make worker-dev`, and `make web-dev` in separate terminals as needed.
 2. Open `http://localhost:3000/login` and use the local demo credentials printed on that page.
 3. Select **Knowledge** in the internal navigation.
 4. Confirm five synthetic collections/documents: three Commercial Kitchen and two Laboratory Animal Facility / IVC examples.
-5. Create a synthetic collection, upload a `.pdf`, `.txt`, or `.md` file, submit it for review, approve it, bind it to the matching domain agent, and activate it.
+5. Create a synthetic collection, upload a `.pdf`, `.docx`, `.txt`, or `.md` file, submit it for review, approve it, bind it to the matching domain agent, and activate it.
 6. Verify that cross-domain agent binding is rejected and that the page never produces a model answer or performs vector retrieval.
 
 Local integration tests may create temporary synthetic collections; the Phase 2.5.1 test suite removes its own fixtures. Never upload real customer or regulated technical documents without business approval.
+
+### Phase 2.5.2 processing
+
+After an exact version is approved or active and bound to its same-domain agent, choose **Process** in `/knowledge`. The API creates a durable processing run and the Worker handles it from `KNOWLEDGE_PROCESSING_QUEUE_NAME`. Refresh the page until the processing status is `completed`; safe failures display as `failed` and may be retried. Default `mock` embeddings are deterministic and offline. To use OpenAI embeddings, set `KNOWLEDGE_EMBEDDING_PROVIDER=openai`, configure `OPENAI_API_KEY`, and restart API and Worker. This creates vector assets only; it does not create answers or enable retrieval.

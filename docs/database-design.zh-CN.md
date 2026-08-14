@@ -726,3 +726,5 @@ tenant_id = current_setting('app.tenant_id', true)::uuid
 ## Phase 2.5.1 知识管理数据表
 
 知识控制面新增 `knowledge_collections`、`managed_knowledge_documents`、`knowledge_document_versions` 和 `knowledge_document_agent_bindings`。每张表都限定租户并强制执行 RLS。逻辑文档保存生命周期和审批状态；版本行保存准确文件元数据与 SHA-256；绑定行组成默认拒绝的智能体允许清单。已有 Phase 2.5 检索表保持不变。
+
+Phase 2.5.2 新增 `processing_status`、`knowledge_processing_runs` 和 `managed_knowledge_chunks`。运行记录保存准确版本、提取或分块或嵌入配置、状态、安全失败和来源元数据快照。分块引用租户、业务域、智能体、集合、文档、准确版本和运行，包含 `vector(1536)`，并保存引用元数据。两张新增表都强制执行 RLS。

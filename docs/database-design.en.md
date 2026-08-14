@@ -730,3 +730,5 @@ Migration, break-glass, and data-repair roles are separate, non-application role
 ## Phase 2.5.1 knowledge management tables
 
 The knowledge control plane adds `knowledge_collections`, `managed_knowledge_documents`, `knowledge_document_versions`, and `knowledge_document_agent_bindings`. Every table is tenant-scoped with forced RLS. The logical document owns lifecycle and approval state; version rows preserve exact file metadata and SHA-256; binding rows form the deny-by-default agent allow-list. The existing Phase 2.5 retrieval tables remain unchanged.
+
+Phase 2.5.2 adds `processing_status`, `knowledge_processing_runs`, and `managed_knowledge_chunks`. Runs snapshot exact version, extraction/chunk/embedding configuration, status, safe failure, and source metadata. Chunks reference tenant, domain, agent, collection, document, exact version, and run; contain `vector(1536)`; and preserve citation metadata. Both new tables force RLS.

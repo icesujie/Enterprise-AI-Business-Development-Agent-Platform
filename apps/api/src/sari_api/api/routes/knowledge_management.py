@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 from uuid import UUID, uuid4
 
@@ -19,12 +19,18 @@ from sari_api.adapters.enterprise_knowledge_repository import (
     EnterpriseKnowledgeRepository,
     EnterpriseKnowledgeStateError,
 )
+from sari_api.adapters.knowledge_embedding import build_knowledge_embedding_provider
+from sari_api.adapters.knowledge_processing_queue import (
+    KnowledgeProcessingQueue,
+    get_knowledge_processing_queue,
+)
 from sari_api.adapters.knowledge_storage import KnowledgeStorage, get_knowledge_storage
 from sari_api.adapters.models import (
     AuditEvent,
     DomainPackage,
     KnowledgeCollection,
     KnowledgeDocumentVersion,
+    KnowledgeProcessingRun,
     ManagedKnowledgeDocument,
 )
 from sari_api.api.dependencies import require_permission
@@ -34,6 +40,7 @@ from sari_api.domain.identity import Principal
 
 router = APIRouter(prefix="/api/v1/knowledge-management", tags=["knowledge-management"])
 SUPPORTED_MEDIA_TYPES = {"application/pdf", "text/plain", "text/markdown", "text/x-markdown"}
+SUPPORTED_MEDIA_TYPES.add("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
 
 
 class StrictModel(BaseModel):
@@ -92,6 +99,7 @@ class DocumentResponse(StrictModel):
     language: str
     lifecycle_status: str
     approval_status: str
+    processing_status: str
     current_version_number: int
     document_metadata: dict[str, Any]
     approved_by: UUID | None
@@ -111,6 +119,27 @@ class ReviewInput(StrictModel):
 
 class BindInput(StrictModel):
     agent_key: str = Field(min_length=2, max_length=120)
+
+
+class ProcessingRunResponse(StrictModel):
+    id: UUID
+    document_id: UUID
+    document_version_id: UUID
+    status: str
+    extractor_version: str
+    chunking_version: str
+    chunk_size: int
+    chunk_overlap: int
+    embedding_provider: str
+    embedding_model: str
+    embedding_dimensions: int
+    chunk_count: int
+    correlation_id: str | None
+    error_code: str | None
+    error_message: str | None
+    started_at: datetime | None
+    completed_at: datetime | None
+    created_at: datetime
 
 
 def add_audit(
@@ -193,6 +222,7 @@ def document_response(
         language=document.language,
         lifecycle_status=document.lifecycle_status,
         approval_status=document.approval_status,
+        processing_status=document.processing_status,
         current_version_number=document.current_version_number,
         document_metadata=document.document_metadata,
         approved_by=document.approved_by,
@@ -203,6 +233,29 @@ def document_response(
         updated_at=document.updated_at,
         current_version=version_response(version) if version else None,
         bindings=bindings or [],
+    )
+
+
+def processing_response(run: KnowledgeProcessingRun) -> ProcessingRunResponse:
+    return ProcessingRunResponse(
+        id=run.id,
+        document_id=run.document_id,
+        document_version_id=run.document_version_id,
+        status=run.status,
+        extractor_version=run.extractor_version,
+        chunking_version=run.chunking_version,
+        chunk_size=run.chunk_size,
+        chunk_overlap=run.chunk_overlap,
+        embedding_provider=run.embedding_provider,
+        embedding_model=run.embedding_model,
+        embedding_dimensions=run.embedding_dimensions,
+        chunk_count=run.chunk_count,
+        correlation_id=run.correlation_id,
+        error_code=run.error_code,
+        error_message=run.error_message_safe,
+        started_at=run.started_at,
+        completed_at=run.completed_at,
+        created_at=run.created_at,
     )
 
 
@@ -267,7 +320,9 @@ async def upload_document(
     settings = get_settings()
     media_type = (file.content_type or "").split(";", maxsplit=1)[0].lower()
     if media_type not in SUPPORTED_MEDIA_TYPES:
-        raise HTTPException(status_code=415, detail="Supported types are PDF, text, and Markdown.")
+        raise HTTPException(
+            status_code=415, detail="Supported types are PDF, DOCX, text, and Markdown."
+        )
     content = await file.read(settings.knowledge_max_upload_bytes + 1)
     if not content:
         raise HTTPException(status_code=422, detail="Uploaded document is empty.")
@@ -500,3 +555,83 @@ async def bind_document(
         status=binding.status,
         created_at=binding.created_at,
     )
+
+
+@router.post(
+    "/documents/{document_id}/processing-runs",
+    response_model=ProcessingRunResponse,
+    status_code=202,
+)
+async def create_processing_run(
+    document_id: UUID,
+    principal: Annotated[Principal, Depends(require_permission("knowledge:manage"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    queue: Annotated[KnowledgeProcessingQueue, Depends(get_knowledge_processing_queue)],
+) -> ProcessingRunResponse:
+    settings = get_settings()
+    embedding_provider = build_knowledge_embedding_provider(settings)
+    repo = await repository(session, principal)
+    try:
+        document, run = await repo.create_processing_run(
+            document_id,
+            created_by=principal.user_id,
+            chunk_size=settings.knowledge_chunk_size,
+            chunk_overlap=settings.knowledge_chunk_overlap,
+            embedding_provider=embedding_provider.provider_type,
+            embedding_model=embedding_provider.model_id,
+            embedding_dimensions=embedding_provider.dimensions,
+            correlation_id=get_correlation_id(),
+        )
+        add_audit(
+            session,
+            principal,
+            action="knowledge.document.processing_requested",
+            target_type="managed_knowledge_document",
+            target_id=document.id,
+            details={"processing_run_id": str(run.id)},
+        )
+        await session.commit()
+        try:
+            await queue.enqueue(
+                run.id,
+                principal.tenant_id,
+                correlation_id=run.correlation_id,
+            )
+        except Exception as exc:
+            await repo.set_tenant_context()
+            persistent_run = await repo.get_processing_run(run.id)
+            persistent_document, _, _ = await repo.get_document(document.id)
+            persistent_run.status = "failed"
+            persistent_run.error_code = "queue_unavailable"
+            persistent_run.error_message_safe = "Knowledge processing could not be queued."
+            persistent_run.completed_at = datetime.now(UTC)
+            persistent_document.processing_status = "failed"
+            await session.commit()
+            raise HTTPException(
+                status_code=503, detail="Knowledge processing queue is unavailable."
+            ) from exc
+    except EnterpriseKnowledgeNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Knowledge document not found.") from exc
+    except EnterpriseKnowledgeAccessError as exc:
+        raise HTTPException(
+            status_code=409, detail="Bind the document to an agent before processing."
+        ) from exc
+    except EnterpriseKnowledgeStateError as exc:
+        raise HTTPException(
+            status_code=409,
+            detail="Only approved or active documents without a running job can be processed.",
+        ) from exc
+    return processing_response(run)
+
+
+@router.get("/processing-runs/{run_id}", response_model=ProcessingRunResponse)
+async def get_processing_run(
+    run_id: UUID,
+    principal: Annotated[Principal, Depends(require_permission("knowledge:retrieve"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ProcessingRunResponse:
+    repo = await repository(session, principal)
+    try:
+        return processing_response(await repo.get_processing_run(run_id))
+    except EnterpriseKnowledgeNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Knowledge processing run not found.") from exc

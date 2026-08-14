@@ -78,6 +78,10 @@ export async function archiveKnowledgeDocument(documentId: string) {
   await command(documentId, "archive");
 }
 
+export async function processKnowledgeDocument(documentId: string) {
+  await command(documentId, "processing-runs");
+}
+
 export async function bindKnowledgeDocument(
   documentId: string,
   formData: FormData,

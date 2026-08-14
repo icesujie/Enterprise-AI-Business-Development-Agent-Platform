@@ -960,3 +960,5 @@ Link: <https://docs.example.com/migrations/v1-old-endpoint>; rel="deprecation"
 ## Phase 2.5.1 知识管理 API
 
 `/api/v1/knowledge-management` 控制面 API 支持创建和列出集合、上传版本 1、文档查找和详情、提交审核、批准或拒绝、绑定同业务域智能体、启用和归档。读取操作需要 `knowledge:retrieve`，修改操作需要 `knowledge:manage`。这些端点不会调用嵌入或向量检索。
+
+Phase 2.5.2 新增 `POST /documents/{id}/processing-runs` 和 `GET /processing-runs/{run_id}`。该命令只接受具有已启用智能体绑定的已批准或已启用当前版本，并返回 `202`。文档响应增加 `processing_status`，上传也支持 DOCX。没有端点开放相似度检索。

@@ -13,6 +13,7 @@ from sari_api.adapters.models import (
     KnowledgeCollection,
     KnowledgeDocumentAgentBinding,
     KnowledgeDocumentVersion,
+    KnowledgeProcessingRun,
     ManagedKnowledgeDocument,
 )
 
@@ -388,3 +389,88 @@ class EnterpriseKnowledgeRepository:
             .tuples()
             .all()
         )
+
+    async def create_processing_run(
+        self,
+        document_id: UUID,
+        *,
+        created_by: UUID,
+        chunk_size: int,
+        chunk_overlap: int,
+        embedding_provider: str,
+        embedding_model: str,
+        embedding_dimensions: int,
+        correlation_id: str | None,
+    ) -> tuple[ManagedKnowledgeDocument, KnowledgeProcessingRun]:
+        document, collection, domain = await self.get_document(document_id, lock=True)
+        version = await self.current_version(document)
+        if (
+            document.approval_status != "approved"
+            or document.lifecycle_status not in {"approved", "active"}
+            or collection.status != "active"
+        ):
+            raise EnterpriseKnowledgeStateError
+        enabled_binding = await self._session.scalar(
+            select(KnowledgeDocumentAgentBinding.id).where(
+                KnowledgeDocumentAgentBinding.tenant_id == self._tenant_id,
+                KnowledgeDocumentAgentBinding.document_id == document.id,
+                KnowledgeDocumentAgentBinding.status == "enabled",
+            )
+        )
+        if enabled_binding is None:
+            raise EnterpriseKnowledgeAccessError
+        running = await self._session.scalar(
+            select(KnowledgeProcessingRun.id).where(
+                KnowledgeProcessingRun.tenant_id == self._tenant_id,
+                KnowledgeProcessingRun.document_id == document.id,
+                KnowledgeProcessingRun.status.in_({"uploaded", "processing"}),
+            )
+        )
+        if running is not None:
+            raise EnterpriseKnowledgeStateError
+        snapshot = {
+            "tenant_id": str(self._tenant_id),
+            "domain_key": domain.domain_key,
+            "domain_package_id": str(domain.id),
+            "collection_id": str(collection.id),
+            "collection_key": collection.collection_key,
+            "collection_name": collection.name,
+            "document_id": str(document.id),
+            "document_title": document.title,
+            "document_type": document.document_type,
+            "language": document.language,
+            "document_metadata": document.document_metadata,
+            "document_version_id": str(version.id),
+            "version_number": version.version_number,
+            "version_metadata": version.version_metadata,
+            "filename": version.original_filename,
+            "content_sha256": version.content_sha256,
+        }
+        run = KnowledgeProcessingRun(
+            tenant_id=self._tenant_id,
+            document_id=document.id,
+            document_version_id=version.id,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            embedding_provider=embedding_provider,
+            embedding_model=embedding_model,
+            embedding_dimensions=embedding_dimensions,
+            source_metadata_snapshot=snapshot,
+            correlation_id=correlation_id,
+            created_by=created_by,
+        )
+        document.processing_status = "uploaded"
+        self._session.add(run)
+        await self._session.flush()
+        return document, run
+
+    async def get_processing_run(self, run_id: UUID) -> KnowledgeProcessingRun:
+        run = await self._session.scalar(
+            select(KnowledgeProcessingRun).where(
+                KnowledgeProcessingRun.id == run_id,
+                KnowledgeProcessingRun.tenant_id == self._tenant_id,
+            )
+        )
+        if run is None:
+            raise EnterpriseKnowledgeNotFoundError
+        return run

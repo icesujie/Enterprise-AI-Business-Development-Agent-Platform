@@ -11,6 +11,7 @@ import {
   archiveKnowledgeDocument,
   bindKnowledgeDocument,
   createKnowledgeCollection,
+  processKnowledgeDocument,
   reviewKnowledgeDocument,
   submitKnowledgeReview,
   uploadKnowledgeDocument,
@@ -120,7 +121,7 @@ export default async function KnowledgePage({
               className="field mt-2"
               type="file"
               name="file"
-              accept=".pdf,.txt,.md"
+              accept=".pdf,.docx,.txt,.md"
               required
             />
           </label>
@@ -196,6 +197,10 @@ function DocumentRow({
             <span className="status-chip">
               {statusLabel(document.lifecycle_status, zh)}
             </span>
+            <span className="status-chip">
+              {copy.processing}:{" "}
+              {processingLabel(document.processing_status, zh)}
+            </span>
             <span className="text-xs font-semibold text-[var(--color-muted)]">
               v{document.current_version_number}
             </span>
@@ -252,6 +257,16 @@ function DocumentRow({
             <form action={activateKnowledgeDocument.bind(null, document.id)}>
               <button className="button-primary" type="submit">
                 {copy.activate}
+              </button>
+            </form>
+          ) : null}
+          {["approved", "active"].includes(document.lifecycle_status) &&
+          document.processing_status !== "processing" ? (
+            <form action={processKnowledgeDocument.bind(null, document.id)}>
+              <button className="button-primary" type="submit">
+                {document.processing_status === "completed"
+                  ? copy.reprocess
+                  : copy.process}
               </button>
             </form>
           ) : null}
@@ -337,6 +352,20 @@ function statusLabel(status: string, zh: boolean) {
   );
 }
 
+function processingLabel(status: string, zh: boolean) {
+  if (!zh) return status;
+  return (
+    (
+      {
+        uploaded: "待处理",
+        processing: "处理中",
+        completed: "已完成",
+        failed: "失败",
+      } as Record<string, string>
+    )[status] ?? status
+  );
+}
+
 const english = {
   eyebrow: "Phase 2.5.1 · Knowledge control plane",
   title: "Knowledge management",
@@ -361,11 +390,11 @@ const english = {
   productCatalogue: "Product catalogue",
   technicalReference: "Technical reference",
   language: "Language",
-  file: "PDF, text, or Markdown file",
+  file: "PDF, DOCX, text, or Markdown file",
   uploadAction: "Upload document",
   documents: "Documents",
   documentsHelp:
-    "Only explicitly bound and approved/active versions are eligible for future RAG publication.",
+    "Only explicitly bound and approved/active versions are eligible for processing and future RAG publication.",
   search: "Search title or type",
   find: "Search",
   noDocuments: "No documents found.",
@@ -375,6 +404,9 @@ const english = {
   reject: "Reject",
   activate: "Activate",
   archive: "Archive",
+  processing: "Processing",
+  process: "Process",
+  reprocess: "Reprocess",
 };
 const chinese: typeof english = {
   eyebrow: "Phase 2.5.1 · 知识控制面",
@@ -400,11 +432,11 @@ const chinese: typeof english = {
   productCatalogue: "产品目录",
   technicalReference: "技术资料",
   language: "语言",
-  file: "PDF、文本或 Markdown 文件",
+  file: "PDF、DOCX、文本或 Markdown 文件",
   uploadAction: "上传文档",
   documents: "文档",
   documentsHelp:
-    "只有明确绑定智能体且状态为已批准或已生效的版本，未来才有资格发布到 RAG。",
+    "只有明确绑定智能体且状态为已批准或已生效的版本，才可处理并在未来发布到 RAG。",
   search: "按标题或类型查找",
   find: "查找",
   noDocuments: "没有找到文档。",
@@ -414,5 +446,8 @@ const chinese: typeof english = {
   reject: "拒绝",
   activate: "启用",
   archive: "归档",
+  processing: "处理状态",
+  process: "开始处理",
+  reprocess: "重新处理",
 };
 type Copy = typeof english;

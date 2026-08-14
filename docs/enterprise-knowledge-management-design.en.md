@@ -128,3 +128,7 @@ A future publication service should read only the current exact version where:
 5. The content digest still matches the stored object.
 
 That service may then copy an immutable publication snapshot to the existing extraction, chunking, embedding, and citation pipeline. Archiving or superseding a version must revoke its retrieval eligibility. Publication, embedding, vector retrieval, and conversational answers are intentionally outside Phase 2.5.1.
+
+## 10. Phase 2.5.2 processing integration
+
+Phase 2.5.2 adds an explicit **Process** command for approved/active, agent-bound current versions. It creates durable processing runs and agent-isolated pgvector chunks while preserving this control plane as the approval authority. It still does not implement retrieval or a conversational Knowledge Assistant. See `knowledge-processing-pipeline-design.en.md`.

@@ -20,11 +20,16 @@ from sari_api.adapters.ivc_qualification_executor import IvcQualificationRunExec
 from sari_api.adapters.ivc_qualification_provider import build_ivc_qualification_provider
 from sari_api.adapters.knowledge_embedding import build_knowledge_embedding_provider
 from sari_api.adapters.knowledge_ingestion import KnowledgeIngestionExecutor
+from sari_api.adapters.knowledge_processing_queue import (
+    InvalidKnowledgeProcessingMessageError,
+    RedisKnowledgeProcessingQueue,
+)
 from sari_api.adapters.knowledge_queue import (
     InvalidKnowledgeQueueMessageError,
     RedisKnowledgeQueue,
 )
 from sari_api.adapters.knowledge_storage import LocalKnowledgeStorage
+from sari_api.adapters.managed_knowledge_processing import ManagedKnowledgeProcessingExecutor
 from sari_api.adapters.models import AgentRun
 from sari_api.adapters.qualification_executor import QualificationRunExecutor, RetrySchedule
 from sari_api.adapters.qualification_provider import build_qualification_provider
@@ -64,10 +69,17 @@ async def run_worker() -> None:
     configure_logging(settings.log_level)
     queue = RedisAgentQueue(settings.redis_url, settings.agent_queue_name)
     knowledge_queue = RedisKnowledgeQueue(settings.redis_url, settings.knowledge_queue_name)
+    processing_queue = RedisKnowledgeProcessingQueue(
+        settings.redis_url, settings.knowledge_processing_queue_name
+    )
     knowledge_executor = KnowledgeIngestionExecutor(
         LocalKnowledgeStorage(settings.knowledge_storage_path),
         build_knowledge_embedding_provider(settings),
         settings,
+    )
+    processing_executor = ManagedKnowledgeProcessingExecutor(
+        LocalKnowledgeStorage(settings.knowledge_storage_path),
+        build_knowledge_embedding_provider(settings),
     )
     provider = build_qualification_provider(settings)
     executor = QualificationRunExecutor(provider, settings.agent_retry_base_seconds)
@@ -162,6 +174,36 @@ async def run_worker() -> None:
                 finally:
                     reset_correlation_id(knowledge_token)
             try:
+                processing_message = await processing_queue.dequeue(block_seconds=1)
+            except InvalidKnowledgeProcessingMessageError:
+                logger.warning(
+                    "Discarded an invalid managed knowledge processing message",
+                    extra={"event": "knowledge.processing_queue.invalid_message"},
+                )
+                processing_message = None
+            if processing_message is not None:
+                processing_token = set_correlation_id(
+                    processing_message.correlation_id or str(processing_message.processing_run_id)
+                )
+                try:
+                    await processing_executor.execute(
+                        processing_message.processing_run_id,
+                        processing_message.tenant_id,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Managed knowledge processing failed unexpectedly",
+                        extra={
+                            "event": "knowledge.processing.unexpected_failure",
+                            "knowledge_processing_run_id": str(
+                                processing_message.processing_run_id
+                            ),
+                            "tenant_id": str(processing_message.tenant_id),
+                        },
+                    )
+                finally:
+                    reset_correlation_id(processing_token)
+            try:
                 message = await queue.dequeue(block_seconds=5)
             except InvalidAgentQueueMessageError:
                 logger.warning(
@@ -230,6 +272,7 @@ async def run_worker() -> None:
     finally:
         await queue.close()
         await knowledge_queue.close()
+        await processing_queue.close()
         await dispose_database()
 
 

@@ -965,3 +965,5 @@ Each release requires OpenAPI review, authorization matrix tests, tenant-isolati
 ## Phase 2.5.1 knowledge management API
 
 The `/api/v1/knowledge-management` control-plane API supports collection creation/listing, version-1 upload, document search/detail, review submission, approve/reject, same-domain agent binding, activation, and archive. Read operations require `knowledge:retrieve`; mutations require `knowledge:manage`. These endpoints never call embeddings or vector retrieval.
+
+Phase 2.5.2 adds `POST /documents/{id}/processing-runs` and `GET /processing-runs/{run_id}`. The command accepts only approved/active current versions with enabled agent bindings and returns `202`. Document responses include `processing_status`; uploads also accept DOCX. No endpoint exposes similarity search.

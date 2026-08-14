@@ -87,6 +87,12 @@ archive them. This management layer does not enable a conversational Knowledge A
 automatically publish documents to vector retrieval. See the bilingual
 [enterprise knowledge management design](docs/enterprise-knowledge-management-design.en.md).
 
+Phase 2.5.2 adds explicit processing of approved/active current versions. PDF, DOCX, UTF-8 text,
+and Markdown are cleaned, chunked, embedded through the configured provider abstraction, and stored
+as tenant/domain/agent-isolated pgvector assets with exact citation metadata. No conversational
+Knowledge Assistant or user-facing vector search is enabled. See the bilingual
+[knowledge processing design](docs/knowledge-processing-pipeline-design.en.md).
+
 ## Repository layout
 
 ```text

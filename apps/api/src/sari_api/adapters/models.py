@@ -671,6 +671,10 @@ class ManagedKnowledgeDocument(TimestampVersionMixin, Base):
             name="managed_knowledge_documents_approval_check",
         ),
         CheckConstraint(
+            "processing_status IN ('uploaded','processing','completed','failed')",
+            name="managed_knowledge_documents_processing_check",
+        ),
+        CheckConstraint(
             "current_version_number > 0", name="managed_knowledge_documents_version_check"
         ),
         Index(
@@ -702,6 +706,7 @@ class ManagedKnowledgeDocument(TimestampVersionMixin, Base):
     language: Mapped[str] = mapped_column(String(20), server_default="en")
     lifecycle_status: Mapped[str] = mapped_column(String(20), server_default="draft")
     approval_status: Mapped[str] = mapped_column(String(20), server_default="pending")
+    processing_status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
     current_version_number: Mapped[int] = mapped_column(Integer, server_default="1")
     document_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     approved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
@@ -770,6 +775,115 @@ class KnowledgeDocumentAgentBinding(Base):
     agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
     status: Mapped[str] = mapped_column(String(20), server_default="enabled")
     created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class KnowledgeProcessingRun(Base):
+    __tablename__ = "knowledge_processing_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('uploaded','processing','completed','failed')",
+            name="knowledge_processing_runs_status_check",
+        ),
+        CheckConstraint(
+            "chunk_size > 0 AND chunk_overlap >= 0 AND chunk_overlap < chunk_size",
+            name="knowledge_processing_runs_chunking_check",
+        ),
+        CheckConstraint(
+            "embedding_dimensions = 1536",
+            name="knowledge_processing_runs_dimensions_check",
+        ),
+        Index(
+            "ix_knowledge_processing_runs_tenant_document",
+            "tenant_id",
+            "document_id",
+            "created_at",
+        ),
+        Index(
+            "ix_knowledge_processing_runs_tenant_status",
+            "tenant_id",
+            "status",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("managed_knowledge_documents.id", ondelete="CASCADE")
+    )
+    document_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="RESTRICT")
+    )
+    status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
+    extractor_version: Mapped[str] = mapped_column(String(40), server_default="extract_v2")
+    chunking_version: Mapped[str] = mapped_column(String(40), server_default="chunk_v1")
+    chunk_size: Mapped[int] = mapped_column(Integer)
+    chunk_overlap: Mapped[int] = mapped_column(Integer)
+    embedding_provider: Mapped[str] = mapped_column(String(80))
+    embedding_model: Mapped[str] = mapped_column(String(120))
+    embedding_dimensions: Mapped[int] = mapped_column(Integer)
+    chunk_count: Mapped[int] = mapped_column(Integer, server_default="0")
+    source_metadata_snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    error_code: Mapped[str | None] = mapped_column(String(80))
+    error_message_safe: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ManagedKnowledgeChunk(Base):
+    __tablename__ = "managed_knowledge_chunks"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "document_version_id", "agent_id", "chunk_index"),
+        Index(
+            "ix_managed_knowledge_chunks_access",
+            "tenant_id",
+            "domain_package_id",
+            "agent_id",
+            "document_id",
+        ),
+        Index(
+            "ix_managed_knowledge_chunks_version",
+            "tenant_id",
+            "document_version_id",
+            "chunk_index",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    domain_package_id: Mapped[UUID] = mapped_column(
+        ForeignKey("domain_packages.id", ondelete="RESTRICT")
+    )
+    agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    collection_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_collections.id", ondelete="RESTRICT")
+    )
+    document_id: Mapped[UUID] = mapped_column(
+        ForeignKey("managed_knowledge_documents.id", ondelete="CASCADE")
+    )
+    document_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_document_versions.id", ondelete="CASCADE")
+    )
+    processing_run_id: Mapped[UUID] = mapped_column(
+        ForeignKey("knowledge_processing_runs.id", ondelete="RESTRICT")
+    )
+    chunk_index: Mapped[int] = mapped_column(Integer)
+    content: Mapped[str] = mapped_column(Text)
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    character_count: Mapped[int] = mapped_column(Integer)
+    page_number: Mapped[int | None] = mapped_column(Integer)
+    section_title: Mapped[str | None] = mapped_column(String(300))
+    language: Mapped[str] = mapped_column(String(20))
+    document_type: Mapped[str] = mapped_column(String(80))
+    source_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    citation_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    embedding: Mapped[list[float]] = mapped_column(VECTOR(1536))
+    embedding_provider: Mapped[str] = mapped_column(String(80))
+    embedding_model: Mapped[str] = mapped_column(String(120))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
