@@ -982,3 +982,9 @@ Phase 2.5.2 新增 `POST /documents/{id}/processing-runs` 和 `GET /processing-r
 ## Phase 2.6.3 只读知识助手 API
 
 `POST /api/v1/knowledge/assistant/runs` 只接受 `agent_id`、`language` 和受限 `question`，要求 `knowledge:retrieve` 与 `Idempotency-Key`，在排队前授权，并返回 `202`。`GET /api/v1/knowledge/assistant/runs/{run_id}` 返回状态和最终结构化结果。Worker 在嵌入前再次授权，然后执行受治理检索、确定性证据/冲突验证，仅在证据充分时使用无工具生成，并由应用验证引用。端点仅限商用厨房智能体；IVC 继续拒绝。参见 `knowledge-assistant-design.zh-CN.md`。
+
+## Phase 3.1 公开项目咨询 API
+
+`POST /api/v1/public/consultation/turns` 接受固定项目需求收集顺序中当前字段的受限英文或中文回答。系统在可选的无工具公开响应提供方前，先执行仅服务端保存的 `X-Site-Token`、独立 Redis 限流、严格验证和滥用检查。该端点不能检索内部知识或 CRM 数据。
+
+在访客明确同意联系后，网站复用 `POST /api/v1/public/lead-submissions`，来源为 `website_ai_assistant`。该端点保留幂等、租户范围和验证，增加按照标准化邮箱/来源/项目/城市的 24 小时防重复，记录创建/重复审计事件，并返回 `duplicate`。新线索仍为新建、未分配和未资格评估状态。参见 `public-consultation-agent-design.zh-CN.md`。

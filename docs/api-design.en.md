@@ -987,3 +987,9 @@ The response additionally returns `correlation_id`, `duration_ms`, `similarity_t
 ## Phase 2.6.3 read-only Knowledge Assistant API
 
 `POST /api/v1/knowledge/assistant/runs` accepts only `agent_id`, `language`, and a bounded `question`, requires `knowledge:retrieve` and `Idempotency-Key`, authorizes before queueing, and returns `202`. `GET /api/v1/knowledge/assistant/runs/{run_id}` returns status and the final structured result. The worker reauthorizes before embedding, then performs governed retrieval, deterministic evidence/conflict validation, no-tools generation only for sufficient evidence, and application-side citation validation. The endpoint is restricted to the Commercial Kitchen Agent; IVC remains denied. See `knowledge-assistant-design.en.md`.
+
+## Phase 3.1 public consultation API
+
+`POST /api/v1/public/consultation/turns` accepts a bounded English or Chinese answer for the current field in a fixed project-intake sequence. A server-held `X-Site-Token`, separate Redis rate limit, strict validation and abuse screening run before an optional no-tools public response provider. The endpoint cannot retrieve internal knowledge or CRM data.
+
+After explicit contact consent, the website reuses `POST /api/v1/public/lead-submissions` with source `website_ai_assistant`. The endpoint retains idempotency, tenant scoping and validation, adds 24-hour duplicate suppression by normalized email/source/project/city, records create/duplicate audit events, and returns `duplicate`. The resulting lead remains new, unassigned and unqualified. See `public-consultation-agent-design.en.md`.

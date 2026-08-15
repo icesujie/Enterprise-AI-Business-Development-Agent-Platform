@@ -13,6 +13,7 @@ from sari_api.api.routes.knowledge_assistant import router as knowledge_assistan
 from sari_api.api.routes.knowledge_management import router as knowledge_management_router
 from sari_api.api.routes.knowledge_retrieval import router as knowledge_retrieval_router
 from sari_api.api.routes.opportunities import router as opportunities_router
+from sari_api.api.routes.public_consultation import router as public_consultation_router
 from sari_api.api.routes.public_leads import router as public_leads_router
 from sari_api.api.routes.qualification import router as qualification_router
 from sari_api.api.routes.work import router as work_router
@@ -22,6 +23,7 @@ router.include_router(health_router)
 router.include_router(identity_router)
 router.include_router(crm_router)
 router.include_router(public_leads_router)
+router.include_router(public_consultation_router)
 router.include_router(qualification_router)
 router.include_router(work_router)
 router.include_router(opportunities_router)

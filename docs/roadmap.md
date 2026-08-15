@@ -115,6 +115,7 @@ production launch remains a separate human-approved activity with environment-sp
 
 **Goal:** Reduce repetitive follow-up work while keeping external communication controlled.
 
+- [x] Phase 3.1 bilingual public Commercial Kitchen Consultation Agent with consented CRM intake
 - [ ] WhatsApp integration
 - [ ] Email integration and controlled automation
 - [ ] CRM follow-up workflows
@@ -145,7 +146,7 @@ production launch remains a separate human-approved activity with environment-sp
 
 **M8 Phase 1 acceptance, Phase 2.3 Agent Playground, Phase 2.5 Knowledge Foundation, Phase
 2.5.1 Enterprise Knowledge Management, Phase 2.5.2 Knowledge Processing, Phase 2.5.3
-Knowledge Governance, Phase 2.6.1 Knowledge Retrieval, Phase 2.6.2 Retrieval Evaluation, and Phase 2.6.3 Read-Only Knowledge Assistant are implemented.** The control plane manages tenant- and domain-scoped
+Knowledge Governance, Phase 2.6.1 Knowledge Retrieval, Phase 2.6.2 Retrieval Evaluation, Phase 2.6.3 Read-Only Knowledge Assistant, and Phase 3.1 Public Consultation Agent are implemented.** The control plane manages tenant- and domain-scoped
 collections, immutable version history, explicit current/published/active pointers, human approval,
 separate publication, safe rollback, agent bindings, and a tenant-scoped audit timeline through
 `/knowledge`. The read-only retrieval API returns agent-authorized evidence chunks and exact citations
@@ -153,6 +154,11 @@ from the active published version. The Commercial Kitchen Knowledge Assistant ad
 answers with deterministic insufficient/conflicting evidence behavior; existing CRM, Playground, and
 qualification workflows are unchanged. IVC production retrieval, external actions, and production
 activation remain disabled.
+
+The separate public consultation widget collects a bilingual structured project brief and creates an
+unassigned `website_ai_assistant` lead only after explicit contact consent. It has no internal
+knowledge/CRM read access, pricing capability or external action tools. General business automation
+and Phase 3 external channels remain unimplemented.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

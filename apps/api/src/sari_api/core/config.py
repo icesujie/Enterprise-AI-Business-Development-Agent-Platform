@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     public_site_token: str = "local-public-site-token"
     public_tenant_id: str = "10000000-0000-4000-8000-000000000001"
     public_rate_limit: int = Field(default=10, ge=1, le=1000)
+    public_consultation_rate_limit: int = Field(default=30, ge=1, le=1000)
+    public_consultation_ai_enabled: bool = False
     public_rate_window_seconds: int = Field(default=60, ge=10, le=3600)
     ai_enabled: bool = False
     openai_api_key: SecretStr | None = None
@@ -74,6 +76,8 @@ class Settings(BaseSettings):
                 raise ValueError("production PUBLIC_SITE_TOKEN must be configured")
         if self.ai_enabled and self.openai_api_key is None:
             raise ValueError("AI_ENABLED requires OPENAI_API_KEY")
+        if self.public_consultation_ai_enabled and not self.ai_enabled:
+            raise ValueError("PUBLIC_CONSULTATION_AI_ENABLED requires AI_ENABLED")
         if self.knowledge_embedding_provider == "openai" and self.openai_api_key is None:
             raise ValueError("OpenAI knowledge embeddings require OPENAI_API_KEY")
         if self.knowledge_chunk_overlap >= self.knowledge_chunk_size:

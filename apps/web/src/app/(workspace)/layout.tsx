@@ -2,7 +2,8 @@ import Link from "next/link";
 
 import { WorkspaceNav } from "@/components/workspace/workspace-nav";
 import { WorkspaceTopbar } from "@/components/workspace/workspace-topbar";
-import { getMessages } from "@/i18n/server";
+import { FloatingKnowledgeAssistant } from "@/components/knowledge/floating-knowledge-assistant";
+import { getLocale, getMessages } from "@/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function WorkspaceLayout({
   children: React.ReactNode;
 }) {
   const { workspace: copy } = await getMessages();
+  const locale = await getLocale();
   return (
     <div className="min-h-screen bg-[#eef0eb] text-[var(--color-ink)]">
       <a href="#workspace-content" className="skip-link">
@@ -71,6 +73,10 @@ export default async function WorkspaceLayout({
           {children}
         </main>
       </div>
+      <FloatingKnowledgeAssistant
+        key={locale}
+        initialLanguage={locale === "zh-CN" ? "zh-CN" : "en"}
+      />
     </div>
   );
 }

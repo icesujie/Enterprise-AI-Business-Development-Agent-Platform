@@ -18,11 +18,13 @@ export type PublicLeadPayload = {
     project_country_code: string | null;
     project_city: string | null;
     project_type: string;
+    facility_type?: string | null;
     expected_capacity: string;
     target_timeline: string;
+    budget_range?: string | null;
   };
   attribution: {
-    source: "website";
+    source: "website" | "website_ai_assistant";
     campaign: string;
   };
   consent: {
@@ -36,6 +38,7 @@ export type PublicLeadAccepted = {
   submission_id: string;
   status: "accepted";
   message: string;
+  duplicate?: boolean;
 };
 
 export class PublicLeadServiceError extends Error {

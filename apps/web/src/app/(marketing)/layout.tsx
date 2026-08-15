@@ -1,5 +1,6 @@
 import { MarketingFooter } from "@/components/marketing/marketing-footer";
 import { MarketingHeader } from "@/components/marketing/marketing-header";
+import { PublicConsultationWidget } from "@/components/marketing/public-consultation-widget";
 import { getLocale, getMessages } from "@/i18n/server";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -45,6 +46,10 @@ export default async function MarketingLayout({
       <MarketingHeader />
       <main id="main-content">{children}</main>
       <MarketingFooter />
+      <PublicConsultationWidget
+        key={locale}
+        initialLanguage={locale === "zh-CN" ? "zh-CN" : "en"}
+      />
     </div>
   );
 }

@@ -10,12 +10,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field
 from redis.exceptions import RedisError
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sari_api.adapters.crm_repository import SqlAlchemyCrmRepository
 from sari_api.adapters.database import get_session
-from sari_api.adapters.models import Contact, IdempotencyKey, Lead, Organization
+from sari_api.adapters.models import AuditEvent, Contact, IdempotencyKey, Lead, Organization
 from sari_api.adapters.rate_limit import consume_fixed_window
 from sari_api.core.config import get_settings
 
@@ -45,12 +45,14 @@ class PublicInquiry(PublicModel):
     project_country_code: str | None = Field(default=None, min_length=2, max_length=2)
     project_city: str | None = Field(default=None, max_length=120)
     project_type: str | None = Field(default=None, max_length=120)
+    facility_type: str | None = Field(default=None, max_length=120)
     expected_capacity: str | None = Field(default=None, max_length=120)
     target_timeline: str | None = Field(default=None, max_length=100)
+    budget_range: str | None = Field(default=None, max_length=120)
 
 
 class PublicAttribution(PublicModel):
-    source: Literal["website"] = "website"
+    source: Literal["website", "website_ai_assistant"] = "website"
     campaign: str | None = Field(default=None, max_length=200)
 
 
@@ -72,6 +74,7 @@ class PublicLeadAccepted(PublicModel):
     submission_id: UUID
     status: Literal["accepted"] = "accepted"
     message: str = "Your inquiry has been received."
+    duplicate: bool = False
 
 
 async def enforce_public_rate_limit(request: Request) -> None:
@@ -136,6 +139,59 @@ async def submit_public_lead(
             )
         return PublicLeadAccepted.model_validate(existing.response_body)
 
+    duplicate_conditions = [
+        Contact.tenant_id == tenant_id,
+        func.lower(Contact.email) == payload.contact.email.lower(),
+        Lead.tenant_id == tenant_id,
+        Lead.source_channel == payload.attribution.source,
+        Lead.created_at >= datetime.now(UTC) - timedelta(days=1),
+    ]
+    if payload.inquiry.project_type:
+        duplicate_conditions.append(
+            func.lower(Lead.project_type) == payload.inquiry.project_type.lower()
+        )
+    if payload.inquiry.project_city:
+        duplicate_conditions.append(
+            func.lower(Lead.project_city) == payload.inquiry.project_city.lower()
+        )
+    duplicate_lead = await session.scalar(
+        select(Lead)
+        .join(Contact, Contact.id == Lead.contact_id)
+        .where(*duplicate_conditions)
+        .order_by(Lead.created_at.desc())
+        .limit(1)
+    )
+    if duplicate_lead is not None:
+        duplicate_result = PublicLeadAccepted(
+            submission_id=duplicate_lead.id,
+            message="Your existing inquiry has already been received.",
+            duplicate=True,
+        )
+        session.add(
+            IdempotencyKey(
+                tenant_id=tenant_id,
+                scope="public-lead",
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                response_status=202,
+                response_body=duplicate_result.model_dump(mode="json"),
+                expires_at=datetime.now(UTC) + timedelta(days=1),
+            )
+        )
+        session.add(
+            AuditEvent(
+                tenant_id=tenant_id,
+                actor_user_id=None,
+                action="public_lead.duplicate_detected",
+                target_type="lead",
+                target_id=duplicate_lead.id,
+                result="success",
+                details={"source": payload.attribution.source},
+            )
+        )
+        await session.commit()
+        return duplicate_result
+
     organization = await repo.add(
         Organization(
             tenant_id=tenant_id,
@@ -163,7 +219,7 @@ async def submit_public_lead(
             tenant_id=tenant_id,
             organization_id=organization.id,
             contact_id=contact.id,
-            source_channel="website",
+            source_channel=payload.attribution.source,
             source_detail=payload.attribution.campaign,
             inquiry_summary=payload.inquiry.message,
             project_country_code=uppercase(payload.inquiry.project_country_code),
@@ -174,6 +230,8 @@ async def submit_public_lead(
             requirements={
                 "privacy_policy_version": payload.consent.privacy_policy_version,
                 "contact_consent": True,
+                "facility_type": payload.inquiry.facility_type,
+                "budget_range": payload.inquiry.budget_range,
             },
         )
     )
@@ -187,6 +245,17 @@ async def submit_public_lead(
             response_status=202,
             response_body=result.model_dump(mode="json"),
             expires_at=datetime.now(UTC) + timedelta(days=1),
+        )
+    )
+    session.add(
+        AuditEvent(
+            tenant_id=tenant_id,
+            actor_user_id=None,
+            action="public_lead.created",
+            target_type="lead",
+            target_id=lead.id,
+            result="success",
+            details={"source": payload.attribution.source},
         )
     )
     await session.commit()

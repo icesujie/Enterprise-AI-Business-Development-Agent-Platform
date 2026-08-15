@@ -18,8 +18,10 @@ const AGENT_ID = "61000000-0000-4000-8000-000000000001";
 
 export function KnowledgeAssistant({
   initialLanguage,
+  compact = false,
 }: {
   initialLanguage: Language;
+  compact?: boolean;
 }) {
   const [language, setLanguage] = useState<Language>(initialLanguage);
   const [question, setQuestion] = useState("");
@@ -59,18 +61,29 @@ export function KnowledgeAssistant({
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(340px,0.72fr)_minmax(0,1.28fr)]">
-      <form className="card h-fit p-6 sm:p-7" onSubmit={submit}>
+    <div
+      className={
+        compact
+          ? "space-y-4"
+          : "grid gap-6 xl:grid-cols-[minmax(340px,0.72fr)_minmax(0,1.28fr)]"
+      }
+    >
+      <form
+        className={compact ? "space-y-4" : "card h-fit p-6 sm:p-7"}
+        onSubmit={submit}
+      >
         <div className="rounded-xl bg-[var(--color-info-soft)] p-4 text-sm text-[var(--color-info)]">
           {copy.notice}
         </div>
-        <label className="label mt-6">
-          {copy.agent}
-          <select className="field mt-2" disabled value={AGENT_ID}>
-            <option value={AGENT_ID}>{copy.kitchen}</option>
-          </select>
-        </label>
-        <label className="label mt-5">
+        {!compact ? (
+          <label className="label mt-6">
+            {copy.agent}
+            <select className="field mt-2" disabled value={AGENT_ID}>
+              <option value={AGENT_ID}>{copy.kitchen}</option>
+            </select>
+          </label>
+        ) : null}
+        <label className={compact ? "label block" : "label mt-5"}>
           {copy.language}
           <select
             className="field mt-2"
@@ -81,10 +94,10 @@ export function KnowledgeAssistant({
             <option value="zh-CN">中文</option>
           </select>
         </label>
-        <label className="label mt-5">
+        <label className={compact ? "label block" : "label mt-5"}>
           {copy.question}
           <textarea
-            className="field mt-2 min-h-40 resize-y"
+            className={`field mt-2 resize-y ${compact ? "min-h-28" : "min-h-40"}`}
             value={question}
             onChange={(event) => setQuestion(event.target.value)}
             minLength={3}
@@ -93,7 +106,11 @@ export function KnowledgeAssistant({
             required
           />
         </label>
-        <Button className="mt-6 w-full" type="submit" disabled={pending}>
+        <Button
+          className={compact ? "w-full" : "mt-6 w-full"}
+          type="submit"
+          disabled={pending}
+        >
           {pending ? copy.running : copy.ask}
         </Button>
         {error ? (
@@ -106,16 +123,29 @@ export function KnowledgeAssistant({
         ) : null}
       </form>
 
-      <section className="space-y-5" aria-live="polite">
+      <section
+        className={compact ? "space-y-4" : "space-y-5"}
+        aria-live="polite"
+      >
         {!run && !pending ? <Empty text={copy.empty} /> : null}
         {pending && !run ? <Empty text={copy.loading} loading /> : null}
-        {run?.result ? <Answer run={run} copy={copy} /> : null}
+        {run?.result ? (
+          <Answer run={run} copy={copy} compact={compact} />
+        ) : null}
       </section>
     </div>
   );
 }
 
-function Answer({ run, copy }: { run: KnowledgeAssistantRun; copy: Copy }) {
+function Answer({
+  run,
+  copy,
+  compact,
+}: {
+  run: KnowledgeAssistantRun;
+  copy: Copy;
+  compact: boolean;
+}) {
   const result = run.result;
   if (!result) return null;
   const tone =
@@ -126,7 +156,9 @@ function Answer({ run, copy }: { run: KnowledgeAssistantRun; copy: Copy }) {
         : "border-l-amber-600";
   return (
     <>
-      <article className={`card border-l-4 p-6 sm:p-7 ${tone}`}>
+      <article
+        className={`card border-l-4 ${compact ? "p-4" : "p-6 sm:p-7"} ${tone}`}
+      >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-[var(--color-muted)]">
@@ -149,14 +181,14 @@ function Answer({ run, copy }: { run: KnowledgeAssistantRun; copy: Copy }) {
         </p>
       </article>
 
-      <section className="card p-6">
+      <section className={`card ${compact ? "p-4" : "p-6"}`}>
         <h2 className="text-lg font-semibold">
           {copy.citations} ({result.citations.length})
         </h2>
         <div className="mt-4 space-y-3">
           {result.citations.map((citation, index) => (
             <div
-              className="rounded-xl border border-[var(--color-line)] p-4"
+              className={`rounded-xl border border-[var(--color-line)] ${compact ? "p-3" : "p-4"}`}
               key={citation.chunk_id}
             >
               <p className="text-sm font-semibold">

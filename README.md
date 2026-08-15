@@ -111,6 +111,13 @@ evidence, returns application-validated citations, and fails safely for insuffic
 evidence. It has no tools, CRM writes, external actions, or IVC production retrieval. See the bilingual
 [Knowledge Assistant design](docs/knowledge-assistant-design.en.md).
 
+Phase 3.1 adds the bilingual public Commercial Kitchen Consultation Agent as a floating website
+widget. It collects a structured project brief, requires explicit contact consent, and reuses the
+existing idempotent lead workflow with `website_ai_assistant` attribution and duplicate protection.
+It has no internal knowledge or CRM read access, pricing capability, communication tools, or
+autonomous sales actions. See the bilingual
+[Public Consultation Agent design](docs/public-consultation-agent-design.en.md).
+
 ## Repository layout
 
 ```text

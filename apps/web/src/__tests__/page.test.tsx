@@ -16,6 +16,7 @@ import LoginPage from "@/app/login/page";
 import KnowledgeSearchPage from "@/app/(workspace)/knowledge/search/page";
 import KnowledgeAssistantPage from "@/app/(workspace)/knowledge/assistant/page";
 import { QualificationCard } from "@/components/workspace/qualification-card";
+import { PublicConsultationWidget } from "@/components/marketing/public-consultation-widget";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { I18nProvider } from "@/i18n/context";
 import {
@@ -35,6 +36,10 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/app/language-actions", () => ({
   setLanguage: setLanguageMock,
+}));
+vi.mock("@/app/(marketing)/public-consultation-actions", () => ({
+  processConsultationTurn: vi.fn(),
+  createConsultationLead: vi.fn(),
 }));
 vi.mock("@/i18n/server", async () => {
   const { messagesFor } = await import("@/i18n/messages");
@@ -162,6 +167,23 @@ test("renders the public engineering positioning and consultation action", () =>
   ).toHaveLength(2);
 });
 
+test("opens the separate public consultation agent", async () => {
+  render(<PublicConsultationWidget initialLanguage="en" />);
+  const launcher = screen.getByRole("button", {
+    name: "Open Commercial Kitchen Consultation Agent",
+  });
+  fireEvent.click(launcher);
+  expect(
+    screen.getByRole("dialog", {
+      name: "Commercial Kitchen Consultation Agent",
+    }),
+  ).toBeDefined();
+  expect(
+    screen.getByText(/No price, delivery, or technical commitment/i),
+  ).toBeDefined();
+  expect(screen.getByText(/What type of facility/i)).toBeDefined();
+});
+
 test("renders the M6 workspace navigation and live dashboard", async () => {
   const dashboard = await DashboardPage();
   render(await WorkspaceLayout({ children: dashboard }));
@@ -176,6 +198,15 @@ test("renders the M6 workspace navigation and live dashboard", async () => {
     screen.getByRole("heading", { name: "Sales command centre" }),
   ).toBeDefined();
   expect(screen.getByText("School kitchen · Jakarta")).toBeDefined();
+  const launcher = screen.getByRole("button", {
+    name: "Open Knowledge Assistant, draggable vertically",
+  });
+  expect(launcher).toBeDefined();
+  fireEvent.click(launcher);
+  expect(
+    screen.getByRole("dialog", { name: "Enterprise Knowledge Assistant" }),
+  ).toBeDefined();
+  expect(screen.getByRole("link", { name: "Open full page →" })).toBeDefined();
 });
 
 test("renders the internal knowledge retrieval test interface", async () => {

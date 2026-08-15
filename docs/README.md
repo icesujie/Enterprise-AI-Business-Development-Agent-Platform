@@ -37,6 +37,7 @@ Design documents are maintained as complete bilingual pairs:
 | Knowledge retrieval foundation / 知识检索基础 | [knowledge-retrieval-design.en.md](knowledge-retrieval-design.en.md) | [knowledge-retrieval-design.zh-CN.md](knowledge-retrieval-design.zh-CN.md) |
 | Knowledge retrieval evaluation / 知识检索评估 | [knowledge-retrieval-evaluation.en.md](knowledge-retrieval-evaluation.en.md) | [knowledge-retrieval-evaluation.zh-CN.md](knowledge-retrieval-evaluation.zh-CN.md) |
 | Read-only Knowledge Assistant / 只读知识助手 | [knowledge-assistant-design.en.md](knowledge-assistant-design.en.md) | [knowledge-assistant-design.zh-CN.md](knowledge-assistant-design.zh-CN.md) |
+| Public Consultation Agent / 公开项目咨询智能体 | [public-consultation-agent-design.en.md](public-consultation-agent-design.en.md) | [public-consultation-agent-design.zh-CN.md](public-consultation-agent-design.zh-CN.md) |
 
 ## Project and operational documents / 项目与运行文档
 

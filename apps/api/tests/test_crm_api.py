@@ -202,7 +202,7 @@ async def test_public_submission_is_idempotent_and_private() -> None:
             assert first.status_code == 202, first.text
             assert second.status_code == 202
             assert second.json() == first.json()
-            assert set(first.json()) == {"submission_id", "status", "message"}
+            assert set(first.json()) == {"submission_id", "status", "message", "duplicate"}
 
             changed_payload = {
                 **payload,

@@ -97,7 +97,7 @@ The answer model returns only an answer and a sequence of retrieved chunk IDs. T
 
 ## 7. Internal UI
 
-`/knowledge/assistant` provides a fixed Commercial Kitchen Agent selector, English/Chinese answer language, question input, asynchronous loading and safe error states, evidence status, answer, complete citations, collapsible source excerpts, visible similarity scores, correlation ID, and latency. It labels the feature read-only. No IVC production option is shown.
+The authenticated workspace exposes a right-side Knowledge Assistant launcher on every workspace page. The launcher can be dragged vertically and stores its position in local browser storage. Clicking it opens a responsive drawer with English/Chinese answer language, question input, asynchronous loading and safe error states, evidence status, answer, complete citations, collapsible source excerpts, visible similarity scores, correlation ID, and latency. On mobile the drawer uses nearly the full viewport. `/knowledge/assistant` remains available for long-form review and hides the duplicate launcher. Both surfaces label the feature read-only, fix the agent to Commercial Kitchen, and show no IVC production option.
 
 ## 8. Evaluation and regression baseline
 
