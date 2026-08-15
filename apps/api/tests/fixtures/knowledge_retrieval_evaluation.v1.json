@@ -1,0 +1,105 @@
+{
+  "format_version": 1,
+  "dataset": "synthetic-commercial-kitchen-v1",
+  "configuration": {
+    "embedding_provider": "mock",
+    "embedding_dimensions": 1536,
+    "chunk_size": 1200,
+    "chunk_overlap": 200,
+    "top_k": 3,
+    "similarity_threshold": 0.15,
+    "language_filtering": "exact"
+  },
+  "acceptance_thresholds": {
+    "recall_at_k": 0.8,
+    "precision_at_k": 0.75,
+    "hit_at_1": 0.8,
+    "mrr": 0.85,
+    "citation_completeness": 1.0,
+    "insufficient_evidence_accuracy": 1.0,
+    "same_source_document_rate": 1.0,
+    "relevant_chunk_set_jaccard": 0.8,
+    "ranking_consistency": 0.8,
+    "max_latency_ms": 1000.0
+  },
+  "baseline_results": {
+    "recall_at_k": 1.0,
+    "precision_at_k": 1.0,
+    "hit_at_1": 1.0,
+    "mrr": 1.0,
+    "citation_completeness": 1.0,
+    "insufficient_evidence_accuracy": 1.0,
+    "same_source_document_rate": 1.0,
+    "relevant_chunk_set_jaccard": 1.0,
+    "ranking_consistency": 1.0,
+    "mean_latency_ms": 48.0,
+    "max_latency_ms": 71.0
+  },
+  "cases": [
+    {
+      "case_id": "ventilation-en",
+      "language": "en",
+      "query": "What determines exhaust airflow for a commercial kitchen?",
+      "expected_document_ids": ["ventilation-guide"],
+      "expected_chunk_ids": ["ventilation-core"],
+      "bilingual_pair_id": "ventilation"
+    },
+    {
+      "case_id": "ventilation-zh",
+      "language": "zh-CN",
+      "query": "商用厨房的排风量由什么决定？",
+      "expected_document_ids": ["ventilation-guide"],
+      "expected_chunk_ids": ["ventilation-core"],
+      "bilingual_pair_id": "ventilation"
+    },
+    {
+      "case_id": "school-capacity-en",
+      "language": "en",
+      "query": "Which information is required to size a school kitchen?",
+      "expected_document_ids": ["school-case"],
+      "expected_chunk_ids": ["school-capacity", "school-service-window"]
+    },
+    {
+      "case_id": "unsupported-warranty-en",
+      "language": "en",
+      "query": "What lifetime warranty does Sari Arta guarantee?",
+      "expected_document_ids": [],
+      "expected_chunk_ids": [],
+      "expect_insufficient_evidence": true
+    }
+  ],
+  "observations": [
+    {
+      "case_id": "ventilation-en",
+      "ranked_document_ids": ["ventilation-guide"],
+      "ranked_chunk_ids": ["ventilation-core"],
+      "citation_complete": [true],
+      "evidence_status": "sufficient_candidates",
+      "latency_ms": 41.0
+    },
+    {
+      "case_id": "ventilation-zh",
+      "ranked_document_ids": ["ventilation-guide"],
+      "ranked_chunk_ids": ["ventilation-core"],
+      "citation_complete": [true],
+      "evidence_status": "sufficient_candidates",
+      "latency_ms": 48.0
+    },
+    {
+      "case_id": "school-capacity-en",
+      "ranked_document_ids": ["school-case", "school-case"],
+      "ranked_chunk_ids": ["school-capacity", "school-service-window"],
+      "citation_complete": [true, true],
+      "evidence_status": "sufficient_candidates",
+      "latency_ms": 71.0
+    },
+    {
+      "case_id": "unsupported-warranty-en",
+      "ranked_document_ids": [],
+      "ranked_chunk_ids": [],
+      "citation_complete": [],
+      "evidence_status": "insufficient_evidence",
+      "latency_ms": 32.0
+    }
+  ]
+}

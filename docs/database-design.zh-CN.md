@@ -736,3 +736,7 @@ Phase 2.5.2 新增 `processing_status`、`knowledge_processing_runs` 和 `manage
 `knowledge_audit_logs` 是强制执行 RLS、按租户隔离的追加式治理账本。主要字段包括 `tenant_id`、`document_id`、可选的 `document_version_id`、`actor_user_id`、`action`、`before_metadata`、`after_metadata`、`details`、`correlation_id` 和 `created_at`。索引支持 `(tenant_id, document_id, created_at desc)` 和准确版本历史。
 
 行锁、乐观并发 `record_version` 和唯一约束 `(tenant_id, document_id, version_number)` 共同保护版本编号。回滚创建版本 `N + 1`，不会覆盖记录或反向移动权威指针。参见 `knowledge-governance-design.zh-CN.md`。
+
+## Phase 2.6.1 检索查询边界
+
+Phase 2.6.1 不需要数据结构迁移。它搜索已有 `managed_knowledge_chunks.embedding vector(1536)` 列和 HNSW 余弦索引。受治理查询关联按租户隔离的分块、逻辑文档、不可变版本、集合、处理运行和文档—智能体绑定。明确条件要求准确分块版本同时匹配文档 `published_version_id` 和 `active_version_id`；所有租户数据面表继续强制执行 RLS。参见 `knowledge-retrieval-design.zh-CN.md`。

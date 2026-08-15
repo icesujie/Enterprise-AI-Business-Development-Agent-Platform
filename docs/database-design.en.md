@@ -740,3 +740,7 @@ Migration `d3e5f7a9b2c4` adds explicit `current_version_id`, `published_version_
 `knowledge_audit_logs` is a forced-RLS, tenant-scoped append-only governance ledger. Its principal fields are `tenant_id`, `document_id`, optional `document_version_id`, `actor_user_id`, `action`, `before_metadata`, `after_metadata`, `details`, `correlation_id`, and `created_at`. Indexes support `(tenant_id, document_id, created_at desc)` and exact-version history.
 
 Version numbering is protected by row locking, optimistic `record_version`, and unique `(tenant_id, document_id, version_number)`. Rollback creates version `N + 1`; it never overwrites a row or rewinds an authority pointer. See `knowledge-governance-design.en.md`.
+
+## Phase 2.6.1 retrieval query boundary
+
+Phase 2.6.1 requires no schema migration. It searches the existing `managed_knowledge_chunks.embedding vector(1536)` column and HNSW cosine index. The governed query joins tenant-scoped chunks, logical documents, immutable versions, collections, processing runs, and document-agent bindings. Explicit predicates require the exact chunk version to match both document `published_version_id` and `active_version_id`; RLS remains forced on all tenant data-plane tables. See `knowledge-retrieval-design.en.md`.

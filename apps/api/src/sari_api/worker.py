@@ -18,6 +18,8 @@ from sari_api.adapters.agent_recovery import AgentRunRecoveryService
 from sari_api.adapters.database import dispose_database, session_factory
 from sari_api.adapters.ivc_qualification_executor import IvcQualificationRunExecutor
 from sari_api.adapters.ivc_qualification_provider import build_ivc_qualification_provider
+from sari_api.adapters.knowledge_assistant_executor import KnowledgeAssistantRunExecutor
+from sari_api.adapters.knowledge_assistant_provider import build_knowledge_assistant_provider
 from sari_api.adapters.knowledge_embedding import build_knowledge_embedding_provider
 from sari_api.adapters.knowledge_ingestion import KnowledgeIngestionExecutor
 from sari_api.adapters.knowledge_processing_queue import (
@@ -93,6 +95,12 @@ async def run_worker() -> None:
         playground_provider,
         settings.agent_retry_base_seconds,
     )
+    knowledge_assistant_provider = build_knowledge_assistant_provider(settings)
+    knowledge_assistant_executor = KnowledgeAssistantRunExecutor(
+        build_knowledge_embedding_provider(settings),
+        knowledge_assistant_provider,
+        settings,
+    )
     recovery = AgentRunRecoveryService(settings.agent_stale_after_seconds)
     next_recovery_at = 0.0
     logger.info(
@@ -117,6 +125,14 @@ async def run_worker() -> None:
             "event": "agent_playground.worker.provider_selected",
             "provider_type": playground_provider.provider_type,
             "model_id": playground_provider.model_id,
+        },
+    )
+    logger.info(
+        "Knowledge Assistant provider selected",
+        extra={
+            "event": "knowledge_assistant.worker.provider_selected",
+            "provider_type": knowledge_assistant_provider.provider_type,
+            "model_id": knowledge_assistant_provider.model_id,
         },
     )
     logger.info("Qualification worker started", extra={"event": "agent.worker.started"})
@@ -223,6 +239,7 @@ async def run_worker() -> None:
                     "lead_qualification": executor,
                     "ivc_facility_qualification": ivc_executor,
                     "agent_playground_qualification": playground_executor,
+                    "knowledge_assistant": knowledge_assistant_executor,
                 }
                 selected_executor = executors.get(workflow_type) if workflow_type else None
                 if selected_executor is None:

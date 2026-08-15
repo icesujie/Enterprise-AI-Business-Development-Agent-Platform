@@ -45,6 +45,17 @@ export default async function KnowledgePage({
         description={copy.description}
       />
 
+      <div className="flex justify-end">
+        <div className="flex flex-wrap gap-2">
+          <Link className="button-primary" href="/knowledge/assistant">
+            {zh ? "打开知识助手" : "Open Knowledge Assistant"}
+          </Link>
+          <Link className="button-tertiary" href="/knowledge/search">
+            {zh ? "测试知识检索" : "Test knowledge retrieval"}
+          </Link>
+        </div>
+      </div>
+
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {collections.map((collection) => (
           <article className="card p-5" key={collection.id}>

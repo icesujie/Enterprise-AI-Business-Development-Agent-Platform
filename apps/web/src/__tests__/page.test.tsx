@@ -13,6 +13,8 @@ import DashboardPage from "@/app/(workspace)/dashboard/page";
 import ContactsPage from "@/app/(workspace)/contacts/page";
 import OrganizationsPage from "@/app/(workspace)/organizations/page";
 import LoginPage from "@/app/login/page";
+import KnowledgeSearchPage from "@/app/(workspace)/knowledge/search/page";
+import KnowledgeAssistantPage from "@/app/(workspace)/knowledge/assistant/page";
 import { QualificationCard } from "@/components/workspace/qualification-card";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { I18nProvider } from "@/i18n/context";
@@ -174,6 +176,32 @@ test("renders the M6 workspace navigation and live dashboard", async () => {
     screen.getByRole("heading", { name: "Sales command centre" }),
   ).toBeDefined();
   expect(screen.getByText("School kitchen · Jakarta")).toBeDefined();
+});
+
+test("renders the internal knowledge retrieval test interface", async () => {
+  render(await KnowledgeSearchPage());
+  expect(
+    screen.getByRole("heading", { name: "Knowledge retrieval test" }),
+  ).toBeDefined();
+  expect(screen.getByLabelText("Agent")).toBeDefined();
+  expect(screen.getByLabelText("Query")).toBeDefined();
+  expect(screen.getByRole("button", { name: "Run search" })).toBeDefined();
+  expect(screen.getByText(/does not generate AI answers/i)).toBeDefined();
+});
+
+test("renders the read-only enterprise Knowledge Assistant", async () => {
+  render(await KnowledgeAssistantPage());
+  expect(
+    screen.getByRole("heading", { name: "Enterprise Knowledge Assistant" }),
+  ).toBeDefined();
+  expect((screen.getByLabelText("Agent") as HTMLSelectElement).disabled).toBe(
+    true,
+  );
+  expect(screen.getByLabelText("Question")).toBeDefined();
+  expect(
+    screen.getByRole("button", { name: "Ask Knowledge Assistant" }),
+  ).toBeDefined();
+  expect(screen.getByText(/No CRM writes or external actions/i)).toBeDefined();
 });
 
 test("renders the production sign-in form", async () => {

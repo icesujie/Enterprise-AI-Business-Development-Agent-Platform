@@ -99,6 +99,18 @@ binding change history, optimistic concurrency, and a tenant-scoped audit timeli
 `/knowledge/{id}`. It does not enable Knowledge Retrieval. See the bilingual
 [knowledge governance design](docs/knowledge-governance-design.en.md).
 
+Phase 2.6.1 adds `POST /api/v1/knowledge/search`. It performs tenant and active-agent authorization
+before embedding the query, searches only the exact approved published/active version with an enabled
+same-agent binding, and returns evidence chunks with document/version/page/chunk citations. It does
+not generate conversational answers. See the bilingual
+[knowledge retrieval design](docs/knowledge-retrieval-design.en.md).
+
+Phase 2.6.3 adds the read-only Commercial Kitchen Knowledge Assistant at `/knowledge/assistant` and
+the asynchronous `/api/v1/knowledge/assistant/runs` API. It answers only from validated governed
+evidence, returns application-validated citations, and fails safely for insufficient or conflicting
+evidence. It has no tools, CRM writes, external actions, or IVC production retrieval. See the bilingual
+[Knowledge Assistant design](docs/knowledge-assistant-design.en.md).
+
 ## Repository layout
 
 ```text
@@ -177,4 +189,6 @@ make verify-backup BACKUP_FILE=/absolute/path/to/sariarta-YYYYMMDDTHHMMSSZ.dump
 - [Technical architecture](docs/technical-architecture.en.md)
 - [Knowledge foundation](docs/knowledge-foundation-design.en.md)
 - [Knowledge governance](docs/knowledge-governance-design.en.md)
+- [Knowledge retrieval](docs/knowledge-retrieval-design.en.md)
+- [Read-only Knowledge Assistant](docs/knowledge-assistant-design.en.md)
 - [Development rules](AGENTS.md)

@@ -15,8 +15,9 @@ COPY alembic.ini ./alembic.ini
 COPY migrations ./migrations
 COPY src ./src
 
+RUN mkdir -p /app/data/knowledge && chown -R app:app /app/data/knowledge
+
 USER app
 EXPOSE 8000
 
 CMD ["uvicorn", "sari_api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-

@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     knowledge_embedding_dimensions: int = Field(default=1536, ge=128, le=3072)
     knowledge_queue_name: str = "sari-arta:knowledge-ingestion"
     knowledge_processing_queue_name: str = "sari-arta:knowledge-processing"
+    knowledge_retrieval_min_similarity: float = Field(default=0.15, ge=0, le=1)
+    knowledge_retrieval_min_evidence_count: int = Field(default=1, ge=1, le=5)
+    knowledge_retrieval_diagnostic_candidates: int = Field(default=5, ge=0, le=20)
+    knowledge_assistant_top_k: int = Field(default=5, ge=1, le=10)
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:

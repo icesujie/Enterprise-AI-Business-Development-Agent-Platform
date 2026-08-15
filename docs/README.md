@@ -34,6 +34,9 @@ Design documents are maintained as complete bilingual pairs:
 | Knowledge processing pipeline / 知识处理流水线 | [knowledge-processing-pipeline-design.en.md](knowledge-processing-pipeline-design.en.md) | [knowledge-processing-pipeline-design.zh-CN.md](knowledge-processing-pipeline-design.zh-CN.md) |
 | Knowledge governance gap analysis / 知识治理差距分析 | [knowledge-governance-gap-analysis.en.md](knowledge-governance-gap-analysis.en.md) | [knowledge-governance-gap-analysis.zh-CN.md](knowledge-governance-gap-analysis.zh-CN.md) |
 | Knowledge governance implementation / 知识治理实现 | [knowledge-governance-design.en.md](knowledge-governance-design.en.md) | [knowledge-governance-design.zh-CN.md](knowledge-governance-design.zh-CN.md) |
+| Knowledge retrieval foundation / 知识检索基础 | [knowledge-retrieval-design.en.md](knowledge-retrieval-design.en.md) | [knowledge-retrieval-design.zh-CN.md](knowledge-retrieval-design.zh-CN.md) |
+| Knowledge retrieval evaluation / 知识检索评估 | [knowledge-retrieval-evaluation.en.md](knowledge-retrieval-evaluation.en.md) | [knowledge-retrieval-evaluation.zh-CN.md](knowledge-retrieval-evaluation.zh-CN.md) |
+| Read-only Knowledge Assistant / 只读知识助手 | [knowledge-assistant-design.en.md](knowledge-assistant-design.en.md) | [knowledge-assistant-design.zh-CN.md](knowledge-assistant-design.zh-CN.md) |
 
 ## Project and operational documents / 项目与运行文档
 

@@ -139,3 +139,7 @@ Then:
 5. Use database diagnostics to confirm chunks contain exact document/version citation references; no answer-generation screen exists.
 
 Only synthetic or explicitly approved documents may be processed.
+
+## 12. Phase 2.6.1 retrieval integration
+
+Phase 2.6.1 now reads these processed assets through the governed `POST /api/v1/knowledge/search` boundary. Processing alone does not make a chunk retrievable: the logical document must also be active, the exact chunk version must equal both published and active pointers, and the requested active tenant agent must retain an enabled binding and retrieval capability. See `knowledge-retrieval-design.en.md`.

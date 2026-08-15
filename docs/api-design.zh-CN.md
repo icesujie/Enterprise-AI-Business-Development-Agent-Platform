@@ -968,3 +968,17 @@ Phase 2.5.2 新增 `POST /documents/{id}/processing-runs` 和 `GET /processing-r
 控制面现在提供受治理元数据更新、替换版本上传、不可变版本历史、安全回滚、分开的发布与启用命令、归档/恢复、绑定状态变更，以及文档审计时间线。元数据更新、替换和回滚使用 `If-Match`；`record_version` 过期时返回 `412`。
 
 权限拆分为 `knowledge:upload`、`knowledge:edit`、`knowledge:submit_review`、`knowledge:approve`、`knowledge:publish`、`knowledge:archive`、`knowledge:restore`、`knowledge:process` 和 `knowledge:audit_read`。只读元数据访问仍使用 `knowledge:retrieve`。每个命令都会重新检查租户所有权和状态；审批、发布和启用是独立转换。端点矩阵参见 `knowledge-governance-design.zh-CN.md`。
+
+## Phase 2.6.1 知识检索 API
+
+`POST /api/v1/knowledge/search` 接受 `tenant_id`、`agent_id`、受限查询、准确语言和 `top_k`。请求租户必须等于认证工作区。在生成查询嵌入前，系统先检查活动租户智能体和 `approved_knowledge_retrieval` 能力授权。
+
+结果只来自已生效文档：其已批准准确版本必须同时等于 `published_version_id` 和 `active_version_id`，同智能体绑定已启用，且处理运行已完成。每个结果返回文档名称、不可变版本、分块文本、页码、章节、元数据、相似度，以及包含文档/版本/分块 ID 的引用。没有证据时返回 `200 insufficient_evidence`。参见 `knowledge-retrieval-design.zh-CN.md`。
+
+## Phase 2.6.2 检索诊断
+
+响应额外返回 `correlation_id`、`duration_ms`、`similarity_threshold`、`minimum_evidence_count`、`decision_reason` 和 `below_threshold_results`。正式证据仍只限于 `results`。内部测试界面使用 `include_diagnostics=true` 请求诊断，该标志默认为 `false`。低于阈值的结果不得用于生成回答。参见 `knowledge-retrieval-evaluation.zh-CN.md`。
+
+## Phase 2.6.3 只读知识助手 API
+
+`POST /api/v1/knowledge/assistant/runs` 只接受 `agent_id`、`language` 和受限 `question`，要求 `knowledge:retrieve` 与 `Idempotency-Key`，在排队前授权，并返回 `202`。`GET /api/v1/knowledge/assistant/runs/{run_id}` 返回状态和最终结构化结果。Worker 在嵌入前再次授权，然后执行受治理检索、确定性证据/冲突验证，仅在证据充分时使用无工具生成，并由应用验证引用。端点仅限商用厨房智能体；IVC 继续拒绝。参见 `knowledge-assistant-design.zh-CN.md`。

@@ -6,7 +6,7 @@ check: api-check web-check compose-check
 
 api-check:
 	$(PYTHON)/ruff check apps/api/src apps/api/tests apps/api/migrations
-	$(PYTHON)/mypy apps/api/src
+	cd apps/api && .venv/bin/mypy
 	$(PYTHON)/pytest apps/api/tests
 
 web-check:

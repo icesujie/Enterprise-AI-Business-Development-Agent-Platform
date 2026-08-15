@@ -1,0 +1,37 @@
+{
+  "schema_version": "knowledge_assistant_evaluation_v1",
+  "configuration": {
+    "assistant_scope": "commercial_kitchen",
+    "retrieval_baseline": "knowledge_retrieval_evaluation_v1",
+    "notes": "Synthetic recorded regression observations; no customer data."
+  },
+  "cases": [
+    {"case_id":"direct-en","category":"direct_factual","expected_evidence_status":"sufficient","expected_grounded":true,"expected_citation_count":1},
+    {"case_id":"direct-zh","category":"bilingual_pair","expected_evidence_status":"sufficient","expected_grounded":true,"expected_citation_count":1},
+    {"case_id":"multi-source","category":"multi_source","expected_evidence_status":"sufficient","expected_grounded":true,"expected_citation_count":2},
+    {"case_id":"unsupported-price","category":"unsupported_price","expected_evidence_status":"insufficient","expected_grounded":false,"expected_citation_count":0},
+    {"case_id":"unsupported-spec","category":"unsupported_specification","expected_evidence_status":"insufficient","expected_grounded":false,"expected_citation_count":0},
+    {"case_id":"conflict","category":"conflicting_evidence","expected_evidence_status":"conflicting","expected_grounded":false,"expected_citation_count":2},
+    {"case_id":"cross-tenant","category":"cross_tenant","expected_evidence_status":"denied","expected_grounded":false,"expected_citation_count":0,"expected_access_outcome":"denied"},
+    {"case_id":"cross-agent","category":"cross_agent","expected_evidence_status":"denied","expected_grounded":false,"expected_citation_count":0,"expected_access_outcome":"denied"}
+  ],
+  "observations": [
+    {"case_id":"direct-en","evidence_status":"sufficient","grounded":true,"citation_correct":true,"citation_complete":true,"citation_count":1},
+    {"case_id":"direct-zh","evidence_status":"sufficient","grounded":true,"citation_correct":true,"citation_complete":true,"citation_count":1},
+    {"case_id":"multi-source","evidence_status":"sufficient","grounded":true,"citation_correct":true,"citation_complete":true,"citation_count":2},
+    {"case_id":"unsupported-price","evidence_status":"insufficient","grounded":false,"citation_correct":true,"citation_complete":true},
+    {"case_id":"unsupported-spec","evidence_status":"insufficient","grounded":false,"citation_correct":true,"citation_complete":true},
+    {"case_id":"conflict","evidence_status":"conflicting","grounded":false,"citation_correct":true,"citation_complete":true},
+    {"case_id":"cross-tenant","evidence_status":"denied","grounded":false,"citation_correct":true,"citation_complete":true,"access_outcome":"denied"},
+    {"case_id":"cross-agent","evidence_status":"denied","grounded":false,"citation_correct":true,"citation_complete":true,"access_outcome":"denied"}
+  ],
+  "baseline_results": {
+    "grounded_answer_accuracy": 1.0,
+    "citation_correctness": 1.0,
+    "citation_completeness": 1.0,
+    "insufficient_evidence_accuracy": 1.0,
+    "conflict_detection_accuracy": 1.0,
+    "cross_tenant_rejection": 1.0,
+    "cross_agent_rejection": 1.0
+  }
+}

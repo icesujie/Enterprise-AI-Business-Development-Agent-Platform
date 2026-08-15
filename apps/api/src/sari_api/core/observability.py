@@ -49,6 +49,10 @@ class JsonLogFormatter(logging.Formatter):
         "retry_delay_seconds",
         "provider_type",
         "model_id",
+        "agent_id",
+        "language",
+        "result_count",
+        "outcome",
     )
 
     def format(self, record: logging.LogRecord) -> str:

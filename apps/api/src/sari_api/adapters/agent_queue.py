@@ -50,7 +50,14 @@ class AgentQueueMessage:
 
 
 class AgentQueue(Protocol):
-    async def enqueue(self, run_id: UUID, tenant_id: UUID) -> None: ...
+    async def enqueue(
+        self,
+        run_id: UUID,
+        tenant_id: UUID,
+        *,
+        correlation_id: str | None = None,
+        delay_seconds: int = 0,
+    ) -> None: ...
 
 
 class RedisAgentQueue:

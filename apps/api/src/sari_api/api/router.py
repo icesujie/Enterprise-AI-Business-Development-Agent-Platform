@@ -9,7 +9,9 @@ from sari_api.api.routes.health import router as health_router
 from sari_api.api.routes.identity import router as identity_router
 from sari_api.api.routes.ivc_qualification import router as ivc_qualification_router
 from sari_api.api.routes.knowledge import router as knowledge_router
+from sari_api.api.routes.knowledge_assistant import router as knowledge_assistant_router
 from sari_api.api.routes.knowledge_management import router as knowledge_management_router
+from sari_api.api.routes.knowledge_retrieval import router as knowledge_retrieval_router
 from sari_api.api.routes.opportunities import router as opportunities_router
 from sari_api.api.routes.public_leads import router as public_leads_router
 from sari_api.api.routes.qualification import router as qualification_router
@@ -28,3 +30,5 @@ router.include_router(ivc_qualification_router)
 router.include_router(agent_playground_router)
 router.include_router(knowledge_router)
 router.include_router(knowledge_management_router)
+router.include_router(knowledge_retrieval_router)
+router.include_router(knowledge_assistant_router)

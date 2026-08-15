@@ -267,6 +267,104 @@ export type ManagedKnowledgeDocument = {
   bindings?: KnowledgeDocumentBinding[];
 };
 
+export type KnowledgeSearchResult = {
+  document_name: string;
+  document_version: number;
+  chunk_content: string;
+  page_number: number | null;
+  section: string | null;
+  metadata: Record<string, unknown>;
+  similarity_score: number;
+  citation: {
+    document_id: string;
+    document_name: string;
+    document_version_id: string;
+    document_version: number;
+    chunk_id: string;
+    page_number: number | null;
+    section: string | null;
+    content_sha256: string;
+  };
+};
+
+export type KnowledgeSearchResponse = {
+  evidence_status: "sufficient_candidates" | "insufficient_evidence";
+  tenant_id: string;
+  agent_id: string;
+  language: "en" | "zh-CN" | "id";
+  correlation_id: string;
+  duration_ms: number;
+  similarity_threshold: number;
+  minimum_evidence_count: number;
+  decision_reason:
+    | "meets_minimum_evidence"
+    | "below_similarity_threshold"
+    | "insufficient_result_count";
+  results: KnowledgeSearchResult[];
+  below_threshold_results: KnowledgeSearchResult[];
+};
+
+export type KnowledgeAssistantEvidence = {
+  document_id: string;
+  document_name: string;
+  document_version_id: string;
+  document_version: number;
+  page_number: number | null;
+  section: string | null;
+  chunk_id: string;
+  source_metadata: Record<string, unknown>;
+  similarity_score: number;
+  content: string;
+  content_sha256: string;
+};
+
+export type KnowledgeAssistantResult = {
+  evidence_status: "sufficient" | "insufficient" | "conflicting";
+  answer: string;
+  citations: Array<
+    Omit<KnowledgeAssistantEvidence, "content" | "content_sha256">
+  >;
+  evidence: KnowledgeAssistantEvidence[];
+  conflict_keys: string[];
+  retrieved_result_count: number;
+  model_provider: string;
+  model_id: string;
+};
+
+export type KnowledgeAssistantRun = {
+  run_id: string;
+  workflow_type: "knowledge_assistant";
+  status: string;
+  correlation_id: string | null;
+  provider_type: string | null;
+  model_id: string | null;
+  duration_ms: number | null;
+  result: KnowledgeAssistantResult | null;
+  error_code: string | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type KnowledgeAssistantRunStart = {
+  run_id: string;
+  workflow_type: "knowledge_assistant";
+  status: string;
+  status_url: string;
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
+
 const apiBaseUrl = process.env.API_BASE_URL ?? "http://localhost:8000";
 
 async function authenticationHeaders(): Promise<Record<string, string>> {
@@ -311,8 +409,9 @@ export async function apiFetch<T>(
     const problem = (await response.json().catch(() => null)) as {
       detail?: string;
     } | null;
-    throw new Error(
+    throw new ApiRequestError(
       problem?.detail ?? `API request failed (${response.status})`,
+      response.status,
     );
   }
   if (response.status === 204) return undefined as T;

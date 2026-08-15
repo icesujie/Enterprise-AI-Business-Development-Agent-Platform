@@ -973,3 +973,17 @@ Phase 2.5.2 adds `POST /documents/{id}/processing-runs` and `GET /processing-run
 The control plane now exposes governed metadata update, replacement-version upload, immutable version history, safe rollback, separate publish and activate commands, archive/restore, binding status changes, and a document audit timeline. Metadata update, replacement, and rollback use `If-Match` and return `412` for a stale `record_version`.
 
 Permissions are split into `knowledge:upload`, `knowledge:edit`, `knowledge:submit_review`, `knowledge:approve`, `knowledge:publish`, `knowledge:archive`, `knowledge:restore`, `knowledge:process`, and `knowledge:audit_read`. Read-only metadata access remains `knowledge:retrieve`. Every command rechecks tenant ownership and state; approval, publication, and activation are separate transitions. See `knowledge-governance-design.en.md` for the endpoint matrix.
+
+## Phase 2.6.1 knowledge retrieval API
+
+`POST /api/v1/knowledge/search` accepts `tenant_id`, `agent_id`, a bounded query, exact language, and `top_k`. The request tenant must equal the authenticated workspace. Authorization for the active tenant agent and `approved_knowledge_retrieval` capability occurs before query embedding.
+
+Results come only from active documents whose approved exact version equals both `published_version_id` and `active_version_id`, whose same-agent binding is enabled, and whose processing run completed. Each result returns document name, immutable version, chunk text, page, section, metadata, similarity, and a citation containing document/version/chunk IDs. Empty evidence returns `200 insufficient_evidence`. See `knowledge-retrieval-design.en.md`.
+
+## Phase 2.6.2 retrieval diagnostics
+
+The response additionally returns `correlation_id`, `duration_ms`, `similarity_threshold`, `minimum_evidence_count`, `decision_reason`, and `below_threshold_results`. Formal evidence remains limited to `results`. The internal test UI requests diagnostics with `include_diagnostics=true`; the flag defaults to `false`. Below-threshold results must not be used for generated answers. See `knowledge-retrieval-evaluation.en.md`.
+
+## Phase 2.6.3 read-only Knowledge Assistant API
+
+`POST /api/v1/knowledge/assistant/runs` accepts only `agent_id`, `language`, and a bounded `question`, requires `knowledge:retrieve` and `Idempotency-Key`, authorizes before queueing, and returns `202`. `GET /api/v1/knowledge/assistant/runs/{run_id}` returns status and the final structured result. The worker reauthorizes before embedding, then performs governed retrieval, deterministic evidence/conflict validation, no-tools generation only for sufficient evidence, and application-side citation validation. The endpoint is restricted to the Commercial Kitchen Agent; IVC remains denied. See `knowledge-assistant-design.en.md`.

@@ -94,6 +94,8 @@ async def seed_enterprise_knowledge_demo() -> bool:
             document_type,
             filename,
         ) in DEMO_ITEMS:
+            content = (DEMO_ROOT / filename).read_bytes()
+            document_id = uuid5(NAMESPACE_URL, f"phase-2.5.1:{collection_key}")
             existing = await session.scalar(
                 select(KnowledgeCollection).where(
                     KnowledgeCollection.tenant_id == TENANT_ID,
@@ -101,6 +103,15 @@ async def seed_enterprise_knowledge_demo() -> bool:
                 )
             )
             if existing is not None:
+                version_one = await session.scalar(
+                    select(KnowledgeDocumentVersion).where(
+                        KnowledgeDocumentVersion.tenant_id == TENANT_ID,
+                        KnowledgeDocumentVersion.document_id == document_id,
+                        KnowledgeDocumentVersion.version_number == 1,
+                    )
+                )
+                if version_one is not None:
+                    await storage.put(version_one.object_key, content)
                 continue
             domain = await session.scalar(
                 select(DomainPackage).where(DomainPackage.domain_key == domain_key)
@@ -108,7 +119,6 @@ async def seed_enterprise_knowledge_demo() -> bool:
             agent = await session.scalar(select(Agent).where(Agent.agent_key == agent_key))
             if domain is None or agent is None:
                 raise RuntimeError(f"Demo domain agent is not registered: {agent_key}")
-            content = (DEMO_ROOT / filename).read_bytes()
             collection = KnowledgeCollection(
                 tenant_id=TENANT_ID,
                 domain_package_id=domain.id,
@@ -120,7 +130,6 @@ async def seed_enterprise_knowledge_demo() -> bool:
             )
             session.add(collection)
             await session.flush()
-            document_id = uuid5(NAMESPACE_URL, f"phase-2.5.1:{collection_key}")
             object_key = f"{TENANT_ID}/managed/demo/{document_id}-{filename}"
             await storage.put(object_key, content)
             now = datetime.now(UTC)

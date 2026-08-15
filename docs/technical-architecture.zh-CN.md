@@ -831,3 +831,5 @@ flowchart TB
 Phase 2.5.2 通过专用 Redis 队列和 Worker 实现该明确处理边界。符合条件的准确版本会被提取、清洗、分块，通过提供商接口生成嵌入，并写入按智能体隔离的 `managed_knowledge_chunks`。不启用面向用户的检索或回答生成。参见 `knowledge-processing-pipeline-design.zh-CN.md`。
 
 Phase 2.5.3 通过明确的当前、已发布和已生效版本指针，分开的审批人与发布人权限，创建不可变后继版本的回滚，乐观并发控制，以及强制执行 RLS 的 `knowledge_audit_logs` 账本来治理该边界。`/knowledge/{id}` 工作台提供这些控制，但不启用检索。参见 `knowledge-governance-design.zh-CN.md`。
+
+Phase 2.6.1 通过 `POST /api/v1/knowledge/search` 启用第一条只读受治理检索边界。系统先完成租户和智能体能力授权，再生成查询嵌入；之后 pgvector 搜索要求已生效生命周期、准确已发布/已生效版本一致、审核已批准、处理已完成、同智能体绑定已启用，以及语言、提供商/模型和相似度符合条件。它只返回证据和引用，不生成答案。参见 `knowledge-retrieval-design.zh-CN.md`。
