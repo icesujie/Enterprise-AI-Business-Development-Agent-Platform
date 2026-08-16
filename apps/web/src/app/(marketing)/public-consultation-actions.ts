@@ -1,6 +1,7 @@
 "use server";
 
 import { submitPublicLead, type PublicLeadAccepted } from "@/lib/public-leads";
+import type { AcquisitionAttribution } from "@/lib/acquisition-attribution";
 
 export type ConsultationLanguage = "en" | "zh-CN";
 export type ConsultationField =
@@ -56,6 +57,7 @@ export async function createConsultationLead(input: {
   values: Record<ConsultationField, string>;
   contactConsent: boolean;
   marketingConsent: boolean;
+  attribution?: AcquisitionAttribution;
 }): Promise<PublicLeadAccepted> {
   if (input.contactConsent !== true) {
     throw new Error("Contact consent is required before creating an inquiry.");
@@ -90,6 +92,7 @@ export async function createConsultationLead(input: {
       attribution: {
         source: "website_ai_assistant",
         campaign: "phase-3.1-public-consultation-agent",
+        ...input.attribution,
       },
       consent: {
         privacy_policy_version: "public-agent-2026-08",

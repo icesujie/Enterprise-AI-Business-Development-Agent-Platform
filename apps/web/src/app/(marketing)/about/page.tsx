@@ -5,16 +5,24 @@ import {
   ContentBand,
   InnerPageHero,
 } from "@/components/marketing/inner-page";
+import { StructuredData } from "@/components/seo/structured-data";
+import { getLocale } from "@/i18n/server";
+import { buildPublicPageMetadata } from "@/lib/seo";
+import { buildBreadcrumbStructuredData } from "@/lib/structured-data";
 
-export const metadata: Metadata = {
-  title: "About Sari Arta",
-  description:
-    "Learn how Sari Arta coordinates commercial kitchen engineering, China-based manufacturing capability, and local installation in Indonesia.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPublicPageMetadata("about", await getLocale());
+}
 
 export default function AboutPage() {
   return (
     <>
+      <StructuredData
+        data={buildBreadcrumbStructuredData([
+          { name: "Home", path: "/" },
+          { name: "About Sari Arta", path: "/about" },
+        ])}
+      />
       <InnerPageHero
         eyebrow="About Sari Arta"
         title="An Indonesia commercial kitchen engineering partner built around project coordination."

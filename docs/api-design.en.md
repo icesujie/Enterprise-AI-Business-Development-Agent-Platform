@@ -493,7 +493,10 @@ X-Site-Token: public_site_token
   },
   "attribution": {
     "source": "website",
-    "campaign": "hotel-kitchen-2026"
+    "campaign": "hotel-kitchen-2026",
+    "acquisition_source": "organic_google",
+    "landing_path": "/solutions",
+    "referrer_domain": "google.com"
   },
   "consent": {
     "privacy_policy_version": "2026-07",
@@ -513,6 +516,14 @@ X-Site-Token: public_site_token
 ```
 
 Return `202 Accepted`. Do not reveal internal lead score, salesperson, tenant configuration, or duplicate-match result.
+
+`acquisition_source`, `landing_path`, and `referrer_domain` are optional and backward compatible.
+They provide minimal first-touch search attribution while `source` remains the canonical business
+intake source (`website` or `website_ai_assistant`). Accepted acquisition values are
+`organic_google`, `organic_bing`, `ai_search`, `direct`, `social`, and `referral`. The API accepts
+only a path without query/fragment and a normalized referrer domain; it does not accept or retain a
+full referrer URL or search query. The supplemental values are stored in lead requirement metadata
+and do not change deduplication, status, ownership, qualification, or audit behavior.
 
 ### 5.2 Create an internal lead
 

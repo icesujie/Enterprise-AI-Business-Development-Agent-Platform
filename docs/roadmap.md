@@ -105,7 +105,7 @@ production launch remains a separate human-approved activity with environment-sp
 - [x] Governed Marketing Content Agent with typed drafts, public evidence, and human approval
 - [x] Marketing generation business evaluation baseline, immutable human feedback, and channel-specific review previews
 - [x] Fixed ten-case bilingual Marketing Content business-acceptance workspace and GO checklist
-- [ ] Final human GO for Phase 3.2 Marketing Content Agent
+- [ ] Final human business acceptance for Phase 3.2 Marketing Content Agent — pending/deferred; does not block Phase 3.2.4A technical foundations
 - [ ] Proposal Assistant with structured editable drafts
 - [ ] Proposal versioning and print-ready export
 - [x] Evaluation cases for retrieval quality and grounded answer safety
@@ -120,6 +120,7 @@ production launch remains a separate human-approved activity with environment-sp
 
 - [x] Phase 3.1 bilingual public Commercial Kitchen Consultation Agent with consented CRM intake
 - [ ] Phase 3.2.4 Organic & AI Search Visibility Foundation
+  - [x] Phase 3.2.4A Organic & AI Search Technical Foundation
 - [ ] WhatsApp integration
 - [ ] Email integration and controlled automation
 - [ ] CRM follow-up workflows
@@ -133,7 +134,7 @@ production launch remains a separate human-approved activity with environment-sp
 
 ### Phase 3.2.4 — Organic & AI Search Visibility Foundation
 
-**Status:** Planned; no implementation has started.
+**Status:** In progress. **Phase 3.2.4A — Organic & AI Search Technical Foundation** is implemented and validated. Later governed public-content publication and visibility measurement remain future work.
 
 **Purpose:** Turn approved public enterprise knowledge and human-approved governed marketing content into discoverable public website content for traditional organic search and provider-neutral AI-powered search experiences. This milestone follows the governed Marketing Content Agent and its generation evaluation, and precedes outbound channel automation.
 
@@ -161,6 +162,39 @@ Approved Public Knowledge
 
 Search-visible content may originate only from explicitly public knowledge and approved marketing content. It must never expose internal pricing, supplier information, private customer information, internal SOP, CRM data, or confidential commercial information.
 
+#### Phase 3.2 dependency rules
+
+Phase 3.2 engineering, security/governance, and technical evaluation are complete. Business acceptance is pending/deferred, and production activation remains disabled. Final acceptance still requires an approved real Sari Arta Brand Guideline, final English and Chinese review, real Human Edit Distance, and a controlled OpenAI comparison.
+
+The deferred acceptance does **not** block:
+
+- Phase 3.2.4A Organic & AI Search technical foundations;
+- sitemap and robots/crawler readiness;
+- structured-data infrastructure;
+- metadata architecture;
+- public-page architecture;
+- search-attribution design.
+
+The deferred acceptance **does** block:
+
+- production Marketing Content Agent activation;
+- automatic website-content generation;
+- automatic content publication;
+- social publishing;
+- external marketing communication based on generated content.
+
+Phase 3.2.4A must remain a technical foundation only. It must not generate, approve, publish, or externally distribute marketing content.
+
+#### Phase 3.2.4A implementation result
+
+The public website now has an explicit crawl boundary; canonical bilingual metadata; Organization,
+WebSite and Breadcrumb structured data; a publication-aware sitemap policy; reviewed Googlebot,
+Bingbot and OAI-SearchBot rules; private-route `noindex` defense in depth; disabled-by-default
+IndexNow readiness; and minimal, backward-compatible search-acquisition attribution. Search Console,
+Bing Webmaster, production-domain verification, real public-content approval, analytics, and any
+publication trigger remain manual or future production tasks. See
+`docs/organic-ai-search-foundation.en.md` and its Chinese translation.
+
 ## Phase 4 — Advanced Agent System
 
 **Goal:** Add higher-autonomy capabilities only after the underlying data, tools, and governance are proven.
@@ -181,8 +215,11 @@ Search-visible content may originate only from explicitly public knowledge and a
 **M8 Phase 1 acceptance, Phase 2.3 Agent Playground, Phase 2.5 Knowledge Foundation, Phase
 2.5.1 Enterprise Knowledge Management, Phase 2.5.2 Knowledge Processing, Phase 2.5.3
 Knowledge Governance, Phase 2.6.1 Knowledge Retrieval, Phase 2.6.2 Retrieval Evaluation,
-Phase 2.6.3 Read-Only Knowledge Assistant, Phase 3.1 Public Consultation Agent, and Phase
-3.2 Business Acceptance Preparation are implemented for controlled development evaluation. Final Phase 3.2 human GO remains pending.** The control plane manages tenant- and domain-scoped
+Phase 2.6.3 Read-Only Knowledge Assistant, Phase 3.1 Public Consultation Agent, Phase
+3.2 Business Acceptance Preparation, and Phase 3.2.4A Organic & AI Search Technical Foundation
+are implemented for controlled development evaluation. Phase 3.2 engineering, security/governance,
+and technical evaluation are complete; business acceptance is pending/deferred and production
+activation is disabled. The control plane manages tenant- and domain-scoped
 collections, immutable version history, explicit current/published/active pointers, human approval,
 separate publication, safe rollback, agent bindings, and a tenant-scoped audit timeline through
 `/knowledge`. The read-only retrieval API returns agent-authorized evidence chunks and exact citations
@@ -201,9 +238,12 @@ evidence. Generated versions enter the existing human review workflow and cannot
 published, scheduled, sent, or written into CRM by the agent. Development/demo activation is enabled;
 production remains pending.
 
-The deterministic business baseline covers five scenarios, all five supported content types, and paired English/Chinese cases. Human feedback and channel previews are available internally. Business acceptance remains conditional pending real Sari Arta reviewer feedback, approved human revisions, and a small manually authorized real-provider comparison; no next phase starts automatically.
+The deterministic business baseline covers five scenarios, all five supported content types, and paired English/Chinese cases. Human feedback and channel previews are available internally. Business acceptance remains deferred pending an approved real Brand Guideline, final bilingual review, real Human Edit Distance, and a controlled OpenAI comparison. This deferral does not block Phase 3.2.4A technical search foundations, but it continues to block production generation, automatic publication, social publishing, and generated-content external communication.
 
-Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
+The next task should be selected only after reviewing the Phase 3.2.4A production-domain checklist.
+Phase 2–4 architecture may retain simple compatibility boundaries; later production capabilities
+still require their documented acceptance gates, while explicitly independent technical foundations
+may proceed according to the dependency rules above.
 
 ## Progress update rules
 

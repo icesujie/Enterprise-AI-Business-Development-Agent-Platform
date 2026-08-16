@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { AcquisitionAttribution } from "@/lib/acquisition-attribution";
+
 export type PublicLeadPayload = {
   contact: {
     first_name: string;
@@ -26,7 +28,7 @@ export type PublicLeadPayload = {
   attribution: {
     source: "website" | "website_ai_assistant";
     campaign: string;
-  };
+  } & Partial<AcquisitionAttribution>;
   consent: {
     privacy_policy_version: string;
     contact_consent: true;

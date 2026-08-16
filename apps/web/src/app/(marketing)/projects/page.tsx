@@ -6,17 +6,25 @@ import {
   InnerPageHero,
 } from "@/components/marketing/inner-page";
 import { ProjectCard } from "@/components/marketing/project-card";
+import { StructuredData } from "@/components/seo/structured-data";
 import { deliveryStages, sampleProjects } from "@/content/public-site";
+import { getLocale } from "@/i18n/server";
+import { buildPublicPageMetadata } from "@/lib/seo";
+import { buildBreadcrumbStructuredData } from "@/lib/structured-data";
 
-export const metadata: Metadata = {
-  title: "Commercial Kitchen Project Scenarios",
-  description:
-    "Explore clearly labelled sample scenarios showing Sari Arta's approach to school, hospital, factory cafeteria, and central kitchen engineering projects.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPublicPageMetadata("projects", await getLocale());
+}
 
 export default function ProjectsPage() {
   return (
     <>
+      <StructuredData
+        data={buildBreadcrumbStructuredData([
+          { name: "Home", path: "/" },
+          { name: "Projects", path: "/projects" },
+        ])}
+      />
       <InnerPageHero
         eyebrow="Projects & case studies"
         title="Project evidence should explain the problem, responsibility, and delivery approach."

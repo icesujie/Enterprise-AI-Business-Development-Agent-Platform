@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
+
 import { login } from "./actions";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { getMessages } from "@/i18n/server";
 import { getDemoAuthConfig } from "@/lib/demo-auth";
+import { privateMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = privateMetadata;
 
 export default async function LoginPage({
   searchParams,

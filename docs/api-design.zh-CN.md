@@ -488,7 +488,10 @@ X-Site-Token: public_site_token
   },
   "attribution": {
     "source": "website",
-    "campaign": "hotel-kitchen-2026"
+    "campaign": "hotel-kitchen-2026",
+    "acquisition_source": "organic_google",
+    "landing_path": "/solutions",
+    "referrer_domain": "google.com"
   },
   "consent": {
     "privacy_policy_version": "2026-07",
@@ -508,6 +511,13 @@ X-Site-Token: public_site_token
 ```
 
 返回 `202 Accepted`。请勿透露内部潜在客户评分、销售人员、租户配置或重复匹配结果。
+
+`acquisition_source`、`landing_path` 和 `referrer_domain` 是可选且向后兼容的字段。它们提供
+最小化的首次触点搜索归因，而 `source` 仍然是正式业务录入来源（`website` 或
+`website_ai_assistant`）。允许的获客分类为 `organic_google`、`organic_bing`、`ai_search`、
+`direct`、`social` 和 `referral`。API 只接受不包含 Query/Fragment 的路径和标准化 Referrer
+Domain，不接受或保存完整 Referrer URL 或搜索关键词。补充字段存入 Lead Requirements
+Metadata，不会改变去重、状态、负责人、资格评估或审计行为。
 
 ### 5.2 创建内部负责人
 

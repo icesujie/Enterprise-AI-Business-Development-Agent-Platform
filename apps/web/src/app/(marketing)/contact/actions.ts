@@ -7,6 +7,7 @@ import {
   submitPublicLead,
   type PublicLeadPayload,
 } from "@/lib/public-leads";
+import { isAcquisitionAttribution } from "@/lib/acquisition-attribution";
 
 export type ConsultationFormState = {
   error: string | null;
@@ -51,6 +52,11 @@ export async function submitConsultation(
 
   const [countryCode, countryName] = splitCountry(countryValue);
   const [firstName, ...remainingName] = fullName.split(/\s+/);
+  const attribution = {
+    acquisition_source: value(formData, "acquisition_source"),
+    landing_path: value(formData, "landing_path"),
+    referrer_domain: optional(formData, "referrer_domain"),
+  };
   const payload: PublicLeadPayload = {
     contact: {
       first_name: firstName,
@@ -75,6 +81,7 @@ export async function submitConsultation(
     attribution: {
       source: "website",
       campaign: "m6-public-consultation",
+      ...(isAcquisitionAttribution(attribution) ? attribution : {}),
     },
     consent: {
       privacy_policy_version: "mvp-2026-08",

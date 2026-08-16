@@ -1,11 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 
 import { WorkspaceNav } from "@/components/workspace/workspace-nav";
 import { WorkspaceTopbar } from "@/components/workspace/workspace-topbar";
 import { FloatingKnowledgeAssistant } from "@/components/knowledge/floating-knowledge-assistant";
 import { getLocale, getMessages } from "@/i18n/server";
+import { privateMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = privateMetadata;
 
 export default async function WorkspaceLayout({
   children,

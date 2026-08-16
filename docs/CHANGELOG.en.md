@@ -196,6 +196,28 @@ This changelog records major product, architecture, security, and business-capab
 - Staff can generate reviewable B2B marketing drafts from approved public evidence instead of starting from a blank page.
 - Source traceability and mandatory human approval reduce unsupported marketing claims without enabling publishing or external sending.
 
+## 2026-08-16 — Phase 3.2.4A: Organic & AI Search Technical Foundation
+
+### Added capabilities
+
+- Added explicit public/private crawler boundaries, canonical page metadata, and private-route `noindex` controls.
+- Added maintainable robots and sitemap policies with explicit Googlebot, Bingbot, and OAI-SearchBot review.
+- Added Organization, WebSite, and Breadcrumb structured data plus reusable future publication patterns.
+- Added disabled-by-default IndexNow readiness and Google/Bing verification configuration points.
+- Added minimal organic, AI-search, direct, social, and referral attribution while preserving existing CRM intake sources.
+
+### Architecture impact
+
+- Centralized public route eligibility so sitemap, IndexNow, canonical URLs, and future governed publication use the same deny-by-default boundary.
+- Added server-rendered bilingual metadata and provider-neutral machine-readable site identity without crawler-only content.
+- Kept Search Console, webmaster credentials, production-domain activation, analytics, and publication triggers outside application defaults.
+
+### Business impact
+
+- Made the current Sari Arta public website technically ready for organic and AI-search discovery.
+- Connected future search discovery to the existing consented consultation and CRM intake path without changing CRM workflow.
+- Preserved the deferred Phase 3.2 business-acceptance gate: no generated marketing content was activated or published.
+
 ## Current Status
 
-The platform has evolved from a single business demo into a reusable enterprise AI Business Development Platform. It now combines an operational CRM workflow, multidomain agent framework, governed enterprise knowledge lifecycle, evaluated retrieval, read-only grounded assistance, a separated public consultation experience, and governed marketing draft generation. External communication automation, autonomous sales actions, and advanced orchestration remain future controlled phases.
+The platform has evolved from a single business demo into a reusable enterprise AI Business Development Platform. It now combines an operational CRM workflow, multidomain agent framework, governed enterprise knowledge lifecycle, evaluated retrieval, read-only grounded assistance, a separated public consultation experience, governed marketing draft generation, and an Organic & AI Search technical foundation. External communication automation, autonomous sales actions, generated-content production activation, and advanced orchestration remain future controlled phases.

@@ -5,23 +5,25 @@ import {
   ContentBand,
   InnerPageHero,
 } from "@/components/marketing/inner-page";
+import { StructuredData } from "@/components/seo/structured-data";
 import { industries } from "@/content/public-site";
+import { getLocale } from "@/i18n/server";
+import { buildPublicPageMetadata } from "@/lib/seo";
+import { buildBreadcrumbStructuredData } from "@/lib/structured-data";
 
-export const metadata: Metadata = {
-  title: "School, Hospital & Central Kitchen Solutions",
-  description:
-    "Commercial kitchen engineering for schools, hospitals, factories, corporate cafeterias, and central kitchens in Indonesia.",
-  keywords: [
-    "school kitchen design",
-    "hospital kitchen solution",
-    "factory cafeteria kitchen",
-    "central kitchen solution",
-  ],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPublicPageMetadata("industries", await getLocale());
+}
 
 export default function IndustriesPage() {
   return (
     <>
+      <StructuredData
+        data={buildBreadcrumbStructuredData([
+          { name: "Home", path: "/" },
+          { name: "Industries", path: "/industries" },
+        ])}
+      />
       <InnerPageHero
         eyebrow="Industry solutions"
         title="Every food-service environment creates a different engineering problem."

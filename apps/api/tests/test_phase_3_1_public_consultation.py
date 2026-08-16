@@ -102,6 +102,9 @@ async def test_consented_ai_consultation_creates_one_audited_lead_without_qualif
         "attribution": {
             "source": "website_ai_assistant",
             "campaign": "phase-3.1-test",
+            "acquisition_source": "ai_search",
+            "landing_path": "/solutions",
+            "referrer_domain": "chatgpt.com",
         },
         "consent": {
             "privacy_policy_version": "test-v1",
@@ -148,6 +151,11 @@ async def test_consented_ai_consultation_creates_one_audited_lead_without_qualif
             assert lead.owner_membership_id is None
             assert lead.qualification_score is None
             assert lead.requirements["facility_type"] == "School"
+            assert lead.requirements["acquisition_attribution"] == {
+                "source": "ai_search",
+                "landing_path": "/solutions",
+                "referrer_domain": "chatgpt.com",
+            }
             actions = list(
                 (
                     await session.scalars(

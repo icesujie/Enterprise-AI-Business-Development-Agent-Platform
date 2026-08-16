@@ -15,6 +15,7 @@ import {
   type ConsultationLanguage,
 } from "@/app/(marketing)/public-consultation-actions";
 import { Button } from "@/components/ui/button";
+import { captureAcquisitionAttribution } from "@/lib/acquisition-attribution";
 
 type Message = { role: "assistant" | "visitor"; text: string };
 type Point = { x: number; y: number };
@@ -143,6 +144,7 @@ export function PublicConsultationWidget({
         values,
         contactConsent: consent,
         marketingConsent,
+        attribution: captureAcquisitionAttribution(),
       });
       setDuplicate(Boolean(result.duplicate));
       setSubmitted(true);

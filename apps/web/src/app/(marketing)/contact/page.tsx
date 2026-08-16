@@ -3,16 +3,17 @@ import Link from "next/link";
 
 import { SectionContainer } from "@/components/layout/section-container";
 import { InnerPageHero } from "@/components/marketing/inner-page";
+import { StructuredData } from "@/components/seo/structured-data";
 import { Card } from "@/components/ui/card";
+import { getLocale } from "@/i18n/server";
+import { buildPublicPageMetadata } from "@/lib/seo";
+import { buildBreadcrumbStructuredData } from "@/lib/structured-data";
 
 import { ConsultationForm } from "./consultation-form";
 
-export const metadata: Metadata = {
-  title: "Request a Commercial Kitchen Consultation",
-  description:
-    "Share your commercial kitchen project location, facility type, estimated size, timeline, and requirements with Sari Arta.",
-  robots: { index: true, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPublicPageMetadata("contact", await getLocale());
+}
 
 export default async function ContactPage({
   searchParams,
@@ -21,6 +22,12 @@ export default async function ContactPage({
 
   return (
     <>
+      <StructuredData
+        data={buildBreadcrumbStructuredData([
+          { name: "Home", path: "/" },
+          { name: "Contact", path: "/contact" },
+        ])}
+      />
       <InnerPageHero
         eyebrow="Contact & project consultation"
         title={

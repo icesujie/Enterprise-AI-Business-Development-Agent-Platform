@@ -1,24 +1,24 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+import {
+  absolutePublicUrl,
+  getSiteUrl,
+  privateRoutePrefixes,
+} from "@/lib/search-foundation";
 
 export default function robots(): MetadataRoute.Robots {
+  const crawlRules = {
+    allow: "/",
+    disallow: [...privateRoutePrefixes],
+  };
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-      disallow: [
-        "/api/",
-        "/dashboard",
-        "/leads",
-        "/opportunities",
-        "/follow-up",
-        "/organizations",
-        "/contacts",
-        "/tasks",
-        "/login",
-      ],
-    },
-    sitemap: `${siteUrl}/sitemap.xml`,
+    rules: [
+      { userAgent: "*", ...crawlRules },
+      { userAgent: "Googlebot", ...crawlRules },
+      { userAgent: "Bingbot", ...crawlRules },
+      { userAgent: "OAI-SearchBot", ...crawlRules },
+    ],
+    sitemap: absolutePublicUrl("/sitemap.xml"),
+    host: getSiteUrl(),
   };
 }

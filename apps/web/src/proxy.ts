@@ -1,9 +1,17 @@
 import type { NextRequest } from "next/server";
 
+import { isPrivateSearchRoute } from "@/lib/search-foundation";
 import { updateSession } from "@/lib/supabase/proxy";
 
 export async function proxy(request: NextRequest) {
-  return updateSession(request);
+  const response = await updateSession(request);
+  if (isPrivateSearchRoute(request.nextUrl.pathname)) {
+    response.headers.set(
+      "X-Robots-Tag",
+      "noindex, nofollow, noarchive, nosnippet",
+    );
+  }
+  return response;
 }
 
 export const config = {

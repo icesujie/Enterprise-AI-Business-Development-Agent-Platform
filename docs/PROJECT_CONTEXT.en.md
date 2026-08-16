@@ -111,6 +111,30 @@ The application is a modular monolith. PostgreSQL is canonical business state; p
 - Production activation and business acceptance remain pending; external publishing and CRM writes remain prohibited.
 - A fixed ten-case English/Chinese business-acceptance workspace now derives review progress, exact AI/human version lineage, feedback, quality metrics, and readiness checkpoints from the existing governed lifecycle.
 
+### Phase 3.2 Status and Business-Acceptance Deferral
+
+| Area | Status |
+|---|---|
+| Engineering | Complete |
+| Security and governance | Complete |
+| Technical evaluation | Complete |
+| Business acceptance | Pending / Deferred |
+| Production activation | Disabled |
+
+Final business acceptance requires an approved real Sari Arta Brand Guideline, final English and Chinese content review, real Human Edit Distance from approved human successor versions, and a controlled OpenAI comparison. These activities are intentionally deferred and must be completed before production marketing-content generation or automated publication is enabled.
+
+This deferral does **not** block the Phase 3.2.4 Organic & AI Search technical foundation: sitemap, robots/crawler readiness, structured data, metadata architecture, public-page architecture, and search-attribution design may proceed independently. It **does** block production Marketing Content Agent activation, automatic website-content generation, automatic content publication, social publishing, and external marketing communication based on generated content.
+
+### Phase 3.2.4A — Organic & AI Search Technical Foundation
+
+- Added a reviewed crawl boundary for canonical public pages and internal workspace routes.
+- Added maintainable robots and sitemap policies, including explicit Googlebot, Bingbot, and OAI-SearchBot review.
+- Added bilingual canonical/Open Graph metadata plus Organization, WebSite, and Breadcrumb structured data.
+- Added a reusable future published-page sitemap filter and Article schema builder without creating or publishing content.
+- Added disabled-by-default IndexNow readiness and Google/Bing verification configuration points.
+- Added minimal search-acquisition attribution while preserving `website` and `website_ai_assistant` as the canonical CRM intake sources.
+- Production domain verification, search-console onboarding, analytics, and governed public-content publication remain future/manual tasks.
+
 ## 4. Current Active Modules
 
 | Module | Role |
@@ -130,6 +154,7 @@ The application is a modular monolith. PostgreSQL is canonical business state; p
 | Marketing Knowledge Policy | Separate Marketing Agent identity and public-only, exact-agent, tenant/domain-isolated retrieval eligibility |
 | Marketing Generation Runtime | Typed, cited public-knowledge draft generation entering the human content-governance workflow |
 | Marketing Evaluation | Versioned business baseline, internal quality projection, human feedback, edit distance, and channel-specific previews |
+| Organic & AI Search Foundation | Public/private crawl policy, canonical metadata, structured data, sitemap governance, IndexNow readiness, and minimal acquisition attribution |
 
 ## 5. Agent Architecture
 
@@ -211,14 +236,15 @@ The system has evolved from a single Sari Arta demonstration into a reusable, mu
 - Phase 3.2.3.2 governed Content API and human Marketing Content Workspace: completed.
 - Phase 3.2.3.3 Marketing Agent Registry and public-marketing knowledge policy: completed.
 - Phase 3.2.3.4 governed Marketing AI Generation Runtime: completed for development and demonstration.
-- Phase 3.2.3.5 Marketing Generation Evaluation and UX Validation: implemented; business acceptance is conditional.
-- Phase 3.2 Business Acceptance Preparation: implemented; final human GO remains pending.
+- Phase 3.2.3.5 Marketing Generation Evaluation and UX Validation: engineering and technical evaluation completed.
+- Phase 3.2 Business Acceptance Preparation: implemented; business acceptance is pending/deferred and production activation is disabled.
+- Phase 3.2.4A Organic & AI Search Technical Foundation: completed and validated; production-domain onboarding remains pending.
 
 The Marketing Agent now generates cited, immutable `generated` versions through a provider-neutral runtime and the existing human review workflow. Production deployment, real customer data, real public knowledge activation, publishing, and external communication remain disabled or human-approved activities as applicable.
 
-The deterministic evaluation baseline covers five synthetic scenarios, all five supported formats, and paired English/Chinese cases. Proceeding beyond controlled business acceptance requires real Sari Arta reviewer feedback, approved human revisions for edit-distance measurement, and a small explicitly authorized real-provider comparison.
+The deterministic evaluation baseline covers five synthetic scenarios, all five supported formats, and paired English/Chinese cases. Production marketing generation and every generated-content publication or external-communication capability remain blocked until the deferred business-acceptance prerequisites are completed.
 
-The business-acceptance workspace is `/marketing-content/acceptance`. Brand Guideline validation and the controlled one-English/one-Chinese OpenAI comparison remain explicitly pending. Phase 3.2.4 must not start until a human final GO decision.
+The business-acceptance workspace is `/marketing-content/acceptance`. Brand Guideline validation, final English/Chinese review, real Human Edit Distance, and the controlled one-English/one-Chinese OpenAI comparison remain explicitly pending. Phase 3.2.4A is complete without generating or publishing marketing content, so these acceptance blockers remain unchanged.
 
 ## 10. Roadmap
 
@@ -232,7 +258,7 @@ The business-acceptance workspace is `/marketing-content/acceptance`. Brand Guid
 - n8n operational workflows outside core transaction ownership.
 - Reliable retries, delivery status, audit, opt-out, and failure recovery.
 
-#### Planned Phase 3.2.4 — Organic & AI Search Visibility Foundation
+#### In-progress Phase 3.2.4 — Organic & AI Search Visibility Foundation
 
 This future milestone will convert explicitly public enterprise knowledge and exact human-approved marketing content versions into crawlable, indexable, server-rendered website content. It plans sitemap, canonical URL, metadata and crawler-policy foundations; appropriate structured metadata for organization, solution, industry, project/case, article, product/service, breadcrumb, guide, FAQ, and business-question pages; and provider-neutral AI-search readiness through factual pages, entity consistency, evidence, service/location clarity, and public provenance.
 
@@ -251,6 +277,8 @@ Approved Public Knowledge
 ```
 
 Future measurement may cover organic traffic, identifiable AI-search referrals, landing-page performance, consultation conversion, and CRM source attribution. No analytics is implemented by this planning update. Search-visible material must never include internal pricing, supplier information, private customer data, internal SOP, CRM records, or confidential commercial information.
+
+Phase 3.2.4A has implemented sitemap, crawler readiness, structured-data infrastructure, metadata architecture, public-page boundaries, and attribution readiness without activating Marketing Content generation or publishing. Production-domain verification, governed dynamic publication, search-console onboarding, and measurement remain later controlled work.
 
 ### Phase 4 — Advanced AI Platform
 

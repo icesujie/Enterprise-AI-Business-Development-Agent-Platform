@@ -15,18 +15,12 @@ import {
   industries,
   sampleProjects,
 } from "@/content/public-site";
+import { getLocale } from "@/i18n/server";
+import { buildPublicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Commercial Kitchen Engineering Indonesia",
-  description:
-    "Sari Arta coordinates commercial kitchen design, China-based manufacturing capability, logistics, local installation, and commissioning for projects in Indonesia.",
-  keywords: [
-    "commercial kitchen Indonesia",
-    "industrial kitchen engineering",
-    "commercial kitchen design",
-    "central kitchen solution",
-  ],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPublicPageMetadata("home", await getLocale());
+}
 
 export default function HomePage() {
   return (

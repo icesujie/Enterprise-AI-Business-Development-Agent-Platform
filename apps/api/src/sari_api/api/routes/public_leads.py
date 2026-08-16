@@ -54,6 +54,15 @@ class PublicInquiry(PublicModel):
 class PublicAttribution(PublicModel):
     source: Literal["website", "website_ai_assistant"] = "website"
     campaign: str | None = Field(default=None, max_length=200)
+    acquisition_source: Literal[
+        "organic_google", "organic_bing", "ai_search", "direct", "social", "referral"
+    ] | None = None
+    landing_path: str | None = Field(default=None, max_length=500, pattern=r"^/[^?#]*$")
+    referrer_domain: str | None = Field(
+        default=None,
+        max_length=253,
+        pattern=r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[A-Za-z]{2,63}$",
+    )
 
 
 class PublicConsent(PublicModel):
@@ -232,6 +241,11 @@ async def submit_public_lead(
                 "contact_consent": True,
                 "facility_type": payload.inquiry.facility_type,
                 "budget_range": payload.inquiry.budget_range,
+                "acquisition_attribution": {
+                    "source": payload.attribution.acquisition_source,
+                    "landing_path": payload.attribution.landing_path,
+                    "referrer_domain": payload.attribution.referrer_domain,
+                },
             },
         )
     )
@@ -255,7 +269,10 @@ async def submit_public_lead(
             target_type="lead",
             target_id=lead.id,
             result="success",
-            details={"source": payload.attribution.source},
+            details={
+                "source": payload.attribution.source,
+                "acquisition_source": payload.attribution.acquisition_source,
+            },
         )
     )
     await session.commit()

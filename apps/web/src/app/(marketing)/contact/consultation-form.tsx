@@ -1,8 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 
 import { FieldGroup, Select, TextArea, TextField } from "@/components/ui/form";
+import {
+  captureAcquisitionAttribution,
+} from "@/lib/acquisition-attribution";
 
 import { submitConsultation } from "./actions";
 
@@ -27,9 +30,43 @@ export function ConsultationForm() {
   const [state, formAction, pending] = useActionState(submitConsultation, {
     error: null,
   });
+  const acquisitionSourceRef = useRef<HTMLInputElement>(null);
+  const landingPathRef = useRef<HTMLInputElement>(null);
+  const referrerDomainRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const attribution = captureAcquisitionAttribution();
+    if (acquisitionSourceRef.current) {
+      acquisitionSourceRef.current.value = attribution.acquisition_source;
+    }
+    if (landingPathRef.current) {
+      landingPathRef.current.value = attribution.landing_path;
+    }
+    if (referrerDomainRef.current) {
+      referrerDomainRef.current.value = attribution.referrer_domain ?? "";
+    }
+  }, []);
 
   return (
     <form action={formAction} className="card p-6 sm:p-9">
+      <input
+        type="hidden"
+        name="acquisition_source"
+        defaultValue="direct"
+        ref={acquisitionSourceRef}
+      />
+      <input
+        type="hidden"
+        name="landing_path"
+        defaultValue="/contact"
+        ref={landingPathRef}
+      />
+      <input
+        type="hidden"
+        name="referrer_domain"
+        defaultValue=""
+        ref={referrerDomainRef}
+      />
       <div className="border-b border-[var(--color-line)] pb-6">
         <p className="eyebrow">Request kitchen consultation</p>
         <h2 className="mt-4 text-3xl font-semibold tracking-tight">

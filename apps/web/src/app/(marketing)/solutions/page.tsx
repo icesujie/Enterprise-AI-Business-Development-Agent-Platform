@@ -5,22 +5,25 @@ import {
   ContentBand,
   InnerPageHero,
 } from "@/components/marketing/inner-page";
+import { StructuredData } from "@/components/seo/structured-data";
 import { capabilities, deliveryStages } from "@/content/public-site";
+import { getLocale } from "@/i18n/server";
+import { buildPublicPageMetadata } from "@/lib/seo";
+import { buildBreadcrumbStructuredData } from "@/lib/structured-data";
 
-export const metadata: Metadata = {
-  title: "Commercial Kitchen Design & Project Delivery",
-  description:
-    "Explore Sari Arta commercial kitchen design, China manufacturing coordination, logistics, installation, commissioning, and after-sales support in Indonesia.",
-  keywords: [
-    "commercial kitchen design Indonesia",
-    "industrial kitchen engineering",
-    "commercial kitchen installation Indonesia",
-  ],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return buildPublicPageMetadata("solutions", await getLocale());
+}
 
 export default function SolutionsPage() {
   return (
     <>
+      <StructuredData
+        data={buildBreadcrumbStructuredData([
+          { name: "Home", path: "/" },
+          { name: "Solutions", path: "/solutions" },
+        ])}
+      />
       <InnerPageHero
         eyebrow="Commercial kitchen solutions"
         title="A complete delivery framework, shaped around your operation."
