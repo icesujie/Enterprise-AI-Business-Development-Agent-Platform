@@ -14,6 +14,14 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
     Role.ADMIN: frozenset(
         {
             "audit:read",
+            "content:approve",
+            "content:archive",
+            "content:audit_read",
+            "content:create",
+            "content:edit",
+            "content:read",
+            "content:review",
+            "content:submit_review",
             "crm:read",
             "crm:write",
             "leads:assign",
@@ -38,6 +46,10 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
     ),
     Role.SALES: frozenset(
         {
+            "content:create",
+            "content:edit",
+            "content:read",
+            "content:submit_review",
             "crm:read",
             "crm:write",
             "leads:convert",

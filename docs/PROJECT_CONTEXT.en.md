@@ -83,6 +83,12 @@ The application is a modular monolith. PostgreSQL is canonical business state; p
 - Explicit consent, duplicate protection, `website_ai_assistant` source attribution, and reuse of the existing CRM lead workflow.
 - Public-only knowledge boundary with no internal knowledge or CRM read access.
 
+### Phase 3.2.3.1 — Marketing Content Governance Foundation
+
+- Tenant-scoped content requests, assets, immutable versions, approval decisions, generation-run projections, and append-only audit records.
+- Exact-version review and approval with checksum validation, separation of duties, optimistic concurrency, idempotent mutations, safe successor versions, and rollback without history rewriting.
+- Dedicated content RBAC and forced PostgreSQL RLS; AI generation and external publishing remain disabled.
+
 ## 4. Current Active Modules
 
 | Module | Role |
@@ -98,6 +104,7 @@ The application is a modular monolith. PostgreSQL is canonical business state; p
 | Knowledge Retrieval | Governed agent-scoped evidence retrieval and citations |
 | Knowledge Assistant | Internal read-only grounded Q&A for Commercial Kitchen knowledge |
 | Public Consultation Agent | Public guided project intake and consented lead creation |
+| Content Governance | Governed marketing requests, immutable assets and versions, review/approval, rollback, archive, and audit controls |
 
 ## 5. Agent Architecture
 
@@ -174,8 +181,9 @@ The system has evolved from a single Sari Arta demonstration into a reusable, mu
 - Phase 2.5 Knowledge Platform and governance: completed.
 - Phase 2.6 retrieval foundation, evaluation, and read-only assistant: completed.
 - Phase 3.1 public consultation agent: completed.
+- Phase 3.2.3.1 marketing content governance persistence and RBAC: completed.
 
-The next development direction is the remaining controlled Phase 3 business-automation layer. Production deployment, real customer data, real public knowledge activation, and external communication remain human-approved activities.
+The next development direction is the governed Marketing Content Agent generation layer on top of this persistence foundation. Production deployment, real customer data, real public knowledge activation, and external communication remain human-approved activities.
 
 ## 10. Roadmap
 

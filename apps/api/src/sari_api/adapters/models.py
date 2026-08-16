@@ -956,6 +956,297 @@ class ManagedKnowledgeChunk(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ContentRequest(Base):
+    __tablename__ = "content_requests"
+    __table_args__ = (
+        CheckConstraint(
+            "content_type IN ('website_article','case_study','tiktok_script',"
+            "'instagram_reel_script','facebook_post','email_draft')",
+            name="content_requests_type_check",
+        ),
+        CheckConstraint(
+            "audience IN ('schools','hospitals','factories','central_kitchens',"
+            "'project_owners','facility_managers')",
+            name="content_requests_audience_check",
+        ),
+        CheckConstraint("language IN ('en','zh-CN')", name="content_requests_language_check"),
+        CheckConstraint(
+            "channel IN ('website','tiktok','instagram','facebook','email')",
+            name="content_requests_channel_check",
+        ),
+        CheckConstraint(
+            "status IN ('draft','queued','running','completed','insufficient_evidence',"
+            "'failed','cancelled','archived')",
+            name="content_requests_status_check",
+        ),
+        Index("ix_content_requests_tenant_status", "tenant_id", "status", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    domain_id: Mapped[UUID] = mapped_column(
+        ForeignKey("domain_packages.id", ondelete="RESTRICT")
+    )
+    agent_id: Mapped[UUID | None] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    requested_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    content_type: Mapped[str] = mapped_column(String(40))
+    audience: Mapped[str] = mapped_column(String(40))
+    language: Mapped[str] = mapped_column(String(20))
+    channel: Mapped[str] = mapped_column(String(30))
+    business_objective: Mapped[str] = mapped_column(Text)
+    topic: Mapped[str] = mapped_column(Text)
+    call_to_action: Mapped[str] = mapped_column(Text)
+    campaign_name: Mapped[str | None] = mapped_column(String(200))
+    constraints: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    knowledge_collection_ids: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
+    status: Mapped[str] = mapped_column(String(30), server_default="draft")
+    result_asset_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_assets.id", ondelete="RESTRICT", use_alter=True)
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ContentAsset(Base):
+    __tablename__ = "content_assets"
+    __table_args__ = (
+        CheckConstraint(
+            "content_type IN ('website_article','case_study','tiktok_script',"
+            "'instagram_reel_script','facebook_post','email_draft')",
+            name="content_assets_type_check",
+        ),
+        CheckConstraint(
+            "audience IN ('schools','hospitals','factories','central_kitchens',"
+            "'project_owners','facility_managers')",
+            name="content_assets_audience_check",
+        ),
+        CheckConstraint("language IN ('en','zh-CN')", name="content_assets_language_check"),
+        CheckConstraint(
+            "channel IN ('website','tiktok','instagram','facebook','email')",
+            name="content_assets_channel_check",
+        ),
+        CheckConstraint(
+            "status IN ('draft','generated','review','approved','archived')",
+            name="content_assets_status_check",
+        ),
+        CheckConstraint("record_version > 0", name="content_assets_record_version_check"),
+        Index("ix_content_assets_tenant_status", "tenant_id", "status", "updated_at"),
+        Index("ix_content_assets_tenant_owner", "tenant_id", "owner_membership_id", "status"),
+        Index(
+            "ix_content_assets_tenant_classification",
+            "tenant_id",
+            "content_type",
+            "language",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    domain_id: Mapped[UUID] = mapped_column(
+        ForeignKey("domain_packages.id", ondelete="RESTRICT")
+    )
+    agent_id: Mapped[UUID | None] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    request_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_requests.id", ondelete="RESTRICT")
+    )
+    title: Mapped[str] = mapped_column(String(250))
+    content_type: Mapped[str] = mapped_column(String(40))
+    audience: Mapped[str] = mapped_column(String(40))
+    language: Mapped[str] = mapped_column(String(20))
+    channel: Mapped[str] = mapped_column(String(30))
+    status: Mapped[str] = mapped_column(String(20), server_default="draft")
+    owner_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    creator_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    current_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    approved_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    record_version: Mapped[int] = mapped_column(Integer, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archived_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    archive_reason: Mapped[str | None] = mapped_column(Text)
+
+
+class ContentGenerationRun(Base):
+    __tablename__ = "content_generation_runs"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "agent_run_id"),
+        CheckConstraint(
+            "evidence_status IS NULL OR evidence_status IN "
+            "('sufficient','insufficient','conflicting')",
+            name="content_generation_runs_evidence_check",
+        ),
+        Index(
+            "ix_content_generation_runs_tenant_request",
+            "tenant_id",
+            "content_request_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    content_request_id: Mapped[UUID] = mapped_column(
+        ForeignKey("content_requests.id", ondelete="RESTRICT")
+    )
+    agent_run_id: Mapped[UUID] = mapped_column(ForeignKey("agent_runs.id", ondelete="RESTRICT"))
+    agent_id: Mapped[UUID] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
+    agent_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("agent_configurations.id", ondelete="RESTRICT")
+    )
+    provider: Mapped[str | None] = mapped_column(String(120))
+    model: Mapped[str | None] = mapped_column(String(120))
+    evidence_status: Mapped[str | None] = mapped_column(String(20))
+    retrieved_chunk_ids: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
+    output_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    validation_summary: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    token_usage: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    estimated_cost: Mapped[Decimal | None] = mapped_column(Numeric(19, 6))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ContentVersion(Base):
+    __tablename__ = "content_versions"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "content_asset_id", "version_number"),
+        CheckConstraint("version_number > 0", name="content_versions_number_check"),
+        CheckConstraint(
+            "origin IN ('human','ai_generated','rollback')",
+            name="content_versions_origin_check",
+        ),
+        CheckConstraint("length(content_sha256) = 64", name="content_versions_sha_check"),
+        Index(
+            "ix_content_versions_tenant_asset",
+            "tenant_id",
+            "content_asset_id",
+            "version_number",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    content_asset_id: Mapped[UUID] = mapped_column(
+        ForeignKey("content_assets.id", ondelete="RESTRICT")
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    origin: Mapped[str] = mapped_column(String(20))
+    content_body: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    plain_text: Mapped[str] = mapped_column(Text)
+    claims: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")
+    citations: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")
+    generation_run_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_generation_runs.id", ondelete="RESTRICT")
+    )
+    based_on_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT")
+    )
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    created_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ContentApprovalDecision(Base):
+    __tablename__ = "content_approval_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "decision_type IN ('submitted','changes_requested','approved','rejected')",
+            name="content_approval_decisions_type_check",
+        ),
+        CheckConstraint(
+            "length(content_sha256) = 64", name="content_approval_decisions_sha_check"
+        ),
+        Index(
+            "ix_content_approval_decisions_tenant_asset",
+            "tenant_id",
+            "content_asset_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    content_asset_id: Mapped[UUID] = mapped_column(
+        ForeignKey("content_assets.id", ondelete="RESTRICT")
+    )
+    content_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT")
+    )
+    decision_type: Mapped[str] = mapped_column(String(30))
+    decided_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ContentAuditLog(Base):
+    __tablename__ = "content_audit_logs"
+    __table_args__ = (
+        Index(
+            "ix_content_audit_logs_tenant_asset",
+            "tenant_id",
+            "content_asset_id",
+            "created_at",
+        ),
+        Index(
+            "ix_content_audit_logs_tenant_request",
+            "tenant_id",
+            "content_request_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    actor_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(100))
+    target_type: Mapped[str] = mapped_column(String(40))
+    target_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True))
+    content_asset_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_assets.id", ondelete="RESTRICT")
+    )
+    content_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT")
+    )
+    content_request_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_requests.id", ondelete="RESTRICT")
+    )
+    content_generation_run_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("content_generation_runs.id", ondelete="RESTRICT")
+    )
+    outcome: Mapped[str] = mapped_column(String(30), server_default="success")
+    before_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    after_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class AgentRun(TimestampVersionMixin, Base):
     __tablename__ = "agent_runs"
     __table_args__ = (
