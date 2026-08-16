@@ -740,3 +740,7 @@ Phase 2.5.2 新增 `processing_status`、`knowledge_processing_runs` 和 `manage
 ## Phase 2.6.1 检索查询边界
 
 Phase 2.6.1 不需要数据结构迁移。它搜索已有 `managed_knowledge_chunks.embedding vector(1536)` 列和 HNSW 余弦索引。受治理查询关联按租户隔离的分块、逻辑文档、不可变版本、集合、处理运行和文档—智能体绑定。明确条件要求准确分块版本同时匹配文档 `published_version_id` 和 `active_version_id`；所有租户数据面表继续强制执行 RLS。参见 `knowledge-retrieval-design.zh-CN.md`。
+
+## Phase 3.2.3.5 营销审核反馈
+
+迁移 `d4e8f2a6b731` 新增 `content_review_feedback`。每条记录包含 `tenant_id`、准确的 `content_asset_id` 和 `content_version_id`、人工 `reviewer_membership_id`、被审核版本的 SHA-256 校验和、结构化反馈类别、可选备注和 `created_at`。该表具有租户/资产和租户/版本时间线索引、强制 RLS、限制性外键和不可变更新/删除触发器。质量投影继续作为标准化运行元数据保存在 `content_generation_runs.validation_summary`，不会修改不可变内容版本或审批决定。

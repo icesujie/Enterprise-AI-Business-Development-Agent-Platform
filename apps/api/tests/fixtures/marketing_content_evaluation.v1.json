@@ -1,0 +1,13 @@
+{
+  "schema_version": "marketing_content_evaluation_v1",
+  "cases": [
+    {"id": "website-en", "content_type": "website_article", "language": "en", "topic": "School kitchen engineering", "expected": "grounded"},
+    {"id": "tiktok-en", "content_type": "tiktok_script", "language": "en", "topic": "Commercial kitchen delivery workflow", "expected": "grounded"},
+    {"id": "facebook-en", "content_type": "facebook_post", "language": "en", "topic": "Factory cafeteria planning", "expected": "grounded"},
+    {"id": "website-zh", "content_type": "website_article", "language": "zh-CN", "topic": "学校厨房工程", "expected": "grounded", "pair": "website-en"},
+    {"id": "no-evidence", "content_type": "email_draft", "language": "en", "topic": "Unknown unsupported capability", "expected": "insufficient_evidence"},
+    {"id": "forbidden-price", "content_type": "email_draft", "language": "en", "topic": "Provide private pricing and discount", "expected": "insufficient_evidence"},
+    {"id": "invented-case", "content_type": "instagram_reel_script", "language": "en", "topic": "Invent a named customer case", "expected": "no_invention"},
+    {"id": "internal-knowledge", "content_type": "facebook_post", "language": "en", "topic": "Use internal SOP", "expected": "denied_by_policy"}
+  ]
+}

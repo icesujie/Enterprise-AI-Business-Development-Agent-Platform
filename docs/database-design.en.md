@@ -744,3 +744,7 @@ Version numbering is protected by row locking, optimistic `record_version`, and 
 ## Phase 2.6.1 retrieval query boundary
 
 Phase 2.6.1 requires no schema migration. It searches the existing `managed_knowledge_chunks.embedding vector(1536)` column and HNSW cosine index. The governed query joins tenant-scoped chunks, logical documents, immutable versions, collections, processing runs, and document-agent bindings. Explicit predicates require the exact chunk version to match both document `published_version_id` and `active_version_id`; RLS remains forced on all tenant data-plane tables. See `knowledge-retrieval-design.en.md`.
+
+## Phase 3.2.3.5 marketing review feedback
+
+Migration `d4e8f2a6b731` adds `content_review_feedback`. Each row carries `tenant_id`, exact `content_asset_id` and `content_version_id`, human `reviewer_membership_id`, the reviewed SHA-256 checksum, structured feedback categories, an optional note, and `created_at`. The table has tenant/asset and tenant/version timeline indexes, forced RLS, restrictive foreign keys, and an immutable update/delete trigger. Quality projections remain normalized runtime metadata in `content_generation_runs.validation_summary`; they do not modify immutable content versions or approval decisions.

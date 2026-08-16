@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
@@ -66,6 +66,19 @@ class ContentRequestInput(StrictModel):
     campaign_name: str | None = Field(default=None, max_length=200)
     constraints: dict[str, Any] = Field(default_factory=dict)
     knowledge_collection_ids: list[UUID] = Field(default_factory=list, max_length=50)
+
+
+class ContentRequestUpdateInput(StrictModel):
+    content_type: ContentType | None = None
+    audience: Audience | None = None
+    language: Literal["en", "zh-CN"] | None = None
+    channel: Channel | None = None
+    business_objective: str | None = Field(default=None, min_length=3, max_length=2000)
+    topic: str | None = Field(default=None, min_length=3, max_length=2000)
+    call_to_action: str | None = Field(default=None, min_length=2, max_length=1000)
+    campaign_name: str | None = Field(default=None, max_length=200)
+    constraints: dict[str, Any] | None = None
+    knowledge_collection_ids: list[UUID] | None = Field(default=None, max_length=50)
 
 
 class ContentRequestResponse(StrictModel):
@@ -149,6 +162,7 @@ class ContentAssetResponse(StrictModel):
     created_at: datetime
     updated_at: datetime
     current_version: ContentVersionResponse | None = None
+    approved_version: ContentVersionResponse | None = None
 
 
 class ExactVersionInput(StrictModel):
@@ -211,6 +225,24 @@ def parse_if_match(value: str | None) -> int:
         raise HTTPException(
             status_code=400, detail="If-Match must contain a record version."
         ) from exc
+
+
+def parse_request_if_match(value: str | None) -> datetime:
+    if value is None:
+        raise HTTPException(status_code=428, detail="If-Match is required.")
+    try:
+        parsed = datetime.fromisoformat(value.strip().strip('"').replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail="If-Match must contain the request updated_at value.",
+        ) from exc
+    if parsed.tzinfo is None:
+        raise HTTPException(
+            status_code=400,
+            detail="If-Match must contain a timezone-aware updated_at value.",
+        )
+    return parsed.astimezone(UTC)
 
 
 async def repository(
@@ -293,8 +325,18 @@ async def asset_response(
         if asset.current_version_id is not None
         else None
     )
+    approved = (
+        version
+        if version is not None and version.id == asset.approved_version_id
+        else (
+            await repo.get_version(asset.id, asset.approved_version_id)
+            if asset.approved_version_id is not None
+            else None
+        )
+    )
     data = ContentAssetResponse.model_validate(asset).model_dump()
     data["current_version"] = version_response(version) if version else None
+    data["approved_version"] = version_response(approved) if approved else None
     return ContentAssetResponse.model_validate(data)
 
 
@@ -414,25 +456,123 @@ async def create_content_asset(
         raise handle_content_error(exc) from exc
 
 
+@router.get("/requests", response_model=list[ContentRequestResponse])
+async def list_content_requests(
+    principal: Annotated[Principal, Depends(require_permission("content:read"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    request_status: Annotated[str | None, Query(alias="status")] = None,
+    content_type: ContentType | None = None,
+    language: Literal["en", "zh-CN"] | None = None,
+    search: str | None = Query(default=None, max_length=200),
+) -> list[ContentRequestResponse]:
+    repo = await repository(session, principal)
+    requests = await repo.list_requests(
+        status=request_status,
+        content_type=content_type,
+        language=language,
+        search=search,
+    )
+    return [ContentRequestResponse.model_validate(item) for item in requests]
+
+
 @router.get("/assets", response_model=list[ContentAssetResponse])
 async def list_content_assets(
     principal: Annotated[Principal, Depends(require_permission("content:read"))],
     session: Annotated[AsyncSession, Depends(get_session)],
+    asset_status: Annotated[str | None, Query(alias="status")] = None,
+    content_type: ContentType | None = None,
+    language: Literal["en", "zh-CN"] | None = None,
+    owner_membership_id: UUID | None = None,
+    creator_membership_id: UUID | None = None,
+    search: str | None = Query(default=None, max_length=200),
 ) -> list[ContentAssetResponse]:
     repo = await repository(session, principal)
-    return [await asset_response(repo, asset) for asset in await repo.list_assets()]
+    assets = await repo.list_assets(
+        status=asset_status,
+        content_type=content_type,
+        language=language,
+        owner_membership_id=owner_membership_id,
+        creator_membership_id=creator_membership_id,
+        search=search,
+    )
+    return [await asset_response(repo, asset) for asset in assets]
 
 
 @router.get("/requests/{request_id}", response_model=ContentRequestResponse)
 async def get_content_request(
     request_id: UUID,
+    response: Response,
     principal: Annotated[Principal, Depends(require_permission("content:read"))],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ContentRequestResponse:
     repo = await repository(session, principal)
     try:
-        return ContentRequestResponse.model_validate(await repo.get_request(request_id))
+        request = await repo.get_request(request_id)
+        response.headers["ETag"] = f'"{request.updated_at.isoformat()}"'
+        return ContentRequestResponse.model_validate(request)
     except ContentNotFoundError as exc:
+        raise handle_content_error(exc) from exc
+
+
+@router.patch("/requests/{request_id}", response_model=ContentRequestResponse)
+async def update_content_request(
+    request_id: UUID,
+    payload: ContentRequestUpdateInput,
+    response: Response,
+    principal: Annotated[Principal, Depends(require_permission("content:edit"))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    idempotency_key: Annotated[
+        str, Header(alias="Idempotency-Key", min_length=8, max_length=200)
+    ],
+    if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+) -> ContentRequestResponse:
+    values = payload.model_dump(exclude_unset=True, mode="python")
+    if not values:
+        raise HTTPException(status_code=422, detail="At least one request field is required.")
+    if payload.knowledge_collection_ids is not None:
+        values["knowledge_collection_ids"] = [
+            str(item) for item in payload.knowledge_collection_ids
+        ]
+    expected = parse_request_if_match(if_match)
+    repo = await repository(session, principal)
+    payload_hash = request_hash(
+        {"request_id": request_id, "expected": expected, **payload.model_dump(mode="json")}
+    )
+    scope = f"request-{request_id}-update"
+    existing = await existing_idempotent_response(
+        session,
+        principal=principal,
+        scope=scope,
+        key=idempotency_key,
+        payload_hash=payload_hash,
+    )
+    if existing:
+        response.status_code = existing.response_status
+        result = ContentRequestResponse.model_validate(existing.response_body)
+        response.headers["ETag"] = f'"{result.updated_at.isoformat()}"'
+        return result
+    try:
+        request = await repo.update_request(
+            request_id=request_id,
+            expected_updated_at=expected,
+            actor_id=principal.membership_id,
+            values=values,
+        )
+        result = ContentRequestResponse.model_validate(request)
+        save_idempotency(
+            session,
+            principal=principal,
+            scope=scope,
+            key=idempotency_key,
+            payload_hash=payload_hash,
+            status_code=200,
+            body=result,
+        )
+        await session.commit()
+        response.headers["ETag"] = f'"{result.updated_at.isoformat()}"'
+        return result
+    except (ContentNotFoundError, ContentStateError, ContentConcurrencyError) as exc:
+        await session.rollback()
         raise handle_content_error(exc) from exc
 
 

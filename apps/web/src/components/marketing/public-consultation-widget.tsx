@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import {
   createConsultationLead,
@@ -11,6 +17,18 @@ import {
 import { Button } from "@/components/ui/button";
 
 type Message = { role: "assistant" | "visitor"; text: string };
+type Point = { x: number; y: number };
+type DragListenerOptions = {
+  origin: Point;
+  pointerX: number;
+  pointerY: number;
+  element: HTMLElement | null;
+  onMove: (next: Point, distance: number) => void;
+  onFinish: (next: Point) => void;
+};
+
+const launcherStorageKey = "sari-arta-public-consultation-launcher-position";
+const panelStorageKey = "sari-arta-public-consultation-panel-position";
 
 const firstField: ConsultationField = "facility_type";
 const emptyValues: Record<ConsultationField, string> = {
@@ -44,7 +62,42 @@ export function PublicConsultationWidget({
   const [submitted, setSubmitted] = useState(false);
   const [duplicate, setDuplicate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  const stopLauncherDrag = useRef<(() => void) | null>(null);
+  const stopPanelDrag = useRef<(() => void) | null>(null);
+  const launcherMoved = useRef(false);
+  const [launcherPosition, setLauncherPosition] = useState<Point | null>(null);
+  const [panelPosition, setPanelPosition] = useState<Point | null>(null);
   const copy = language === "zh-CN" ? zh : en;
+
+  useEffect(() => {
+    setLauncherPosition(
+      restorePosition(launcherStorageKey, launcherRef.current),
+    );
+    const keepInsideViewport = () => {
+      setLauncherPosition((current) =>
+        current ? clampToViewport(current, launcherRef.current) : current,
+      );
+      setPanelPosition((current) =>
+        current ? clampToViewport(current, panelRef.current) : current,
+      );
+    };
+    window.addEventListener("resize", keepInsideViewport);
+    return () => {
+      window.removeEventListener("resize", keepInsideViewport);
+      stopLauncherDrag.current?.();
+      stopPanelDrag.current?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open || panelPosition) return;
+    const frame = window.requestAnimationFrame(() => {
+      setPanelPosition(restorePosition(panelStorageKey, panelRef.current));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, panelPosition]);
 
   function changeLanguage(next: ConsultationLanguage) {
     setLanguage(next);
@@ -100,21 +153,77 @@ export function PublicConsultationWidget({
     }
   }
 
+  function startLauncherDrag(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    const origin = currentPosition(event.currentTarget, launcherPosition);
+    launcherMoved.current = false;
+    stopLauncherDrag.current?.();
+    stopLauncherDrag.current = listenForDrag({
+      origin,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      element: launcherRef.current,
+      onMove: (next, distance) => {
+        if (distance > 4) launcherMoved.current = true;
+        setLauncherPosition(next);
+      },
+      onFinish: (next) => {
+        setLauncherPosition(next);
+        savePosition(launcherStorageKey, next);
+        stopLauncherDrag.current = null;
+      },
+    });
+  }
+
+  function startPanelDrag(event: ReactPointerEvent<HTMLElement>) {
+    if (event.button !== 0) return;
+    if ((event.target as HTMLElement).closest("button, input, select")) return;
+    event.preventDefault();
+    const origin = currentPosition(panelRef.current, panelPosition);
+    stopPanelDrag.current?.();
+    stopPanelDrag.current = listenForDrag({
+      origin,
+      pointerX: event.clientX,
+      pointerY: event.clientY,
+      element: panelRef.current,
+      onMove: setPanelPosition,
+      onFinish: (next) => {
+        setPanelPosition(next);
+        savePosition(panelStorageKey, next);
+        stopPanelDrag.current = null;
+      },
+    });
+  }
+
   return (
     <>
       {open ? (
         <section
           aria-label={copy.title}
           aria-modal="false"
-          className="fixed inset-x-2 bottom-2 top-[84px] z-[70] flex flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl sm:inset-x-auto sm:right-5 sm:top-auto sm:h-[min(680px,calc(100vh-110px))] sm:w-[410px]"
+          className={`fixed z-[70] flex h-[calc(100vh-92px)] w-[calc(100vw-16px)] flex-col overflow-hidden rounded-2xl border border-[var(--color-line)] bg-white shadow-2xl sm:h-[min(680px,calc(100vh-110px))] sm:w-[410px] ${panelPosition ? "" : "bottom-2 left-2 sm:bottom-5 sm:left-auto sm:right-5"}`}
+          ref={panelRef}
           role="dialog"
+          style={
+            panelPosition
+              ? { left: panelPosition.x, top: panelPosition.y }
+              : undefined
+          }
         >
-          <header className="flex items-center justify-between bg-[var(--color-brand-strong)] px-5 py-4 text-white">
+          <header
+            aria-label={copy.dragWindow}
+            className="flex touch-none select-none items-center justify-between bg-[var(--color-brand-strong)] px-5 py-4 text-white sm:cursor-grab sm:active:cursor-grabbing"
+            onPointerDown={startPanelDrag}
+          >
             <div>
               <p className="text-[0.63rem] font-bold uppercase tracking-[0.16em] text-white/55">
                 {copy.eyebrow}
               </p>
               <h2 className="mt-1 font-semibold">{copy.title}</h2>
+              <p className="mt-1 hidden text-[0.65rem] text-white/55 sm:block">
+                {copy.dragHint}
+              </p>
             </div>
             <button
               aria-label={copy.close}
@@ -253,16 +362,32 @@ export function PublicConsultationWidget({
         </section>
       ) : null}
 
-      <button
-        aria-expanded={open}
-        aria-label={copy.open}
-        className="fixed bottom-5 right-4 z-[71] flex items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgb(180_81_43/35%)] transition hover:-translate-y-1 sm:right-6"
-        onClick={() => setOpen((current) => !current)}
-        type="button"
-      >
-        <span aria-hidden="true">✦</span>
-        {copy.button}
-      </button>
+      {!open ? (
+        <button
+          aria-expanded="false"
+          aria-label={copy.open}
+          className={`fixed z-[71] flex touch-none select-none items-center gap-2 rounded-full bg-[var(--color-accent)] px-5 py-3 text-sm font-bold text-white shadow-[0_16px_45px_rgb(180_81_43/35%)] transition hover:-translate-y-1 active:cursor-grabbing ${launcherPosition ? "" : "bottom-5 right-4 sm:right-6"}`}
+          onClick={() => {
+            if (launcherMoved.current) {
+              launcherMoved.current = false;
+              return;
+            }
+            setOpen(true);
+          }}
+          onPointerDown={startLauncherDrag}
+          ref={launcherRef}
+          style={
+            launcherPosition
+              ? { left: launcherPosition.x, top: launcherPosition.y }
+              : undefined
+          }
+          title={copy.dragLauncher}
+          type="button"
+        >
+          <span aria-hidden="true">✦</span>
+          {copy.button}
+        </button>
+      ) : null}
     </>
   );
 }
@@ -282,6 +407,9 @@ const en = {
   open: "Open Commercial Kitchen Consultation Agent",
   close: "Close consultation assistant",
   language: "Consultation language",
+  dragLauncher: "Drag to reposition; click to open",
+  dragWindow: "Drag consultation window",
+  dragHint: "Drag this header to reposition",
   greeting:
     "Hello. I can help organize your commercial-kitchen project requirements for human review.",
   firstQuestion:
@@ -325,6 +453,9 @@ const zh: typeof en = {
   open: "打开商用厨房项目咨询智能体",
   close: "关闭项目咨询助手",
   language: "咨询语言",
+  dragLauncher: "拖动可调整位置，点击可打开",
+  dragWindow: "拖动项目咨询窗口",
+  dragHint: "拖动此标题栏可调整位置",
   greeting: "您好，我可以帮助整理商用厨房项目需求，并提交给业务人员审核。",
   firstQuestion: "这个项目属于哪类设施，例如学校、医院、工厂食堂或中央厨房？",
   answer: "请输入回答",
@@ -353,6 +484,104 @@ const zh: typeof en = {
     "邮箱",
   ],
 };
+
+function listenForDrag(options: DragListenerOptions): () => void {
+  let last = options.origin;
+  let finished = false;
+
+  const move = (clientX: number, clientY: number) => {
+    const raw = {
+      x: options.origin.x + clientX - options.pointerX,
+      y: options.origin.y + clientY - options.pointerY,
+    };
+    last = clampToViewport(raw, options.element);
+    options.onMove(
+      last,
+      Math.hypot(raw.x - options.origin.x, raw.y - options.origin.y),
+    );
+  };
+  const onPointerMove = (event: PointerEvent) => {
+    event.preventDefault();
+    move(event.clientX, event.clientY);
+  };
+  const onMouseMove = (event: MouseEvent) => {
+    event.preventDefault();
+    move(event.clientX, event.clientY);
+  };
+  const cleanup = () => {
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", finish);
+    window.removeEventListener("pointercancel", finish);
+    window.removeEventListener("mousemove", onMouseMove);
+    window.removeEventListener("mouseup", finish);
+  };
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    cleanup();
+    options.onFinish(last);
+  };
+
+  window.addEventListener("pointermove", onPointerMove, { passive: false });
+  window.addEventListener("pointerup", finish);
+  window.addEventListener("pointercancel", finish);
+  window.addEventListener("mousemove", onMouseMove, { passive: false });
+  window.addEventListener("mouseup", finish);
+  return cleanup;
+}
+
+function currentPosition(
+  element: HTMLElement | null,
+  position: Point | null,
+): Point {
+  if (position) return position;
+  const bounds = element?.getBoundingClientRect();
+  return { x: bounds?.left ?? 0, y: bounds?.top ?? 0 };
+}
+
+function clampToViewport(point: Point, element: HTMLElement | null): Point {
+  const bounds = element?.getBoundingClientRect();
+  const width = bounds?.width ?? 0;
+  const height = bounds?.height ?? 0;
+  const margin = 8;
+  return {
+    x: Math.min(
+      Math.max(point.x, margin),
+      Math.max(margin, window.innerWidth - width - margin),
+    ),
+    y: Math.min(
+      Math.max(point.y, margin),
+      Math.max(margin, window.innerHeight - height - margin),
+    ),
+  };
+}
+
+function restorePosition(
+  storageKey: string,
+  element: HTMLElement | null,
+): Point {
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (stored) {
+      const point = JSON.parse(stored) as Partial<Point>;
+      if (typeof point.x === "number" && typeof point.y === "number") {
+        return clampToViewport({ x: point.x, y: point.y }, element);
+      }
+    }
+  } catch {
+    window.localStorage.removeItem(storageKey);
+  }
+  const bounds = element?.getBoundingClientRect();
+  return clampToViewport(
+    { x: bounds?.left ?? 8, y: bounds?.top ?? 8 },
+    element,
+  );
+}
+
+function savePosition(storageKey: string, position: Point | null) {
+  if (!position) return;
+  window.localStorage.setItem(storageKey, JSON.stringify(position));
+}
 
 function summaryRows(
   copy: typeof en,

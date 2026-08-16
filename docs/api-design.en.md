@@ -410,16 +410,24 @@ Proposal issuance checks that the selected version is approved, current, unexpir
 
 ### 4.11 Marketing content
 
+The current Phase 3.2.3.2 implementation exposes a human-operated governance API under `/api/v1/content`:
+
 | Method | Path | Purpose |
 |---|---|---|
-| `GET`, `POST` | `/content-items` | List/create content item |
-| `GET`, `PATCH` | `/content-items/{content_id}` | Read/update metadata |
-| `GET` | `/content-items/{content_id}/versions` | Version history |
-| `POST` | `/content-items/{content_id}/generation-runs` | Generate draft |
-| `POST` | `/content-items/{content_id}/versions` | Create edited version |
-| `POST` | `/content-versions/{version_id}/review-requests` | Request approval |
-| `POST` | `/content-items/{content_id}/schedules` | Schedule approved content |
-| `POST` | `/content-items/{content_id}/publications` | Publish through approved connector |
+| `GET`, `POST` | `/content/requests` | List or create manual content requests |
+| `GET`, `PATCH` | `/content/requests/{request_id}` | Read or safely update an unassociated draft request |
+| `GET`, `POST` | `/content/assets` | List/filter assets or create an initial manual asset/version |
+| `GET` | `/content/assets/{asset_id}` | Read asset details with current and last-approved versions |
+| `GET`, `POST` | `/content/assets/{asset_id}/versions` | List immutable history or create a successor version |
+| `POST` | `/content/assets/{asset_id}/rollback` | Create a rollback successor without rewriting history |
+| `POST` | `/content/assets/{asset_id}/submit-review` | Submit the exact current version and checksum |
+| `POST` | `/content/assets/{asset_id}/decisions` | Approve, reject, or request changes under RBAC and separation of duties |
+| `POST` | `/content/assets/{asset_id}/archive` | Archive an eligible asset with a reason |
+| `POST` | `/content/assets/{asset_id}/restore` | Restore an archived asset as a draft |
+| `GET` | `/content/assets/{asset_id}/decisions` | Read approval history with governance permission |
+| `GET` | `/content/assets/{asset_id}/audit` | Read append-only audit history with governance permission |
+
+Mutations use `Idempotency-Key` and concurrency-sensitive commands use `If-Match`. Historical versions and audit entries are not mutable through the API. AI generation, scheduling, publication, and outbound delivery endpoints are not implemented in this phase.
 
 ### 4.12 Integrations and automation
 
@@ -993,3 +1001,15 @@ The response additionally returns `correlation_id`, `duration_ms`, `similarity_t
 `POST /api/v1/public/consultation/turns` accepts a bounded English or Chinese answer for the current field in a fixed project-intake sequence. A server-held `X-Site-Token`, separate Redis rate limit, strict validation and abuse screening run before an optional no-tools public response provider. The endpoint cannot retrieve internal knowledge or CRM data.
 
 After explicit contact consent, the website reuses `POST /api/v1/public/lead-submissions` with source `website_ai_assistant`. The endpoint retains idempotency, tenant scoping and validation, adds 24-hour duplicate suppression by normalized email/source/project/city, records create/duplicate audit events, and returns `duplicate`. The resulting lead remains new, unassigned and unqualified. See `public-consultation-agent-design.en.md`.
+
+## Phase 3.2.3.4 governed marketing generation API
+
+`POST /api/v1/content/requests/{request_id}/generate` requires `content:generate` and `Idempotency-Key`, authorizes the exact development Marketing Agent and `public_marketing_v1` policy before queueing, and returns `202`. `GET /api/v1/content/generation-runs/{run_id}` returns tenant-scoped status, evidence state, provider/model, duration, citations, and either a generated asset/version pointer or explicit insufficient evidence.
+
+The worker reauthorizes before embedding, retrieval, or model use. A successful result creates only an immutable `ai_generated` version in `generated` status. It cannot approve, publish, send, schedule, archive, or write CRM data. See `marketing-content-generation-runtime.en.md`.
+
+## Phase 3.2.3.5 marketing generation evaluation API
+
+`POST /api/v1/content/assets/{asset_id}/feedback` requires `content:review` and an `Idempotency-Key`. It binds human-authored structured feedback to an exact version and SHA-256 checksum. `GET /api/v1/content/assets/{asset_id}/evaluation` requires `content:read` and returns the tenant-scoped generation outcome, evidence state, provider/model, deterministic quality projection, Human Edit Distance when available, citations, latency, correlation ID, usage/cost availability, and immutable feedback. Neither endpoint publishes, sends, schedules, approves, or writes CRM data. See `marketing-generation-evaluation.en.md`.
+
+`GET /api/v1/content/acceptance` requires `content:read` and returns the fixed ten-case Phase 3.2 acceptance projection: preparation/review/decision counts, exact generated and approved-human version pointers, real Human Edit Distance only for a human successor, common feedback, quality averages, and explicit Brand Guideline/OpenAI comparison checkpoints. It reuses existing governed records and does not create a parallel approval lifecycle. See `marketing-content-business-acceptance.en.md`.

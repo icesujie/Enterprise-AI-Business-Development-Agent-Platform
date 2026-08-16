@@ -1,0 +1,29 @@
+{
+  "schema_version": "marketing_generation_baseline_v1",
+  "dataset_version": "marketing_generation_business_eval_v1",
+  "provider": "mock",
+  "model": "grounded-marketing-v1",
+  "case_count": 10,
+  "metrics": {
+    "brand_fit": 90.0,
+    "audience_fit": 90.0,
+    "channel_fit": 95.0,
+    "clarity": 80.0,
+    "cta_quality": 95.0,
+    "factual_grounding": 100.0,
+    "unsupported_claims": 0.0,
+    "repetition": 74.9,
+    "content_usefulness": 91.5,
+    "overall_score": 90.71,
+    "structure_validity": 1.0,
+    "citation_completeness": 1.0
+  },
+  "comparison_dimensions": [
+    "prompt",
+    "model",
+    "retrieval_threshold",
+    "knowledge_set",
+    "content_schema"
+  ],
+  "notes": "Deterministic synthetic regression baseline. Latency and provider usage are recorded per run but are not fixed regression values."
+}

@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     knowledge_retrieval_min_evidence_count: int = Field(default=1, ge=1, le=5)
     knowledge_retrieval_diagnostic_candidates: int = Field(default=5, ge=0, le=20)
     knowledge_assistant_top_k: int = Field(default=5, ge=1, le=10)
+    marketing_content_provider: Literal["mock", "openai"] = "mock"
+    marketing_content_model: str = "gpt-5-mini"
+    marketing_content_top_k: int = Field(default=5, ge=1, le=10)
 
     @model_validator(mode="after")
     def reject_local_production_services(self) -> Self:
@@ -80,6 +83,8 @@ class Settings(BaseSettings):
             raise ValueError("PUBLIC_CONSULTATION_AI_ENABLED requires AI_ENABLED")
         if self.knowledge_embedding_provider == "openai" and self.openai_api_key is None:
             raise ValueError("OpenAI knowledge embeddings require OPENAI_API_KEY")
+        if self.marketing_content_provider == "openai" and self.openai_api_key is None:
+            raise ValueError("OpenAI marketing content generation requires OPENAI_API_KEY")
         if self.knowledge_chunk_overlap >= self.knowledge_chunk_size:
             raise ValueError("KNOWLEDGE_CHUNK_OVERLAP must be smaller than KNOWLEDGE_CHUNK_SIZE")
         if self.knowledge_embedding_dimensions != 1536:

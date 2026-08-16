@@ -13,6 +13,12 @@ from sari_api.api.routes.knowledge import router as knowledge_router
 from sari_api.api.routes.knowledge_assistant import router as knowledge_assistant_router
 from sari_api.api.routes.knowledge_management import router as knowledge_management_router
 from sari_api.api.routes.knowledge_retrieval import router as knowledge_retrieval_router
+from sari_api.api.routes.marketing_content_evaluation import (
+    router as marketing_content_evaluation_router,
+)
+from sari_api.api.routes.marketing_content_generation import (
+    router as marketing_content_generation_router,
+)
 from sari_api.api.routes.opportunities import router as opportunities_router
 from sari_api.api.routes.public_consultation import router as public_consultation_router
 from sari_api.api.routes.public_leads import router as public_leads_router
@@ -30,6 +36,8 @@ router.include_router(work_router)
 router.include_router(opportunities_router)
 router.include_router(agent_registry_router)
 router.include_router(content_governance_router)
+router.include_router(marketing_content_generation_router)
+router.include_router(marketing_content_evaluation_router)
 router.include_router(ivc_qualification_router)
 router.include_router(agent_playground_router)
 router.include_router(knowledge_router)

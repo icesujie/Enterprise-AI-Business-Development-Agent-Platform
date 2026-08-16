@@ -28,7 +28,7 @@ flowchart LR
 
 | Layer | Current responsibility |
 |---|---|
-| Frontend | Next.js public website, authenticated workspace, CRM UI, Agent Playground, Knowledge Management, retrieval testing, and Knowledge Assistant interfaces |
+| Frontend | Next.js public website, authenticated workspace, CRM UI, Agent Playground, Knowledge Management, retrieval testing, Knowledge Assistant, and human Marketing Content interfaces |
 | Backend | FastAPI CRM services, agent runtime, public consultation, knowledge governance, processing, retrieval, and authorization |
 | Database | PostgreSQL business system of record, pgvector embeddings, tenant-scoped records, and Row Level Security (RLS) |
 | Infrastructure | Docker Compose local runtime, Redis-backed asynchronous workers, API/Web/Worker containers |
@@ -89,6 +89,28 @@ The application is a modular monolith. PostgreSQL is canonical business state; p
 - Exact-version review and approval with checksum validation, separation of duties, optimistic concurrency, idempotent mutations, safe successor versions, and rollback without history rewriting.
 - Dedicated content RBAC and forced PostgreSQL RLS; AI generation and external publishing remain disabled.
 
+### Phase 3.2.3.2 — Content API and Human Marketing Workspace
+
+- Governed request and asset listing, request editing, filtering, manual asset creation, exact-version review decisions, archive/restore, rollback, version history, and authorized audit APIs.
+- Human-operated Marketing Content Workspace for Website Articles, TikTok Scripts, Instagram Reel Scripts, Facebook Posts, and Email Drafts.
+- Clear current-versus-approved version display, role-aware actions, and explicit stale-edit handling without overwriting immutable history.
+- AI generation, Marketing Agent runtime, external publishing, and outbound messaging remain disabled.
+
+### Phase 3.2.3.3 — Marketing Agent Registry and Knowledge Policy
+
+- Registered a separate Sari Arta Marketing Content Agent in the Commercial Kitchen domain with English/Chinese support.
+- Added generation-eligibility capability metadata without approval, publishing, communication, scheduling, or CRM authority.
+- Enforced a deny-by-default `public_marketing_v1` knowledge policy using existing governed collection/document metadata and exact-agent bindings.
+- Development is active for policy validation only; production remains pending at 0% rollout, and AI generation remains disabled.
+
+### Phase 3.2.3.4–3.2.3.5 — Marketing Generation and Evaluation
+
+- Provider-neutral, typed English/Chinese draft generation from approved public-marketing evidence.
+- Deterministic business evaluation across five scenarios and all five supported content types.
+- Immutable exact-version human feedback, channel-specific previews, quality projections, and Human Edit Distance when approved review data exists.
+- Production activation and business acceptance remain pending; external publishing and CRM writes remain prohibited.
+- A fixed ten-case English/Chinese business-acceptance workspace now derives review progress, exact AI/human version lineage, feedback, quality metrics, and readiness checkpoints from the existing governed lifecycle.
+
 ## 4. Current Active Modules
 
 | Module | Role |
@@ -104,7 +126,10 @@ The application is a modular monolith. PostgreSQL is canonical business state; p
 | Knowledge Retrieval | Governed agent-scoped evidence retrieval and citations |
 | Knowledge Assistant | Internal read-only grounded Q&A for Commercial Kitchen knowledge |
 | Public Consultation Agent | Public guided project intake and consented lead creation |
-| Content Governance | Governed marketing requests, immutable assets and versions, review/approval, rollback, archive, and audit controls |
+| Content Governance | Governed marketing requests, immutable assets and versions, review/approval, rollback, archive, audit controls, and the human Marketing Content Workspace |
+| Marketing Knowledge Policy | Separate Marketing Agent identity and public-only, exact-agent, tenant/domain-isolated retrieval eligibility |
+| Marketing Generation Runtime | Typed, cited public-knowledge draft generation entering the human content-governance workflow |
+| Marketing Evaluation | Versioned business baseline, internal quality projection, human feedback, edit distance, and channel-specific previews |
 
 ## 5. Agent Architecture
 
@@ -119,8 +144,9 @@ Current agents:
 - **Commercial Kitchen Agent:** B2B commercial-kitchen opportunity qualification.
 - **IVC Facility Business Development Agent:** laboratory animal facility project qualification; production knowledge retrieval remains disabled.
 - **Commercial Kitchen Consultation Agent:** public, guided project discovery and consented lead intake; it is separate from the internal Knowledge Assistant.
+- **Sari Arta Marketing Content Agent:** creates typed English/Chinese governed drafts from approved public-marketing evidence in development; production activation remains disabled.
 
-Planned agents include Marketing Content Agent, Proposal Assistant, controlled communication agents, and Research Agent. Agent Registry, typed capability boundaries, authorization, auditability, and human approval remain mandatory.
+Planned runtime capabilities include governed Marketing Content generation, Proposal Assistant, controlled communication agents, and Research Agent. Agent Registry, typed capability boundaries, authorization, auditability, and human approval remain mandatory.
 
 ## 6. Knowledge Architecture
 
@@ -182,19 +208,49 @@ The system has evolved from a single Sari Arta demonstration into a reusable, mu
 - Phase 2.6 retrieval foundation, evaluation, and read-only assistant: completed.
 - Phase 3.1 public consultation agent: completed.
 - Phase 3.2.3.1 marketing content governance persistence and RBAC: completed.
+- Phase 3.2.3.2 governed Content API and human Marketing Content Workspace: completed.
+- Phase 3.2.3.3 Marketing Agent Registry and public-marketing knowledge policy: completed.
+- Phase 3.2.3.4 governed Marketing AI Generation Runtime: completed for development and demonstration.
+- Phase 3.2.3.5 Marketing Generation Evaluation and UX Validation: implemented; business acceptance is conditional.
+- Phase 3.2 Business Acceptance Preparation: implemented; final human GO remains pending.
 
-The next development direction is the governed Marketing Content Agent generation layer on top of this persistence foundation. Production deployment, real customer data, real public knowledge activation, and external communication remain human-approved activities.
+The Marketing Agent now generates cited, immutable `generated` versions through a provider-neutral runtime and the existing human review workflow. Production deployment, real customer data, real public knowledge activation, publishing, and external communication remain disabled or human-approved activities as applicable.
+
+The deterministic evaluation baseline covers five synthetic scenarios, all five supported formats, and paired English/Chinese cases. Proceeding beyond controlled business acceptance requires real Sari Arta reviewer feedback, approved human revisions for edit-distance measurement, and a small explicitly authorized real-provider comparison.
+
+The business-acceptance workspace is `/marketing-content/acceptance`. Brand Guideline validation and the controlled one-English/one-Chinese OpenAI comparison remain explicitly pending. Phase 3.2.4 must not start until a human final GO decision.
 
 ## 10. Roadmap
 
 ### Phase 3 — Business Automation Layer
 
 - Governed Marketing Content Agent with human approval.
+- Phase 3.2.4 Organic & AI Search Visibility Foundation before outbound automation.
 - Social media content drafting and approval; no autonomous publishing.
 - Controlled email automation and delivery tracking.
 - WhatsApp integration with consent, templates, idempotency, and human control.
 - n8n operational workflows outside core transaction ownership.
 - Reliable retries, delivery status, audit, opt-out, and failure recovery.
+
+#### Planned Phase 3.2.4 — Organic & AI Search Visibility Foundation
+
+This future milestone will convert explicitly public enterprise knowledge and exact human-approved marketing content versions into crawlable, indexable, server-rendered website content. It plans sitemap, canonical URL, metadata and crawler-policy foundations; appropriate structured metadata for organization, solution, industry, project/case, article, product/service, breadcrumb, guide, FAQ, and business-question pages; and provider-neutral AI-search readiness through factual pages, entity consistency, evidence, service/location clarity, and public provenance.
+
+The intended acquisition flow is:
+
+```text
+Approved Public Knowledge
+→ Governed Marketing Content
+→ Public Website Content
+→ Search / AI Search Discovery
+→ Website Visitor
+→ Public Consultation Agent
+→ CRM Lead
+→ Qualification Agent
+→ Sales Follow-up
+```
+
+Future measurement may cover organic traffic, identifiable AI-search referrals, landing-page performance, consultation conversion, and CRM source attribution. No analytics is implemented by this planning update. Search-visible material must never include internal pricing, supplier information, private customer data, internal SOP, CRM records, or confidential commercial information.
 
 ### Phase 4 — Advanced AI Platform
 

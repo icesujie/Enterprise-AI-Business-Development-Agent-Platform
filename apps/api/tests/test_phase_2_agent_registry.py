@@ -69,13 +69,19 @@ async def test_admin_can_browse_localized_registry() -> None:
     assert domains.json()[1]["name"] == "实验动物设施"
 
     assert agents.status_code == 200, agents.text
-    assert len(agents.json()) == 2
+    assert len(agents.json()) == 3
     sari_summary = next(row for row in agents.json() if row["domain_key"] == "commercial_kitchen")
     ivc_summary = next(
         row for row in agents.json() if row["domain_key"] == "laboratory_animal_facility"
     )
+    marketing_summary = next(
+        row
+        for row in agents.json()
+        if row["agent_key"] == "commercial_kitchen.marketing_content"
+    )
     assert sari_summary["activation_status"] == "active"
     assert ivc_summary["activation_status"] == "active"
+    assert marketing_summary["activation_status"] == "active"
 
     assert sari.status_code == 200, sari.text
     assert sari.json()["versions"][0]["status"] == "active"

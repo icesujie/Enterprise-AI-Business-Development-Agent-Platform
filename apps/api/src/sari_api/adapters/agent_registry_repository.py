@@ -13,6 +13,7 @@ from sari_api.adapters.models import (
     DomainPackage,
     TenantAgentActivation,
 )
+from sari_api.core.config import get_settings
 
 
 class AgentRegistryNotFoundError(Exception):
@@ -22,9 +23,13 @@ class AgentRegistryNotFoundError(Exception):
 class SqlAlchemyAgentRegistryRepository:
     """Read model for the registry; execution remains in the existing Phase 1 services."""
 
-    def __init__(self, session: AsyncSession, tenant_id: UUID) -> None:
+    def __init__(
+        self, session: AsyncSession, tenant_id: UUID, *, environment: str | None = None
+    ) -> None:
         self._session = session
         self._tenant_id = tenant_id
+        configured = environment or get_settings().app_environment
+        self._environment = "development" if configured == "test" else configured
 
     async def set_tenant_context(self) -> None:
         await self._session.execute(
@@ -83,6 +88,7 @@ class SqlAlchemyAgentRegistryRepository:
             .where(
                 TenantAgentActivation.tenant_id == self._tenant_id,
                 TenantAgentActivation.agent_id == agent_id,
+                TenantAgentActivation.environment == self._environment,
             )
             .order_by(TenantAgentActivation.created_at.desc())
             .limit(1)

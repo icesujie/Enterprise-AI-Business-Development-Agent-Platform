@@ -1,6 +1,6 @@
 # Phase 3.2.2 Governed Marketing Content Agent MVP — Implementation Plan
 
-**Status:** Implementation plan; no code or schema changes applied  
+**Status:** Implementation plan; governance persistence, human workspace, Agent Registry identity, and public-marketing knowledge policy implemented; generation not implemented
 **Primary engineering baseline:** English  
 **Review translation:** `marketing-content-agent-implementation-plan.zh-CN.md`
 
@@ -282,11 +282,11 @@ The detail page shows rendered content, claims, citations, source excerpts, evid
 
 ### 6.4 Approve or reject
 
-An independently authorized approver checks the exact version and checksum. Approval sets `approved_version_id`; rejection or requested changes returns the asset to draft. Any later edit invalidates the active approval.
+An independently authorized approver checks the exact version and checksum. Approval sets `approved_version_id`; rejection or requested changes returns the asset to draft. Any later edit invalidates approval for the new current version while retaining the last approved-version pointer for governance comparison.
 
 ### 6.5 Archive
 
-Authorized users archive with a reason. Archive clears the active approved pointer but preserves versions, decisions, runs, citations, and audit history. Restore returns the item to a working state without restoring approval.
+Authorized users archive with a reason. Archive preserves the last approved-version pointer, versions, decisions, runs, citations, and audit history, but lifecycle status prevents archived content from being treated as approved for use. Restore returns the item to `draft` without approving its current version.
 
 ## 7. API Design
 

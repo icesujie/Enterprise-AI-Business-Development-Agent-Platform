@@ -167,7 +167,7 @@ async def test_content_version_governance_concurrency_approval_rollback_and_audi
             )
             assert edited.status_code == 201, edited.text
             assert edited.json()["status"] == "draft"
-            assert edited.json()["approved_version_id"] is None
+            assert edited.json()["approved_version_id"] == version_two["id"]
             assert edited.json()["current_version"]["version_number"] == 3
 
             rolled_back = await client.post(
@@ -180,7 +180,7 @@ async def test_content_version_governance_concurrency_approval_rollback_and_audi
             assert rollback["version_number"] == 4
             assert rollback["origin"] == "rollback"
             assert rollback["based_on_version_id"] == version_one["id"]
-            assert rolled_back.json()["approved_version_id"] is None
+            assert rolled_back.json()["approved_version_id"] == version_two["id"]
 
             archive_denied = await client.post(
                 f"/api/v1/content/assets/{asset_id}/archive",
@@ -204,7 +204,7 @@ async def test_content_version_governance_concurrency_approval_rollback_and_audi
             )
             assert restored.status_code == 200, restored.text
             assert restored.json()["status"] == "draft"
-            assert restored.json()["approved_version_id"] is None
+            assert restored.json()["approved_version_id"] == version_two["id"]
 
             audit = await client.get(f"/api/v1/content/assets/{asset_id}/audit")
             assert audit.status_code == 200, audit.text

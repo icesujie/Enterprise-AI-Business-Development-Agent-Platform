@@ -102,7 +102,10 @@ production launch remains a separate human-approved activity with environment-sp
 - [x] Governed Knowledge Retrieval API with active-version filtering and exact citations
 - [x] Retrieval quality evaluation, bilingual consistency baseline, and internal search test interface
 - [x] Read-only Knowledge Assistant with validated citations and insufficient/conflicting-evidence behavior
-- [ ] Content Generation Agent with human approval
+- [x] Governed Marketing Content Agent with typed drafts, public evidence, and human approval
+- [x] Marketing generation business evaluation baseline, immutable human feedback, and channel-specific review previews
+- [x] Fixed ten-case bilingual Marketing Content business-acceptance workspace and GO checklist
+- [ ] Final human GO for Phase 3.2 Marketing Content Agent
 - [ ] Proposal Assistant with structured editable drafts
 - [ ] Proposal versioning and print-ready export
 - [x] Evaluation cases for retrieval quality and grounded answer safety
@@ -116,6 +119,7 @@ production launch remains a separate human-approved activity with environment-sp
 **Goal:** Reduce repetitive follow-up work while keeping external communication controlled.
 
 - [x] Phase 3.1 bilingual public Commercial Kitchen Consultation Agent with consented CRM intake
+- [ ] Phase 3.2.4 Organic & AI Search Visibility Foundation
 - [ ] WhatsApp integration
 - [ ] Email integration and controlled automation
 - [ ] CRM follow-up workflows
@@ -126,6 +130,36 @@ production launch remains a separate human-approved activity with environment-sp
 **Entry condition:** Phase 2 outputs and human-review workflows are stable.
 
 **Exit criteria:** Approved communications can be delivered reliably, duplicated events do not produce duplicate messages, and users can recover failed workflows without corrupting CRM state.
+
+### Phase 3.2.4 — Organic & AI Search Visibility Foundation
+
+**Status:** Planned; no implementation has started.
+
+**Purpose:** Turn approved public enterprise knowledge and human-approved governed marketing content into discoverable public website content for traditional organic search and provider-neutral AI-powered search experiences. This milestone follows the governed Marketing Content Agent and its generation evaluation, and precedes outbound channel automation.
+
+Planned scope:
+
+1. **Technical discoverability:** crawlable and indexable public architecture, sitemap, canonical URLs, metadata, robots/crawler policy, and server-rendered public content.
+2. **Structured content:** appropriate machine-readable metadata for the organization, solutions, projects/case studies, articles, products/services, breadcrumbs, and other eligible public pages.
+3. **AI-search readiness:** clear factual pages, consistent entities, project/case evidence, service and location information, machine-readable metadata, and public-knowledge provenance without coupling to one AI-search provider.
+4. **Search-oriented content architecture:** governed Solution, Industry, Project/Case Study, Guide, FAQ, and business-question pages. AI may assist their creation, but a human must approve the exact content version before publication.
+5. **Visibility and attribution planning:** future measurement of organic traffic, identifiable AI-search referrals, landing-page performance, consultation-agent conversion, and CRM lead-source attribution. Analytics is not part of this planning milestone.
+
+Intended acquisition flow:
+
+```text
+Approved Public Knowledge
+→ Governed Marketing Content
+→ Public Website Content
+→ Search / AI Search Discovery
+→ Website Visitor
+→ Public Consultation Agent
+→ CRM Lead
+→ Qualification Agent
+→ Sales Follow-up
+```
+
+Search-visible content may originate only from explicitly public knowledge and approved marketing content. It must never expose internal pricing, supplier information, private customer information, internal SOP, CRM data, or confidential commercial information.
 
 ## Phase 4 — Advanced Agent System
 
@@ -146,7 +180,9 @@ production launch remains a separate human-approved activity with environment-sp
 
 **M8 Phase 1 acceptance, Phase 2.3 Agent Playground, Phase 2.5 Knowledge Foundation, Phase
 2.5.1 Enterprise Knowledge Management, Phase 2.5.2 Knowledge Processing, Phase 2.5.3
-Knowledge Governance, Phase 2.6.1 Knowledge Retrieval, Phase 2.6.2 Retrieval Evaluation, Phase 2.6.3 Read-Only Knowledge Assistant, and Phase 3.1 Public Consultation Agent are implemented.** The control plane manages tenant- and domain-scoped
+Knowledge Governance, Phase 2.6.1 Knowledge Retrieval, Phase 2.6.2 Retrieval Evaluation,
+Phase 2.6.3 Read-Only Knowledge Assistant, Phase 3.1 Public Consultation Agent, and Phase
+3.2 Business Acceptance Preparation are implemented for controlled development evaluation. Final Phase 3.2 human GO remains pending.** The control plane manages tenant- and domain-scoped
 collections, immutable version history, explicit current/published/active pointers, human approval,
 separate publication, safe rollback, agent bindings, and a tenant-scoped audit timeline through
 `/knowledge`. The read-only retrieval API returns agent-authorized evidence chunks and exact citations
@@ -159,6 +195,13 @@ The separate public consultation widget collects a bilingual structured project 
 unassigned `website_ai_assistant` lead only after explicit contact consent. It has no internal
 knowledge/CRM read access, pricing capability or external action tools. General business automation
 and Phase 3 external channels remain unimplemented.
+
+The Marketing Content Agent creates typed English/Chinese drafts only from approved public-marketing
+evidence. Generated versions enter the existing human review workflow and cannot be approved,
+published, scheduled, sent, or written into CRM by the agent. Development/demo activation is enabled;
+production remains pending.
+
+The deterministic business baseline covers five scenarios, all five supported content types, and paired English/Chinese cases. Human feedback and channel previews are available internally. Business acceptance remains conditional pending real Sari Arta reviewer feedback, approved human revisions, and a small manually authorized real-provider comparison; no next phase starts automatically.
 
 Phase 2–4 architecture may retain simple compatibility boundaries, but their product features must not be implemented until the preceding phase is accepted or the project owner explicitly changes the roadmap.
 

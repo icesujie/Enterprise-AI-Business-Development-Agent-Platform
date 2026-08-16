@@ -47,6 +47,7 @@ export type Messages = {
     followUp: string;
     agentPlayground: string;
     knowledge: string;
+    marketingContent: string;
     records: string;
     companies: string;
     contacts: string;
@@ -119,6 +120,7 @@ const en: Messages = {
     followUp: "Follow-up",
     agentPlayground: "Agent Playground",
     knowledge: "Knowledge",
+    marketingContent: "Marketing Content",
     records: "Records",
     companies: "Companies",
     contacts: "Contacts",
@@ -191,6 +193,7 @@ const zh: Messages = {
     followUp: "跟进管理",
     agentPlayground: "智能体演示",
     knowledge: "知识管理",
+    marketingContent: "营销内容",
     records: "基础资料",
     companies: "客户公司",
     contacts: "联系人",

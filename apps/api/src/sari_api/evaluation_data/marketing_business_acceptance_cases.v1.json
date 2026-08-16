@@ -1,0 +1,115 @@
+{
+  "dataset_version": "phase_3_2_business_acceptance_v1",
+  "cases": [
+    {
+      "case_id": "website_school_project_en",
+      "scenario": "Indonesia school central kitchen project",
+      "content_type": "website_article",
+      "audience": "schools",
+      "language": "en",
+      "channel": "website",
+      "business_objective": "Explain how an institutional school kitchen project can move from requirement discovery through local installation coordination.",
+      "topic": "Planning an Indonesia school central kitchen with coordinated engineering delivery",
+      "call_to_action": "Request a school kitchen consultation"
+    },
+    {
+      "case_id": "website_school_project_zh",
+      "scenario": "印度尼西亚学校中央厨房项目",
+      "content_type": "website_article",
+      "audience": "schools",
+      "language": "zh-CN",
+      "channel": "website",
+      "business_objective": "说明学校机构厨房项目如何从需求梳理推进到印度尼西亚本地安装协调。",
+      "topic": "印度尼西亚学校中央厨房的工程规划与协同交付",
+      "call_to_action": "申请学校厨房项目咨询"
+    },
+    {
+      "case_id": "tiktok_canteen_renovation_en",
+      "scenario": "School canteen renovation",
+      "content_type": "tiktok_script",
+      "audience": "schools",
+      "language": "en",
+      "channel": "tiktok",
+      "business_objective": "Help school facility managers identify the first planning questions for a canteen renovation without making project-specific technical promises.",
+      "topic": "Three questions to ask before renovating a school canteen",
+      "call_to_action": "Share your renovation brief with our project team"
+    },
+    {
+      "case_id": "tiktok_canteen_renovation_zh",
+      "scenario": "学校食堂翻新",
+      "content_type": "tiktok_script",
+      "audience": "schools",
+      "language": "zh-CN",
+      "channel": "tiktok",
+      "business_objective": "帮助学校设施负责人了解食堂翻新前应先确认的问题，不作具体项目技术承诺。",
+      "topic": "学校食堂翻新前需要确认的三个问题",
+      "call_to_action": "把翻新需求发给我们的项目团队"
+    },
+    {
+      "case_id": "instagram_factory_canteen_en",
+      "scenario": "Factory canteen",
+      "content_type": "instagram_reel_script",
+      "audience": "factories",
+      "language": "en",
+      "channel": "instagram",
+      "business_objective": "Show factory project owners the coordinated planning stages behind an employee canteen kitchen.",
+      "topic": "From meal demand to an installation-ready factory canteen kitchen plan",
+      "call_to_action": "Request an initial factory canteen consultation"
+    },
+    {
+      "case_id": "instagram_factory_canteen_zh",
+      "scenario": "工厂员工食堂",
+      "content_type": "instagram_reel_script",
+      "audience": "factories",
+      "language": "zh-CN",
+      "channel": "instagram",
+      "business_objective": "向工厂项目负责人展示员工食堂厨房从需求到安装准备的协同规划过程。",
+      "topic": "从用餐需求到可安装的工厂食堂厨房方案",
+      "call_to_action": "申请工厂食堂项目初步咨询"
+    },
+    {
+      "case_id": "facebook_hospital_kitchen_en",
+      "scenario": "Hospital and institutional kitchen",
+      "content_type": "facebook_post",
+      "audience": "hospitals",
+      "language": "en",
+      "channel": "facebook",
+      "business_objective": "Introduce the importance of structured requirement discovery for hospital and institutional kitchen projects.",
+      "topic": "Why hospital kitchen planning starts with operational requirements",
+      "call_to_action": "Discuss your institutional kitchen requirements"
+    },
+    {
+      "case_id": "facebook_hospital_kitchen_zh",
+      "scenario": "医院及机构厨房",
+      "content_type": "facebook_post",
+      "audience": "hospitals",
+      "language": "zh-CN",
+      "channel": "facebook",
+      "business_objective": "介绍医院及机构厨房项目进行结构化需求梳理的重要性。",
+      "topic": "医院厨房规划为什么要从运营需求开始",
+      "call_to_action": "与我们讨论您的机构厨房需求"
+    },
+    {
+      "case_id": "email_central_kitchen_en",
+      "scenario": "Central kitchen capacity planning",
+      "content_type": "email_draft",
+      "audience": "central_kitchens",
+      "language": "en",
+      "channel": "email",
+      "business_objective": "Create a concise first-contact email that invites a project owner to clarify central kitchen capacity and delivery requirements.",
+      "topic": "Initial consultation for central kitchen capacity planning",
+      "call_to_action": "Schedule a requirement discovery discussion"
+    },
+    {
+      "case_id": "email_central_kitchen_zh",
+      "scenario": "中央厨房产能规划",
+      "content_type": "email_draft",
+      "audience": "central_kitchens",
+      "language": "zh-CN",
+      "channel": "email",
+      "business_objective": "创建简洁的首次联系邮件，邀请项目负责人进一步说明中央厨房产能和交付需求。",
+      "topic": "中央厨房产能规划初步咨询",
+      "call_to_action": "安排一次项目需求梳理沟通"
+    }
+  ]
+}

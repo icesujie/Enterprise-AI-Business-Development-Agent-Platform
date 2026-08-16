@@ -71,10 +71,10 @@ class DomainAgentManifest:
     def validate(self) -> None:
         if self.default_locale not in self.supported_locales:
             raise ValueError("default locale must be supported")
-        if set(self.supported_locales) != set(SUPPORTED_LOCALES):
-            raise ValueError(
-                "Phase 2 domain packages must support English, Chinese, and Indonesian"
-            )
+        if not self.supported_locales or not set(self.supported_locales).issubset(
+            set(SUPPORTED_LOCALES)
+        ):
+            raise ValueError("agent locales must be a non-empty supported locale subset")
         self._require_unique(
             "qualification field", [item.key for item in self.qualification_fields]
         )

@@ -32,6 +32,10 @@ from sari_api.adapters.knowledge_queue import (
 )
 from sari_api.adapters.knowledge_storage import LocalKnowledgeStorage
 from sari_api.adapters.managed_knowledge_processing import ManagedKnowledgeProcessingExecutor
+from sari_api.adapters.marketing_content_generation_executor import (
+    MarketingContentGenerationExecutor,
+)
+from sari_api.adapters.marketing_content_provider import build_marketing_content_provider
 from sari_api.adapters.models import AgentRun
 from sari_api.adapters.qualification_executor import QualificationRunExecutor, RetrySchedule
 from sari_api.adapters.qualification_provider import build_qualification_provider
@@ -101,6 +105,10 @@ async def run_worker() -> None:
         knowledge_assistant_provider,
         settings,
     )
+    marketing_content_provider = build_marketing_content_provider(settings)
+    marketing_content_executor = MarketingContentGenerationExecutor(
+        build_knowledge_embedding_provider(settings), marketing_content_provider, settings
+    )
     recovery = AgentRunRecoveryService(settings.agent_stale_after_seconds)
     next_recovery_at = 0.0
     logger.info(
@@ -133,6 +141,14 @@ async def run_worker() -> None:
             "event": "knowledge_assistant.worker.provider_selected",
             "provider_type": knowledge_assistant_provider.provider_type,
             "model_id": knowledge_assistant_provider.model_id,
+        },
+    )
+    logger.info(
+        "Marketing Content provider selected",
+        extra={
+            "event": "marketing_content.worker.provider_selected",
+            "provider_type": marketing_content_provider.provider_type,
+            "model_id": marketing_content_provider.model_id,
         },
     )
     logger.info("Qualification worker started", extra={"event": "agent.worker.started"})
@@ -240,6 +256,7 @@ async def run_worker() -> None:
                     "ivc_facility_qualification": ivc_executor,
                     "agent_playground_qualification": playground_executor,
                     "knowledge_assistant": knowledge_assistant_executor,
+                    "marketing_content_generation": marketing_content_executor,
                 }
                 selected_executor = executors.get(workflow_type) if workflow_type else None
                 if selected_executor is None:

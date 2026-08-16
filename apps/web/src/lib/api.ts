@@ -227,6 +227,8 @@ export type CurrentIdentity = {
   user_id: string;
   email: string;
   display_name: string;
+  workspace: { id: string; slug: string; name: string };
+  membership_id: string;
   role: string;
   permissions: string[];
 };
@@ -353,6 +355,232 @@ export type KnowledgeAssistantRunStart = {
   status_url: string;
   correlation_id: string | null;
   created_at: string;
+};
+
+export type MarketingContentRequest = {
+  id: string;
+  tenant_id: string;
+  domain_id: string;
+  agent_id: string | null;
+  requested_by: string;
+  content_type: string;
+  audience: string;
+  language: "en" | "zh-CN";
+  channel: string;
+  business_objective: string;
+  topic: string;
+  call_to_action: string;
+  campaign_name: string | null;
+  constraints: Record<string, unknown>;
+  knowledge_collection_ids: string[];
+  status: string;
+  result_asset_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type MarketingContentVersion = {
+  id: string;
+  tenant_id: string;
+  content_asset_id: string;
+  version_number: number;
+  origin: "human" | "ai_generated" | "rollback";
+  content_body: Record<string, unknown>;
+  plain_text: string;
+  claims: Array<Record<string, unknown>>;
+  citations: Array<Record<string, unknown>>;
+  generation_run_id: string | null;
+  based_on_version_id: string | null;
+  content_sha256: string;
+  created_by: string;
+  created_at: string;
+};
+
+export type MarketingContentAsset = {
+  id: string;
+  tenant_id: string;
+  domain_id: string;
+  agent_id: string | null;
+  request_id: string | null;
+  title: string;
+  content_type: string;
+  audience: string;
+  language: "en" | "zh-CN";
+  channel: string;
+  status: "draft" | "generated" | "review" | "approved" | "archived";
+  owner_membership_id: string;
+  creator_membership_id: string;
+  current_version_id: string | null;
+  approved_version_id: string | null;
+  record_version: number;
+  archived_at: string | null;
+  archived_by: string | null;
+  archive_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  current_version: MarketingContentVersion | null;
+  approved_version: MarketingContentVersion | null;
+};
+
+export type MarketingContentDecision = {
+  id: string;
+  content_asset_id: string;
+  content_version_id: string;
+  decision_type: "submitted" | "changes_requested" | "approved" | "rejected";
+  decided_by: string;
+  content_sha256: string;
+  comment: string | null;
+  created_at: string;
+};
+
+export type MarketingContentAuditLog = {
+  id: string;
+  actor_membership_id: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  content_asset_id: string | null;
+  content_version_id: string | null;
+  content_request_id: string | null;
+  outcome: string;
+  before_metadata: Record<string, unknown>;
+  after_metadata: Record<string, unknown>;
+  details: Record<string, unknown>;
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export type ContentGovernanceCommand = {
+  asset: MarketingContentAsset;
+  decision: MarketingContentDecision | null;
+};
+
+export type MarketingGenerationStart = {
+  run_id: string;
+  request_id: string;
+  workflow_type: "marketing_content_generation";
+  status: string;
+  status_url: string;
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export type MarketingGenerationRun = {
+  run_id: string;
+  request_id: string;
+  workflow_type: "marketing_content_generation";
+  status: string;
+  correlation_id: string | null;
+  provider: string | null;
+  model: string | null;
+  evidence_status: "sufficient" | "insufficient" | "conflicting" | null;
+  duration_ms: number | null;
+  result: null | {
+    outcome: "generated" | "insufficient_evidence";
+    evidence_status: "sufficient" | "insufficient" | "conflicting";
+    message: string;
+    asset_id: string | null;
+    version_id: string | null;
+    content: Record<string, unknown> | null;
+    citations: Array<Record<string, unknown>>;
+  };
+  error_code: string | null;
+  error_message: string | null;
+  created_at: string;
+  completed_at: string | null;
+};
+
+export type MarketingReviewFeedback = {
+  id: string;
+  content_asset_id: string;
+  content_version_id: string;
+  reviewer_membership_id: string;
+  content_sha256: string;
+  categories: string[];
+  note: string | null;
+  created_at: string;
+};
+
+export type MarketingQualityEvaluation = {
+  brand_fit: number;
+  audience_fit: number;
+  channel_fit: number;
+  clarity: number;
+  cta_quality: number;
+  factual_grounding: number;
+  unsupported_claims: number;
+  repetition: number;
+  content_usefulness: number;
+  overall_score: number;
+  issues: string[];
+};
+
+export type MarketingContentEvaluation = {
+  asset_id: string;
+  evaluated_version_id: string;
+  generation_run_id: string | null;
+  generation_outcome: string | null;
+  evidence_status: string | null;
+  provider: string | null;
+  model: string | null;
+  quality_evaluation: MarketingQualityEvaluation | null;
+  human_edit_distance: number | null;
+  generated_version_id: string | null;
+  generated_version_number: number | null;
+  approved_human_version_id: string | null;
+  approved_human_version_number: number | null;
+  citations: Array<Record<string, unknown>>;
+  latency_ms: number | null;
+  token_usage: Record<string, unknown>;
+  estimated_cost: string | null;
+  correlation_id: string | null;
+  feedback: MarketingReviewFeedback[];
+};
+
+export type MarketingAcceptanceCase = {
+  case_id: string;
+  scenario: string;
+  content_type: string;
+  audience: string;
+  language: "en" | "zh-CN";
+  channel: string;
+  business_objective: string;
+  topic: string;
+  call_to_action: string;
+  request_id: string | null;
+  request_status: string | null;
+  attempt_count: number;
+  asset_id: string | null;
+  asset_status: string | null;
+  reviewed: boolean;
+  approved: boolean;
+  rejected: boolean;
+  human_edit_distance: number | null;
+  generated_version_number: number | null;
+  approved_human_version_number: number | null;
+  feedback_categories: string[];
+  quality_evaluation: MarketingQualityEvaluation | null;
+};
+
+export type MarketingAcceptanceDashboard = {
+  dataset_version: string;
+  configured_provider: string;
+  mock_preparation_allowed: boolean;
+  cases: MarketingAcceptanceCase[];
+  summary: {
+    total: number;
+    prepared: number;
+    reviewed: number;
+    approved: number;
+    rejected: number;
+    average_human_edit_distance: number | null;
+    common_feedback_categories: Record<string, number>;
+    quality_metric_summary: Record<string, number>;
+    brand_guideline_validation: "pending" | "completed";
+    brand_guideline_note: string;
+    openai_comparison_state: "not_run" | "completed" | "deferred";
+    openai_comparison_note: string;
+  };
 };
 
 export class ApiRequestError extends Error {

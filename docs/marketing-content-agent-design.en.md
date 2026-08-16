@@ -1,6 +1,6 @@
 # Governed Marketing Content Agent Design
 
-**Status:** Phase 3.2 design specification; not implemented  
+**Status:** Phase 3.2 design baseline; generation and deterministic evaluation are implemented for development, with production activation pending
 **Primary engineering baseline:** English  
 **Review translation:** `marketing-content-agent-design.zh-CN.md`
 
@@ -273,6 +273,7 @@ Phase 3.2 is accepted only when an authorized user can create a brief, generate 
 ## 13. Future Roadmap
 
 - Bahasa Indonesia generation after terminology and quality approval.
+- Phase 3.2.4 may transform only exact human-approved versions backed by explicitly public knowledge into search-visible Solution, Industry, Project/Case Study, Guide, FAQ, and business-question pages. Search visibility does not grant the generation agent publication authority.
 - Controlled social scheduling and publishing through separate channel services.
 - Approved email and WhatsApp delivery with consent and template enforcement.
 - Campaign calendars, reusable content templates, and asset governance.

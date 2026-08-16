@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sari_api.adapters.models import (
@@ -106,6 +106,76 @@ class ContentGovernanceRepository:
         )
         return request
 
+    async def list_requests(
+        self,
+        *,
+        status: str | None = None,
+        content_type: str | None = None,
+        language: str | None = None,
+        search: str | None = None,
+    ) -> list[ContentRequest]:
+        statement = select(ContentRequest).where(ContentRequest.tenant_id == self._tenant_id)
+        if status:
+            statement = statement.where(ContentRequest.status == status)
+        if content_type:
+            statement = statement.where(ContentRequest.content_type == content_type)
+        if language:
+            statement = statement.where(ContentRequest.language == language)
+        if search:
+            pattern = f"%{search}%"
+            statement = statement.where(
+                or_(
+                    ContentRequest.topic.ilike(pattern),
+                    ContentRequest.business_objective.ilike(pattern),
+                    ContentRequest.campaign_name.ilike(pattern),
+                )
+            )
+        return list(
+            (
+                await self._session.scalars(
+                    statement.order_by(ContentRequest.updated_at.desc(), ContentRequest.id)
+                )
+            ).all()
+        )
+
+    async def update_request(
+        self,
+        *,
+        request_id: UUID,
+        expected_updated_at: datetime,
+        actor_id: UUID,
+        values: dict[str, Any],
+    ) -> ContentRequest:
+        request = await self.get_request(request_id, lock=True)
+        if request.status != "draft" or request.result_asset_id is not None:
+            raise ContentStateError("Only an unassociated draft request can be edited.")
+        if request.updated_at != expected_updated_at:
+            raise ContentConcurrencyError("Content request changed; reload and retry.")
+        before = {
+            "audience": request.audience,
+            "business_objective": request.business_objective,
+            "call_to_action": request.call_to_action,
+            "campaign_name": request.campaign_name,
+            "channel": request.channel,
+            "content_type": request.content_type,
+            "language": request.language,
+            "topic": request.topic,
+        }
+        for field, value in values.items():
+            setattr(request, field, value)
+        request.updated_at = datetime.now(UTC)
+        self._audit(
+            actor_id=actor_id,
+            action="content.request_updated",
+            target_type="content_request",
+            target_id=request.id,
+            request_id=request.id,
+            before=before,
+            after=values,
+        )
+        await self._session.flush()
+        return request
+
     async def create_asset(
         self,
         *,
@@ -169,24 +239,51 @@ class ContentGovernanceRepository:
         await self._session.flush()
         return asset, version
 
-    async def list_assets(self) -> list[ContentAsset]:
+    async def list_assets(
+        self,
+        *,
+        status: str | None = None,
+        content_type: str | None = None,
+        language: str | None = None,
+        owner_membership_id: UUID | None = None,
+        creator_membership_id: UUID | None = None,
+        search: str | None = None,
+    ) -> list[ContentAsset]:
+        statement = select(ContentAsset).where(ContentAsset.tenant_id == self._tenant_id)
+        if status:
+            statement = statement.where(ContentAsset.status == status)
+        if content_type:
+            statement = statement.where(ContentAsset.content_type == content_type)
+        if language:
+            statement = statement.where(ContentAsset.language == language)
+        if owner_membership_id:
+            statement = statement.where(
+                ContentAsset.owner_membership_id == owner_membership_id
+            )
+        if creator_membership_id:
+            statement = statement.where(
+                ContentAsset.creator_membership_id == creator_membership_id
+            )
+        if search:
+            statement = statement.where(ContentAsset.title.ilike(f"%{search}%"))
         return list(
             (
                 await self._session.scalars(
-                    select(ContentAsset)
-                    .where(ContentAsset.tenant_id == self._tenant_id)
-                    .order_by(ContentAsset.updated_at.desc(), ContentAsset.id)
+                    statement.order_by(ContentAsset.updated_at.desc(), ContentAsset.id)
                 )
             ).all()
         )
 
-    async def get_request(self, request_id: UUID) -> ContentRequest:
-        request = await self._session.scalar(
-            select(ContentRequest).where(
+    async def get_request(
+        self, request_id: UUID, *, lock: bool = False
+    ) -> ContentRequest:
+        statement = select(ContentRequest).where(
                 ContentRequest.id == request_id,
                 ContentRequest.tenant_id == self._tenant_id,
             )
-        )
+        if lock:
+            statement = statement.with_for_update()
+        request = await self._session.scalar(statement)
         if request is None:
             raise ContentNotFoundError("Content request not found.")
         return request
@@ -259,7 +356,6 @@ class ContentGovernanceRepository:
         await self._session.flush()
         before = self._asset_state(asset)
         asset.current_version_id = version.id
-        asset.approved_version_id = None
         asset.status = "draft"
         asset.record_version += 1
         self._audit_version(actor_id=actor_id, asset=asset, version=version, action="edited")
@@ -307,7 +403,6 @@ class ContentGovernanceRepository:
         await self._session.flush()
         before = self._asset_state(asset)
         asset.current_version_id = version.id
-        asset.approved_version_id = None
         asset.status = "draft"
         asset.record_version += 1
         self._audit_version(actor_id=actor_id, asset=asset, version=version, action="rollback")
@@ -349,7 +444,6 @@ class ContentGovernanceRepository:
             comment=comment,
         )
         asset.status = "review"
-        asset.approved_version_id = None
         asset.record_version += 1
         self._session.add(decision)
         self._audit(
@@ -399,11 +493,9 @@ class ContentGovernanceRepository:
             action = "content.approved"
         elif decision_type == "rejected":
             asset.status = "draft"
-            asset.approved_version_id = None
             action = "content.rejected"
         else:
             asset.status = "draft"
-            asset.approved_version_id = None
             action = "content.changes_requested"
         asset.record_version += 1
         self._session.add(decision)
@@ -434,7 +526,6 @@ class ContentGovernanceRepository:
             raise ContentStateError("Content is already archived.")
         before = self._asset_state(asset)
         asset.status = "archived"
-        asset.approved_version_id = None
         asset.archived_at = datetime.now(UTC)
         asset.archived_by = actor_id
         asset.archive_reason = reason
@@ -467,7 +558,6 @@ class ContentGovernanceRepository:
             raise ContentStateError("Only archived content can be restored.")
         before = self._asset_state(asset)
         asset.status = "draft"
-        asset.approved_version_id = None
         asset.archived_at = None
         asset.archived_by = None
         asset.archive_reason = None

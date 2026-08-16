@@ -19,6 +19,10 @@ from sari_api.api.dependencies import require_permission
 from sari_api.core.config import get_settings
 from sari_api.core.observability import get_correlation_id
 from sari_api.domain.identity import Principal
+from sari_api.domain.marketing_knowledge_policy import (
+    MARKETING_CONTENT_AGENT_ID,
+    MARKETING_CONTENT_CAPABILITY_KEY,
+)
 
 router = APIRouter(prefix="/api/v1/knowledge", tags=["knowledge-retrieval"])
 
@@ -79,6 +83,29 @@ class ManagedKnowledgeSearchResponse(StrictModel):
     below_threshold_results: list[ManagedKnowledgeSearchResult]
 
 
+def log_marketing_policy_decision(
+    *,
+    tenant_id: UUID,
+    agent_id: UUID,
+    outcome: Literal["allow", "deny"],
+    reason: str,
+) -> None:
+    if agent_id != MARKETING_CONTENT_AGENT_ID:
+        return
+    logging.getLogger("sari_api.marketing_knowledge_policy").info(
+        "Marketing knowledge policy evaluated",
+        extra={
+            "event": "marketing.knowledge_policy.decision",
+            "correlation_id": get_correlation_id(),
+            "tenant_id": str(tenant_id),
+            "agent_id": str(agent_id),
+            "capability": MARKETING_CONTENT_CAPABILITY_KEY,
+            "outcome": outcome,
+            "policy_reason": reason,
+        },
+    )
+
+
 @router.post("/search", response_model=ManagedKnowledgeSearchResponse)
 async def search_managed_knowledge(
     payload: ManagedKnowledgeSearchInput,
@@ -87,6 +114,12 @@ async def search_managed_knowledge(
 ) -> ManagedKnowledgeSearchResponse:
     started_at = time.perf_counter()
     if payload.tenant_id != principal.tenant_id:
+        log_marketing_policy_decision(
+            tenant_id=principal.tenant_id,
+            agent_id=payload.agent_id,
+            outcome="deny",
+            reason="cross_tenant_request",
+        )
         raise HTTPException(status_code=403, detail="Workspace access denied.")
 
     repository = ManagedKnowledgeRetrievalRepository(session, principal.tenant_id)
@@ -94,10 +127,23 @@ async def search_managed_knowledge(
     try:
         await repository.ensure_agent_retrieval_enabled(payload.agent_id)
     except ManagedKnowledgeRetrievalDeniedError as exc:
+        log_marketing_policy_decision(
+            tenant_id=principal.tenant_id,
+            agent_id=payload.agent_id,
+            outcome="deny",
+            reason=exc.reason,
+        )
         raise HTTPException(
             status_code=403,
             detail="Knowledge retrieval is not enabled for this tenant agent.",
         ) from exc
+
+    log_marketing_policy_decision(
+        tenant_id=principal.tenant_id,
+        agent_id=payload.agent_id,
+        outcome="allow",
+        reason="public_marketing_policy_authorized",
+    )
 
     settings = get_settings()
     provider = build_knowledge_embedding_provider(settings)
@@ -116,6 +162,12 @@ async def search_managed_knowledge(
             top_k=candidate_limit,
         )
     except ManagedKnowledgeRetrievalDeniedError as exc:
+        log_marketing_policy_decision(
+            tenant_id=principal.tenant_id,
+            agent_id=payload.agent_id,
+            outcome="deny",
+            reason=exc.reason,
+        )
         raise HTTPException(
             status_code=403,
             detail="Knowledge retrieval is not enabled for this tenant agent.",

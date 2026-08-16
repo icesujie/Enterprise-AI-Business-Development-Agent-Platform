@@ -176,6 +176,26 @@ This changelog records major product, architecture, security, and business-capab
 - Turned the public website into a guided lead-generation experience.
 - Allowed prospects to prepare a useful project brief while preserving human sales review and consent.
 
+## 2026-08-16 — Phase 3.2.3.4: Governed Marketing Content Generation
+
+### Added capabilities
+
+- Added typed English/Chinese website article, TikTok, Instagram Reel, Facebook, and email draft generation.
+- Added deterministic Mock and OpenAI provider adapters behind one generation contract.
+- Added asynchronous status, public evidence citations, insufficient-evidence handling, and a Marketing Workspace generation flow.
+- Added repeatable grounding, citation, structure, bilingual, forbidden-claim, and knowledge-boundary evaluations.
+
+### Architecture impact
+
+- Connected Agent Registry, `public_marketing_v1`, governed retrieval, Agent Runs, immutable content versions, and human review in one controlled runtime.
+- Enforced authorization before embedding, retrieval, and model calls while keeping production activation pending.
+- Preserved provider portability for future Qwen or approved private/local adapters.
+
+### Business impact
+
+- Staff can generate reviewable B2B marketing drafts from approved public evidence instead of starting from a blank page.
+- Source traceability and mandatory human approval reduce unsupported marketing claims without enabling publishing or external sending.
+
 ## Current Status
 
-The platform has evolved from a single business demo into a reusable enterprise AI Business Development Platform. It now combines an operational CRM workflow, multidomain agent framework, governed enterprise knowledge lifecycle, evaluated retrieval, read-only grounded assistance, and a separated public consultation experience. External communication automation, autonomous sales actions, and advanced orchestration remain future controlled phases.
+The platform has evolved from a single business demo into a reusable enterprise AI Business Development Platform. It now combines an operational CRM workflow, multidomain agent framework, governed enterprise knowledge lifecycle, evaluated retrieval, read-only grounded assistance, a separated public consultation experience, and governed marketing draft generation. External communication automation, autonomous sales actions, and advanced orchestration remain future controlled phases.

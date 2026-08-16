@@ -18,6 +18,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
             "content:archive",
             "content:audit_read",
             "content:create",
+            "content:generate",
             "content:edit",
             "content:read",
             "content:review",
@@ -47,6 +48,7 @@ ROLE_PERMISSIONS: dict[Role, frozenset[str]] = {
     Role.SALES: frozenset(
         {
             "content:create",
+            "content:generate",
             "content:edit",
             "content:read",
             "content:submit_review",

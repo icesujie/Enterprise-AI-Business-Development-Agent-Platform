@@ -405,16 +405,24 @@ RBAC 提供粗粒度的权限；应用程序策略强制执行租户、对象、
 
 ### 4.11 营销内容
 
+当前 Phase 3.2.3.2 实现在 `/api/v1/content` 下提供人工操作的治理 API：
+
 | 方法 | 路径 | 目的 |
 |---|---|---|
-| `GET`, `POST` | `/content-items` | 列出/创建内容项 |
-| `GET`, `PATCH` | `/content-items/{content_id}` | 读取/更新元数据 |
-| `GET` | `/content-items/{content_id}/versions` | 版本历史 |
-| `POST` | `/content-items/{content_id}/generation-runs` | 生成草稿 |
-| `POST` | `/content-items/{content_id}/versions` | 创建修改后的版本 |
-| `POST` | `/content-versions/{version_id}/review-requests` | 请求批准 |
-| `POST` | `/content-items/{content_id}/schedules` | 批准的内容安排 |
-| `POST` | `/content-items/{content_id}/publications` | 通过已批准的连接器发布 |
+| `GET`, `POST` | `/content/requests` | 列出或创建人工内容请求 |
+| `GET`, `PATCH` | `/content/requests/{request_id}` | 读取或安全更新未关联资产的草稿请求 |
+| `GET`, `POST` | `/content/assets` | 列出/筛选资产，或创建初始人工资产和版本 |
+| `GET` | `/content/assets/{asset_id}` | 读取包含当前版本和最近批准版本的资产详情 |
+| `GET`, `POST` | `/content/assets/{asset_id}/versions` | 列出不可变历史或创建后继版本 |
+| `POST` | `/content/assets/{asset_id}/rollback` | 创建回滚后继版本且不改写历史 |
+| `POST` | `/content/assets/{asset_id}/submit-review` | 提交准确的当前版本和校验和 |
+| `POST` | `/content/assets/{asset_id}/decisions` | 在 RBAC 和职责分离约束下批准、拒绝或要求修改 |
+| `POST` | `/content/assets/{asset_id}/archive` | 使用原因归档符合条件的资产 |
+| `POST` | `/content/assets/{asset_id}/restore` | 把已归档资产恢复为草稿 |
+| `GET` | `/content/assets/{asset_id}/decisions` | 使用治理权限读取审批历史 |
+| `GET` | `/content/assets/{asset_id}/audit` | 使用治理权限读取仅追加审计历史 |
+
+写操作使用 `Idempotency-Key`，并发敏感命令使用 `If-Match`。历史版本和审计记录不能通过 API 修改。本阶段不实现 AI 生成、排期、发布或外发端点。
 
 ### 4.12 集成与自动化
 
@@ -988,3 +996,15 @@ Phase 2.5.2 新增 `POST /documents/{id}/processing-runs` 和 `GET /processing-r
 `POST /api/v1/public/consultation/turns` 接受固定项目需求收集顺序中当前字段的受限英文或中文回答。系统在可选的无工具公开响应提供方前，先执行仅服务端保存的 `X-Site-Token`、独立 Redis 限流、严格验证和滥用检查。该端点不能检索内部知识或 CRM 数据。
 
 在访客明确同意联系后，网站复用 `POST /api/v1/public/lead-submissions`，来源为 `website_ai_assistant`。该端点保留幂等、租户范围和验证，增加按照标准化邮箱/来源/项目/城市的 24 小时防重复，记录创建/重复审计事件，并返回 `duplicate`。新线索仍为新建、未分配和未资格评估状态。参见 `public-consultation-agent-design.zh-CN.md`。
+
+## Phase 3.2.3.4 受治理营销生成 API
+
+`POST /api/v1/content/requests/{request_id}/generate` 要求 `content:generate` 和 `Idempotency-Key`，在排队前授权准确的开发环境营销智能体和 `public_marketing_v1` 策略，并返回 `202`。`GET /api/v1/content/generation-runs/{run_id}` 返回租户范围的状态、证据状态、提供方/模型、耗时、引用，以及生成的资产/版本指针或明确的证据不足结果。
+
+Worker 在嵌入、检索或模型使用前重新授权。成功结果只能创建状态为 `generated`、来源为 `ai_generated` 的不可变版本。它不能批准、发布、发送、排期、归档或写入 CRM。参见 `marketing-content-generation-runtime.zh-CN.md`。
+
+## Phase 3.2.3.5 营销内容生成评估 API
+
+`POST /api/v1/content/assets/{asset_id}/feedback` 要求 `content:review` 和 `Idempotency-Key`，把人工编写的结构化反馈绑定到准确版本和 SHA-256 校验和。`GET /api/v1/content/assets/{asset_id}/evaluation` 要求 `content:read`，返回租户范围的生成结果、证据状态、提供方/模型、确定性质量投影、可用时的人工编辑距离、引用、延迟、Correlation ID、用量/成本可用性和不可变反馈。两个端点都不会发布、发送、排期、审批或写入 CRM。参见 `marketing-generation-evaluation.zh-CN.md`。
+
+`GET /api/v1/content/acceptance` 要求 `content:read`，返回固定十项 Phase 3.2 验收投影：准备/审核/决定数量、准确 AI 生成版本和人工批准版本指针、只针对人工后继版本的真实人工修改比例、常见反馈、质量平均值，以及明确的品牌指南/OpenAI 对比检查点。它复用现有受治理记录，不创建平行审批生命周期。参见 `marketing-content-business-acceptance.zh-CN.md`。

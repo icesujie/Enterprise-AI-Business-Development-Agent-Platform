@@ -124,7 +124,10 @@ vi.mock("@/lib/api", () => ({
   }),
 }));
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.localStorage.clear();
+});
 
 test("switches from Chinese back to English and refreshes server content", async () => {
   render(
@@ -174,6 +177,11 @@ test("opens the separate public consultation agent", async () => {
   });
   fireEvent.click(launcher);
   expect(
+    screen.queryByRole("button", {
+      name: "Open Commercial Kitchen Consultation Agent",
+    }),
+  ).toBeNull();
+  expect(
     screen.getByRole("dialog", {
       name: "Commercial Kitchen Consultation Agent",
     }),
@@ -182,6 +190,50 @@ test("opens the separate public consultation agent", async () => {
     screen.getByText(/No price, delivery, or technical commitment/i),
   ).toBeDefined();
   expect(screen.getByText(/What type of facility/i)).toBeDefined();
+  fireEvent.click(
+    screen.getByRole("button", { name: "Close consultation assistant" }),
+  );
+  expect(
+    screen.getByRole("button", {
+      name: "Open Commercial Kitchen Consultation Agent",
+    }),
+  ).toBeDefined();
+});
+
+test("moves the public consultation launcher without opening it accidentally", async () => {
+  render(<PublicConsultationWidget initialLanguage="en" />);
+  const launcher = screen.getByRole("button", {
+    name: "Open Commercial Kitchen Consultation Agent",
+  });
+  await waitFor(() => expect(launcher.style.left).not.toBe(""));
+
+  fireEvent.pointerDown(launcher, {
+    pointerId: 1,
+    clientX: 20,
+    clientY: 20,
+  });
+  fireEvent.pointerMove(launcher, {
+    pointerId: 1,
+    clientX: 180,
+    clientY: 140,
+  });
+  fireEvent.pointerUp(launcher, {
+    pointerId: 1,
+    clientX: 180,
+    clientY: 140,
+  });
+
+  expect(launcher.style.left).not.toBe("8px");
+  expect(
+    window.localStorage.getItem(
+      "sari-arta-public-consultation-launcher-position",
+    ),
+  ).not.toBeNull();
+  fireEvent.click(launcher);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.click(launcher);
+  expect(screen.getByRole("dialog")).toBeDefined();
+  expect(screen.getByLabelText("Drag consultation window")).toBeDefined();
 });
 
 test("renders the M6 workspace navigation and live dashboard", async () => {

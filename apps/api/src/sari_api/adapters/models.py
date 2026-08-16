@@ -1202,6 +1202,43 @@ class ContentApprovalDecision(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class ContentReviewFeedback(Base):
+    __tablename__ = "content_review_feedback"
+    __table_args__ = (
+        CheckConstraint(
+            "length(content_sha256) = 64", name="content_review_feedback_sha_check"
+        ),
+        Index(
+            "ix_content_review_feedback_tenant_asset",
+            "tenant_id",
+            "content_asset_id",
+            "created_at",
+        ),
+        Index(
+            "ix_content_review_feedback_tenant_version",
+            "tenant_id",
+            "content_version_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    content_asset_id: Mapped[UUID] = mapped_column(
+        ForeignKey("content_assets.id", ondelete="RESTRICT")
+    )
+    content_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("content_versions.id", ondelete="RESTRICT")
+    )
+    reviewer_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    categories: Mapped[list[str]] = mapped_column(JSONB)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class ContentAuditLog(Base):
     __tablename__ = "content_audit_logs"
     __table_args__ = (

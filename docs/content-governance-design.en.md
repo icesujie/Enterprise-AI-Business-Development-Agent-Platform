@@ -93,20 +93,13 @@ Existing versions are never edited or deleted through ordinary workflows. Correc
 
 `current_version_id` identifies the version selected for current editing and review. Changing the pointer requires optimistic concurrency and a valid version belonging to the same tenant and asset.
 
-Creating a new successor normally moves the current pointer to that version. If an approved asset is edited, its lifecycle returns to `draft`; the previous approval remains historical but is no longer the asset's active approval.
+Creating a new successor normally moves the current pointer to that version. If an approved asset is edited, its lifecycle returns to `draft`; the previous approval remains historical and visible through `approved_version_id`, but it does not approve or authorize the new current version.
 
 ### 3.3 Approved version
 
-`approved_version_id` points only to the exact version accepted by an authorized approver. The approval record stores the version ID and `content_sha256` so that changed content cannot reuse an earlier approval.
+`approved_version_id` points only to the most recent exact version accepted by an authorized approver. The approval record stores the version ID and `content_sha256` so that changed content cannot reuse an earlier approval.
 
-The approved pointer is cleared when:
-
-- a successor version becomes current;
-- material classification or audience metadata changes;
-- the approval is explicitly rejected or withdrawn under an authorized correction flow;
-- the asset is archived.
-
-Historical approval records remain immutable.
+The pointer remains available for governance comparison when a successor becomes current, review is rejected, or the asset is archived. Lifecycle status and exact version/checksum validation determine whether content is currently approved for use. Therefore an asset may correctly show `current v4 · Draft` and `approved v3 · Approved`; version 4 has no inherited approval. Historical approval records remain immutable.
 
 ### 3.4 Rollback strategy
 
@@ -196,6 +189,8 @@ The default policy prevents a creator from approving their own AI-generated cont
 No role may approve by editing database state directly or through an automation workflow.
 
 ## 6. Audit Logging
+
+Human marketing quality feedback is stored as a separate append-only record bound to an exact content version and checksum. Feedback categories and reviewer notes are human-authored governance metadata; the Marketing Agent cannot update or delete them.
 
 The content audit ledger is append-only and tenant-scoped.
 
