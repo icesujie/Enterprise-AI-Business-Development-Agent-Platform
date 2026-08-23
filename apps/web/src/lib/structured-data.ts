@@ -19,6 +19,7 @@ export type FutureArticleStructuredData = {
 
 export type FutureCaseStudyStructuredData = FutureArticleStructuredData & {
   industry?: string;
+  images?: readonly string[];
 };
 
 export type FutureServiceStructuredData = {
@@ -100,6 +101,7 @@ export function buildFutureCaseStudyStructuredData(
     articleSection: caseStudy.industry
       ? ["Case Study", caseStudy.industry]
       : "Case Study",
+    image: caseStudy.images?.map(absolutePublicUrl),
   };
 }
 

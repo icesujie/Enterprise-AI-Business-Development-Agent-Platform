@@ -12,11 +12,12 @@ import {
   isPrivateSearchRoute,
   type PublishedPublicRoute,
 } from "@/lib/search-foundation";
+import { eligibleIndexNowUrls, isIndexNowEnabled } from "@/lib/indexnow-policy";
 import {
-  eligibleIndexNowUrls,
-  isIndexNowEnabled,
-} from "@/lib/indexnow-policy";
-import { buildPublicPageMetadata, privateMetadata } from "@/lib/seo";
+  buildPublicPageMetadata,
+  buildPublicRouteMetadata,
+  privateMetadata,
+} from "@/lib/seo";
 import {
   buildBreadcrumbStructuredData,
   buildFutureArticleStructuredData,
@@ -73,7 +74,14 @@ describe("crawl boundary", () => {
     ]) {
       expect(isPrivateSearchRoute(path)).toBe(true);
     }
-    for (const path of ["/", "/solutions", "/industries", "/projects", "/about", "/contact"]) {
+    for (const path of [
+      "/",
+      "/solutions",
+      "/industries",
+      "/projects",
+      "/about",
+      "/contact",
+    ]) {
       expect(isPrivateSearchRoute(path)).toBe(false);
     }
     expect(privateMetadata.robots).toEqual(
@@ -92,6 +100,8 @@ describe("sitemap publication rules", () => {
       "https://www.sariarta.example/projects",
       "https://www.sariarta.example/about",
       "https://www.sariarta.example/contact",
+      "https://www.sariarta.example/solutions/school-canteen-kitchen",
+      "https://www.sariarta.example/industries/schools",
     ]);
     expect(urls.some((url) => url.includes("knowledge"))).toBe(false);
   });
@@ -106,8 +116,12 @@ describe("sitemap publication rules", () => {
       { path: "/guides/query?internal=1", status: "published", isPublic: true },
     ];
     const urls = buildSitemap(candidates).map((entry) => entry.url);
-    expect(urls).toContain("https://www.sariarta.example/guides/kitchen-capacity");
-    expect(urls).toContain("https://www.sariarta.example/projects/approved-case");
+    expect(urls).toContain(
+      "https://www.sariarta.example/guides/kitchen-capacity",
+    );
+    expect(urls).toContain(
+      "https://www.sariarta.example/projects/approved-case",
+    );
     expect(urls).not.toContain("https://www.sariarta.example/guides/draft");
     expect(urls.some((url) => url.includes("knowledge"))).toBe(false);
     expect(urls.some((url) => url.includes("?"))).toBe(false);
@@ -128,6 +142,23 @@ describe("metadata and structured data", () => {
       expect.objectContaining({ locale: "zh_CN" }),
     );
     expect(english.keywords).toBeUndefined();
+    const school = buildPublicRouteMetadata(
+      {
+        title: "School Canteen Kitchen Solutions Indonesia",
+        description: "Approved public solution description.",
+        path: "/solutions/school-canteen-kitchen",
+      },
+      "en",
+    );
+    expect(school.alternates).toEqual({
+      canonical:
+        "https://www.sariarta.example/solutions/school-canteen-kitchen",
+    });
+    expect(school.openGraph).toEqual(
+      expect.objectContaining({
+        url: "https://www.sariarta.example/solutions/school-canteen-kitchen",
+      }),
+    );
   });
 
   test("uses supported Organization, WebSite, Breadcrumb and future Article data", () => {
@@ -185,9 +216,9 @@ test("classifies lightweight acquisition sources without changing lead channel",
     ["", null, "direct"],
   ];
   for (const [query, referrer, expected] of cases) {
-    expect(classifyAcquisitionSource(new URLSearchParams(query), referrer)).toBe(
-      expected,
-    );
+    expect(
+      classifyAcquisitionSource(new URLSearchParams(query), referrer),
+    ).toBe(expected);
   }
 });
 

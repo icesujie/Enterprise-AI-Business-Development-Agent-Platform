@@ -8,12 +8,19 @@ import {
 } from "@/lib/search-foundation";
 
 export type PublicPageKey =
-  | "home"
-  | "solutions"
-  | "industries"
-  | "projects"
-  | "about"
-  | "contact";
+  "home" | "solutions" | "industries" | "projects" | "about" | "contact";
+
+export type PublicRouteMetadata = {
+  title: string;
+  description: string;
+  path: string;
+  image?: {
+    url: string;
+    width: number;
+    height: number;
+    alt: string;
+  };
+};
 
 const publicMetadata: Record<
   PublicPageKey,
@@ -138,8 +145,15 @@ export function buildPublicPageMetadata(
   page: PublicPageKey,
   locale: Locale,
 ): Metadata {
-  const content = publicMetadata[page][locale];
+  return buildPublicRouteMetadata(publicMetadata[page][locale], locale);
+}
+
+export function buildPublicRouteMetadata(
+  content: PublicRouteMetadata,
+  locale: Locale,
+): Metadata {
   const canonical = absolutePublicUrl(content.path);
+  const image = content.image ?? socialImage();
   return {
     title: content.title,
     description: content.description,
@@ -156,13 +170,13 @@ export function buildPublicPageMetadata(
       description: content.description,
       url: canonical,
       locale: locale === "zh-CN" ? "zh_CN" : "en_US",
-      images: [socialImage()],
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title: `${content.title} | Sari Arta`,
       description: content.description,
-      images: ["/sari-arta-social-card.png"],
+      images: [image.url],
     },
     other: { "content-language": locale },
   };

@@ -6,6 +6,7 @@ import {
   InnerPageHero,
 } from "@/components/marketing/inner-page";
 import { StructuredData } from "@/components/seo/structured-data";
+import { ButtonLink } from "@/components/ui/button";
 import { capabilities, deliveryStages } from "@/content/public-site";
 import { getLocale } from "@/i18n/server";
 import { buildPublicPageMetadata } from "@/lib/seo";
@@ -29,6 +30,29 @@ export default function SolutionsPage() {
         title="A complete delivery framework, shaped around your operation."
         description="Sari Arta coordinates the project decisions that connect workflow, equipment, manufacturing, logistics, site work, and operational handover. The final responsibility matrix is agreed for every project."
       />
+
+      <ContentBand>
+        <article className="card grid gap-7 p-7 sm:p-9 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
+            <p className="eyebrow">Solution focus</p>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight sm:text-3xl">
+              School canteen kitchen solutions for Indonesia
+            </h2>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
+              Review the project inputs and coordinated delivery areas for a
+              school kitchen planned around meal volume, service windows,
+              workflow, site readiness, and local installation.
+            </p>
+          </div>
+          <ButtonLink
+            className="shrink-0"
+            href="/solutions/school-canteen-kitchen"
+            variant="secondary"
+          >
+            Explore school canteen kitchens
+          </ButtonLink>
+        </article>
+      </ContentBand>
 
       <ContentBand tone="white">
         <div className="grid gap-6 lg:grid-cols-2">

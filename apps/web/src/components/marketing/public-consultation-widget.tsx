@@ -16,6 +16,7 @@ import {
 } from "@/app/(marketing)/public-consultation-actions";
 import { Button } from "@/components/ui/button";
 import { captureAcquisitionAttribution } from "@/lib/acquisition-attribution";
+import { publicConsultationOpenEvent } from "@/lib/public-consultation-ui";
 
 type Message = { role: "assistant" | "visitor"; text: string };
 type Point = { x: number; y: number };
@@ -90,6 +91,13 @@ export function PublicConsultationWidget({
       stopLauncherDrag.current?.();
       stopPanelDrag.current?.();
     };
+  }, []);
+
+  useEffect(() => {
+    const openConsultation = () => setOpen(true);
+    window.addEventListener(publicConsultationOpenEvent, openConsultation);
+    return () =>
+      window.removeEventListener(publicConsultationOpenEvent, openConsultation);
   }, []);
 
   useEffect(() => {

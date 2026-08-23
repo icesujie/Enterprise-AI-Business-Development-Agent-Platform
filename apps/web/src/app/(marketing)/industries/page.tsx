@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import {
   ConsultationBand,
@@ -63,9 +64,17 @@ export default function IndustriesPage() {
                     </li>
                   ))}
                 </ul>
+                {industry.slug === "schools" ? (
+                  <Link
+                    className="button-secondary mt-7"
+                    href="/industries/schools"
+                  >
+                    Explore school kitchen solutions
+                  </Link>
+                ) : null}
                 <a
                   href={`/contact?industry=${industry.slug}`}
-                  className="button-tertiary mt-7"
+                  className={`button-tertiary ${industry.slug === "schools" ? "mt-3" : "mt-7"}`}
                 >
                   Discuss a {industry.title.toLowerCase()} project →
                 </a>

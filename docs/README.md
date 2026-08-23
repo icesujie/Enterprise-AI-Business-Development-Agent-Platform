@@ -2,18 +2,22 @@
 
 ## Documentation standard / 文档标准
 
-Design documents are maintained as complete bilingual pairs:
+English design documents are the active engineering baseline. Existing bilingual pairs are retained,
+but Chinese translation is synchronized at sub-phase/milestone acceptance, when an internal business
+review requires it, or when explicitly requested. Routine implementation does not require Codex to
+read or update Chinese documents.
 
 - `*.en.md` is the primary engineering baseline.
-- `*.zh-CN.md` is the complete Simplified Chinese translation for internal review.
-- Headings, diagrams, tables, code blocks, identifiers, API paths, database fields, and terminology are preserved across both versions.
+- `*.zh-CN.md` is the latest Simplified Chinese review snapshot and may temporarily trail active English development.
+- When synchronized, headings, diagrams, tables, code blocks, identifiers, API paths, database fields, and terminology are preserved.
 - If the two versions conflict, the English engineering baseline controls implementation.
 
-设计文档采用完整的中英文双语配对：
+英文设计文档是当前工程基线。现有中英文配对会继续保留，但中文版本只在子阶段/里程碑验收、
+内部业务审核需要或用户明确要求时集中同步。日常开发不要求 Codex 读取或更新中文文档。
 
 - `*.en.md` 是正式工程基线。
-- `*.zh-CN.md` 是供内部审核使用的完整简体中文译本。
-- 两个版本保持标题、图表、表格、代码块、标识符、API 路径、数据库字段和术语一致。
+- `*.zh-CN.md` 是最近一次简体中文审核快照，在开发期间可能暂时落后于英文版本。
+- 集中同步时保持标题、图表、表格、代码块、标识符、API 路径、数据库字段和术语一致。
 - 如两个版本存在冲突，以英文工程基线为准。
 
 ## Bilingual design documents / 双语设计文档

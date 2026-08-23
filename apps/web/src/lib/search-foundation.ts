@@ -52,6 +52,23 @@ export type PublishedPublicRoute = {
   priority?: number;
 };
 
+export const publishedPublicRoutes = [
+  {
+    path: "/solutions/school-canteen-kitchen",
+    status: "published",
+    isPublic: true,
+    changeFrequency: "monthly",
+    priority: 0.8,
+  },
+  {
+    path: "/industries/schools",
+    status: "published",
+    isPublic: true,
+    changeFrequency: "monthly",
+    priority: 0.8,
+  },
+] as const satisfies readonly PublishedPublicRoute[];
+
 export function getSiteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   return (configured || "http://localhost:3000").replace(/\/$/, "");

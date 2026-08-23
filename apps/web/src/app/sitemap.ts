@@ -1,9 +1,11 @@
 import type { MetadataRoute } from "next";
 
-import { buildSitemap } from "@/lib/search-foundation";
+import { buildCaseStudySitemapRoutes } from "@/content/case-studies";
+import { buildSitemap, publishedPublicRoutes } from "@/lib/search-foundation";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  // Future approved publication records can be passed to buildSitemap here.
-  // Draft, internal, non-public, and non-published records are rejected there.
-  return buildSitemap();
+  return buildSitemap([
+    ...publishedPublicRoutes,
+    ...buildCaseStudySitemapRoutes(),
+  ]);
 }
