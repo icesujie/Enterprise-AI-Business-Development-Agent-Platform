@@ -38,9 +38,11 @@ export function SolutionPage({ content }: { content: SolutionPageContent }) {
               {content.priorities.map((priority) => (
                 <article className="card p-6" key={priority.title}>
                   <h3 className="font-semibold">{priority.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-                    {priority.description}
-                  </p>
+                  {priority.description ? (
+                    <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
+                      {priority.description}
+                    </p>
+                  ) : null}
                 </article>
               ))}
             </div>
@@ -113,6 +115,24 @@ export function SolutionPage({ content }: { content: SolutionPageContent }) {
           </div>
         </SectionContainer>
       </section>
+
+      {content.relatedLinks?.length ? (
+        <section className="bg-white py-16 sm:py-20">
+          <SectionContainer>
+            <div className="flex flex-wrap gap-3">
+              {content.relatedLinks.map((link) => (
+                <ButtonLink
+                  href={link.href}
+                  key={link.href}
+                  variant="secondary"
+                >
+                  {link.label}
+                </ButtonLink>
+              ))}
+            </div>
+          </SectionContainer>
+        </section>
+      ) : null}
 
       <section className="bg-[var(--color-surface-subtle)] py-16 sm:py-20 lg:py-24">
         <SectionContainer>

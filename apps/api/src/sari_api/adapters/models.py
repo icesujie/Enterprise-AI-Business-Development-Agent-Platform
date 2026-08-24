@@ -984,9 +984,7 @@ class ContentRequest(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
-    domain_id: Mapped[UUID] = mapped_column(
-        ForeignKey("domain_packages.id", ondelete="RESTRICT")
-    )
+    domain_id: Mapped[UUID] = mapped_column(ForeignKey("domain_packages.id", ondelete="RESTRICT"))
     agent_id: Mapped[UUID | None] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
     requested_by: Mapped[UUID] = mapped_column(
         ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
@@ -1046,9 +1044,7 @@ class ContentAsset(Base):
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
     tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
-    domain_id: Mapped[UUID] = mapped_column(
-        ForeignKey("domain_packages.id", ondelete="RESTRICT")
-    )
+    domain_id: Mapped[UUID] = mapped_column(ForeignKey("domain_packages.id", ondelete="RESTRICT"))
     agent_id: Mapped[UUID | None] = mapped_column(ForeignKey("agents.id", ondelete="RESTRICT"))
     request_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("content_requests.id", ondelete="RESTRICT")
@@ -1174,9 +1170,7 @@ class ContentApprovalDecision(Base):
             "decision_type IN ('submitted','changes_requested','approved','rejected')",
             name="content_approval_decisions_type_check",
         ),
-        CheckConstraint(
-            "length(content_sha256) = 64", name="content_approval_decisions_sha_check"
-        ),
+        CheckConstraint("length(content_sha256) = 64", name="content_approval_decisions_sha_check"),
         Index(
             "ix_content_approval_decisions_tenant_asset",
             "tenant_id",
@@ -1205,9 +1199,7 @@ class ContentApprovalDecision(Base):
 class ContentReviewFeedback(Base):
     __tablename__ = "content_review_feedback"
     __table_args__ = (
-        CheckConstraint(
-            "length(content_sha256) = 64", name="content_review_feedback_sha_check"
-        ),
+        CheckConstraint("length(content_sha256) = 64", name="content_review_feedback_sha_check"),
         Index(
             "ix_content_review_feedback_tenant_asset",
             "tenant_id",
@@ -1405,6 +1397,203 @@ class IvcQualificationAssessment(Base):
     review_status: Mapped[str] = mapped_column(String(30), server_default="pending")
     reviewed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PublicContentItem(Base):
+    __tablename__ = "public_content_items"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id", "page_type", "slug", "locale", name="uq_public_content_route_locale"
+        ),
+        UniqueConstraint(
+            "tenant_id", "canonical_path", "locale", name="uq_public_content_canonical_locale"
+        ),
+        CheckConstraint(
+            "page_type IN ('solution','industry','case_study','guide')",
+            name="public_content_items_page_type_check",
+        ),
+        CheckConstraint("locale IN ('en','zh-CN')", name="public_content_items_locale_check"),
+        CheckConstraint(
+            "status IN ('draft','review','approved','published','archived')",
+            name="public_content_items_status_check",
+        ),
+        CheckConstraint("record_version > 0", name="public_content_items_version_check"),
+        CheckConstraint(
+            "slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'", name="public_content_items_slug_check"
+        ),
+        Index("ix_public_content_items_tenant_status", "tenant_id", "status", "updated_at"),
+        Index(
+            "ix_public_content_items_tenant_type_locale",
+            "tenant_id",
+            "page_type",
+            "locale",
+            "status",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    page_type: Mapped[str] = mapped_column(String(30))
+    slug: Mapped[str] = mapped_column(String(160))
+    locale: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(250))
+    summary: Mapped[str] = mapped_column(Text)
+    seo_title: Mapped[str] = mapped_column(String(250))
+    seo_description: Mapped[str] = mapped_column(String(500))
+    canonical_path: Mapped[str] = mapped_column(String(300))
+    status: Mapped[str] = mapped_column(String(20), server_default="draft")
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, server_default="false")
+    current_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("public_content_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    approved_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("public_content_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    published_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("public_content_versions.id", ondelete="RESTRICT", use_alter=True)
+    )
+    created_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    approved_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    published_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    archived_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    record_version: Mapped[int] = mapped_column(Integer, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archive_reason: Mapped[str | None] = mapped_column(Text)
+
+
+class PublicContentVersion(Base):
+    __tablename__ = "public_content_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "tenant_id",
+            "public_content_item_id",
+            "version_number",
+            name="uq_public_content_version_number",
+        ),
+        CheckConstraint("version_number > 0", name="public_content_versions_number_check"),
+        CheckConstraint(
+            "origin IN ('human','ai_draft','imported','rollback')",
+            name="public_content_versions_origin_check",
+        ),
+        CheckConstraint(
+            "source_type IN ('manual','knowledge_version','marketing_content_version',"
+            "'docx_import','pdf_import','html_import','text_import')",
+            name="public_content_versions_source_type_check",
+        ),
+        CheckConstraint("length(content_sha256) = 64", name="public_content_versions_sha_check"),
+        CheckConstraint(
+            "source_checksum IS NULL OR length(source_checksum) = 64",
+            name="public_content_versions_source_sha_check",
+        ),
+        Index(
+            "ix_public_content_versions_tenant_item",
+            "tenant_id",
+            "public_content_item_id",
+            "version_number",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    public_content_item_id: Mapped[UUID] = mapped_column(
+        ForeignKey("public_content_items.id", ondelete="RESTRICT")
+    )
+    version_number: Mapped[int] = mapped_column(Integer)
+    origin: Mapped[str] = mapped_column(String(20))
+    title: Mapped[str] = mapped_column(String(250))
+    summary: Mapped[str] = mapped_column(Text)
+    seo_title: Mapped[str] = mapped_column(String(250))
+    seo_description: Mapped[str] = mapped_column(String(500))
+    structured_content: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    media_references: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")
+    source_type: Mapped[str] = mapped_column(String(40), server_default="manual")
+    source_reference_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
+    source_filename: Mapped[str | None] = mapped_column(String(500))
+    source_checksum: Mapped[str | None] = mapped_column(String(64))
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    based_on_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("public_content_versions.id", ondelete="RESTRICT")
+    )
+    created_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PublicContentDecision(Base):
+    __tablename__ = "public_content_decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "decision_type IN ('submitted','changes_requested','approved','rejected','published')",
+            name="public_content_decisions_type_check",
+        ),
+        CheckConstraint("length(content_sha256) = 64", name="public_content_decisions_sha_check"),
+        Index(
+            "ix_public_content_decisions_tenant_item",
+            "tenant_id",
+            "public_content_item_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    public_content_item_id: Mapped[UUID] = mapped_column(
+        ForeignKey("public_content_items.id", ondelete="RESTRICT")
+    )
+    public_content_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("public_content_versions.id", ondelete="RESTRICT")
+    )
+    decision_type: Mapped[str] = mapped_column(String(30))
+    decided_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PublicContentAuditLog(Base):
+    __tablename__ = "public_content_audit_logs"
+    __table_args__ = (
+        Index(
+            "ix_public_content_audit_tenant_item",
+            "tenant_id",
+            "public_content_item_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    actor_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(100))
+    public_content_item_id: Mapped[UUID] = mapped_column(
+        ForeignKey("public_content_items.id", ondelete="RESTRICT")
+    )
+    public_content_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("public_content_versions.id", ondelete="RESTRICT")
+    )
+    before_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    after_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -12,7 +12,7 @@ export type FutureArticleStructuredData = {
   headline: string;
   description: string;
   path: string;
-  datePublished: string;
+  datePublished?: string;
   dateModified?: string;
   language: Locale;
 };
@@ -27,6 +27,11 @@ export type FutureServiceStructuredData = {
   description: string;
   path: string;
   language: Locale;
+};
+
+export type FaqStructuredDataItem = {
+  question: string;
+  answer: string;
 };
 
 export function buildSiteStructuredData(locale: Locale): StructuredDataNode {
@@ -85,8 +90,12 @@ export function buildFutureArticleStructuredData(
     headline: article.headline,
     description: article.description,
     url: absolutePublicUrl(article.path),
-    datePublished: article.datePublished,
-    dateModified: article.dateModified ?? article.datePublished,
+    ...(article.datePublished
+      ? {
+          datePublished: article.datePublished,
+          dateModified: article.dateModified ?? article.datePublished,
+        }
+      : {}),
     inLanguage: article.language,
     author: { "@id": `${absolutePublicUrl("/")}#organization` },
     publisher: { "@id": `${absolutePublicUrl("/")}#organization` },
@@ -117,5 +126,22 @@ export function buildFutureServiceStructuredData(
     inLanguage: service.language,
     provider: { "@id": `${absolutePublicUrl("/")}#organization` },
     areaServed: { "@type": "Country", name: "Indonesia" },
+  };
+}
+
+export function buildFaqStructuredData(
+  items: readonly FaqStructuredDataItem[],
+): StructuredDataNode {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
   };
 }

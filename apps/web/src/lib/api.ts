@@ -583,6 +583,88 @@ export type MarketingAcceptanceDashboard = {
   };
 };
 
+export type PublicContentVersion = {
+  id: string;
+  tenant_id: string;
+  public_content_item_id: string;
+  version_number: number;
+  origin: "human" | "rollback" | string;
+  title: string;
+  summary: string;
+  seo_title: string;
+  seo_description: string;
+  structured_content: Record<string, unknown>;
+  media_references: Array<Record<string, unknown>>;
+  source_type: string;
+  source_reference_id: string | null;
+  source_filename: string | null;
+  source_checksum: string | null;
+  content_sha256: string;
+  based_on_version_id: string | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type PublicContentItem = {
+  id: string;
+  tenant_id: string;
+  page_type: "solution" | "industry" | "case_study" | "guide";
+  slug: string;
+  locale: "en" | "zh-CN";
+  title: string;
+  summary: string;
+  seo_title: string;
+  seo_description: string;
+  canonical_path: string;
+  status: "draft" | "review" | "approved" | "published" | "archived";
+  is_synthetic: boolean;
+  current_version_id: string | null;
+  approved_version_id: string | null;
+  published_version_id: string | null;
+  created_by: string;
+  approved_by: string | null;
+  published_by: string | null;
+  record_version: number;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+  archived_at: string | null;
+  archived_by: string | null;
+  archive_reason: string | null;
+  current_version: PublicContentVersion | null;
+  approved_version: PublicContentVersion | null;
+  published_version: PublicContentVersion | null;
+};
+
+export type PublicContentDecision = {
+  id: string;
+  public_content_item_id: string;
+  public_content_version_id: string;
+  decision_type: string;
+  decided_by: string;
+  content_sha256: string;
+  comment: string | null;
+  created_at: string;
+};
+
+export type PublicContentAuditLog = {
+  id: string;
+  actor_membership_id: string;
+  action: string;
+  public_content_item_id: string;
+  public_content_version_id: string | null;
+  before_metadata: Record<string, unknown>;
+  after_metadata: Record<string, unknown>;
+  details: Record<string, unknown>;
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export type PublicContentGovernanceCommand = {
+  item: PublicContentItem;
+  decision: PublicContentDecision | null;
+};
+
 export class ApiRequestError extends Error {
   constructor(
     message: string,

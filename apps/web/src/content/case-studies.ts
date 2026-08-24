@@ -40,8 +40,10 @@ export type CaseStudyPageContent = {
   deliveryApproach: readonly CaseStudySectionItem[];
   approvedProjectFacts: readonly CaseStudyFact[];
   images: readonly CaseStudyImage[];
-  relatedSolution: CaseStudyRelatedLink;
-  relatedIndustry: CaseStudyRelatedLink;
+  relatedSolution?: CaseStudyRelatedLink;
+  relatedIndustry?: CaseStudyRelatedLink;
+  consultationLabel?: string;
+  consultationDescription?: string;
 };
 
 export type CaseStudyRecord = {

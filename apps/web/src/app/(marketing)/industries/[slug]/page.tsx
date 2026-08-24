@@ -12,12 +12,12 @@ export async function generateMetadata({
   params,
 }: RouteProps): Promise<Metadata> {
   const [{ slug }, locale] = await Promise.all([params, getLocale()]);
-  return buildPublishedPublicMetadata("case_study", slug, locale);
+  return buildPublishedPublicMetadata("industry", slug, locale);
 }
 
-export default async function PublicCaseStudyPage({ params }: RouteProps) {
+export default async function PublicIndustryPage({ params }: RouteProps) {
   const [{ slug }, locale] = await Promise.all([params, getLocale()]);
   return (
-    <PublishedPublicRoute pageType="case_study" slug={slug} locale={locale} />
+    <PublishedPublicRoute pageType="industry" slug={slug} locale={locale} />
   );
 }

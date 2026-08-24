@@ -11,7 +11,7 @@ export type IndustryPageContent = {
   needsEyebrow: string;
   needsTitle: string;
   needsDescription: string;
-  needs: ReadonlyArray<{ title: string; description: string }>;
+  needs: ReadonlyArray<{ title: string; description?: string }>;
   projectEyebrow: string;
   projectTitle: string;
   projectDescription: string;
@@ -24,11 +24,14 @@ export type IndustryPageContent = {
   solutionTitle: string;
   solutionDescription: string;
   solutionLinkLabel: string;
+  solutionLinkHref?: string;
   consultationEyebrow: string;
   consultationTitle: string;
   consultationDescription: string;
   consultationAgentLabel: string;
   consultationFormLabel: string;
+  consultationFormHref?: string;
+  relatedLinks?: ReadonlyArray<{ label: string; href: string }>;
 };
 
 export const schoolsIndustry: Record<Locale, IndustryPageContent> = {
@@ -110,6 +113,7 @@ export const schoolsIndustry: Record<Locale, IndustryPageContent> = {
     solutionDescription:
       "See the project inputs and coordinated delivery areas for a school canteen kitchen, from early operational planning through manufacturing coordination and local installation.",
     solutionLinkLabel: "Explore school canteen kitchen solutions",
+    solutionLinkHref: "/solutions/school-canteen-kitchen",
     consultationEyebrow: "Engineering consultation",
     consultationTitle:
       "Discuss what your school kitchen needs to prepare, serve, and support.",
@@ -193,6 +197,7 @@ export const schoolsIndustry: Record<Locale, IndustryPageContent> = {
     solutionDescription:
       "了解学校食堂厨房的项目资料和协调交付范围，包括早期运营规划、制造协调和本地安装。",
     solutionLinkLabel: "查看学校食堂厨房解决方案",
+    solutionLinkHref: "/solutions/school-canteen-kitchen",
     consultationEyebrow: "工程咨询",
     consultationTitle: "讨论学校厨房需要准备、供应和支持的内容。",
     consultationDescription:

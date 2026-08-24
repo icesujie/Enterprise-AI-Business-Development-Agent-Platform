@@ -17,7 +17,10 @@ export function IndustryPage({ content }: { content: IndustryPageContent }) {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <PublicConsultationCta label={content.consultationAgentLabel} />
-            <ButtonLink href="/contact?industry=schools" variant="secondary">
+            <ButtonLink
+              href={content.consultationFormHref ?? "/contact?industry=schools"}
+              variant="secondary"
+            >
               {content.consultationFormLabel}
             </ButtonLink>
           </div>
@@ -38,9 +41,11 @@ export function IndustryPage({ content }: { content: IndustryPageContent }) {
               {content.needs.map((need) => (
                 <article className="card p-6" key={need.title}>
                   <h3 className="font-semibold">{need.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
-                    {need.description}
-                  </p>
+                  {need.description ? (
+                    <p className="mt-3 text-sm leading-6 text-[var(--color-muted)]">
+                      {need.description}
+                    </p>
+                  ) : null}
                 </article>
               ))}
             </div>
@@ -75,50 +80,75 @@ export function IndustryPage({ content }: { content: IndustryPageContent }) {
         </SectionContainer>
       </section>
 
-      <section className="bg-[var(--color-brand)] py-16 text-white sm:py-20 lg:py-24">
-        <SectionContainer>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d4a48e]">
-            {content.workflowEyebrow}
-          </p>
-          <div className="mt-4 grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
-            <h2 className="section-title">{content.workflowTitle}</h2>
-            <p className="max-w-2xl text-sm leading-7 text-white/65 lg:justify-self-end">
-              {content.workflowDescription}
+      {content.workflowAreas.length ? (
+        <section className="bg-[var(--color-brand)] py-16 text-white sm:py-20 lg:py-24">
+          <SectionContainer>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#d4a48e]">
+              {content.workflowEyebrow}
             </p>
-          </div>
-          <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/15 sm:grid-cols-2 lg:grid-cols-4">
-            {content.workflowAreas.map((area) => (
-              <article className="bg-[var(--color-brand)] p-6" key={area.title}>
-                <h3 className="font-semibold">{area.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/60">
-                  {area.description}
-                </p>
-              </article>
-            ))}
-          </div>
-        </SectionContainer>
-      </section>
-
-      <section className="bg-white py-16 sm:py-20 lg:py-24">
-        <SectionContainer>
-          <article className="card grid gap-7 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <p className="eyebrow">{content.solutionEyebrow}</p>
-              <h2 className="section-title mt-4">{content.solutionTitle}</h2>
-              <p className="mt-5 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
-                {content.solutionDescription}
+            <div className="mt-4 grid gap-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
+              <h2 className="section-title">{content.workflowTitle}</h2>
+              <p className="max-w-2xl text-sm leading-7 text-white/65 lg:justify-self-end">
+                {content.workflowDescription}
               </p>
             </div>
-            <ButtonLink
-              className="shrink-0"
-              href="/solutions/school-canteen-kitchen"
-              variant="secondary"
-            >
-              {content.solutionLinkLabel}
-            </ButtonLink>
-          </article>
-        </SectionContainer>
-      </section>
+            <div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-white/15 bg-white/15 sm:grid-cols-2 lg:grid-cols-4">
+              {content.workflowAreas.map((area) => (
+                <article
+                  className="bg-[var(--color-brand)] p-6"
+                  key={area.title}
+                >
+                  <h3 className="font-semibold">{area.title}</h3>
+                  <p className="mt-3 text-sm leading-6 text-white/60">
+                    {area.description}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </SectionContainer>
+        </section>
+      ) : null}
+
+      {content.solutionLinkHref ? (
+        <section className="bg-white py-16 sm:py-20 lg:py-24">
+          <SectionContainer>
+            <article className="card grid gap-7 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <p className="eyebrow">{content.solutionEyebrow}</p>
+                <h2 className="section-title mt-4">{content.solutionTitle}</h2>
+                <p className="mt-5 max-w-3xl text-sm leading-7 text-[var(--color-muted)]">
+                  {content.solutionDescription}
+                </p>
+              </div>
+              <ButtonLink
+                className="shrink-0"
+                href={content.solutionLinkHref}
+                variant="secondary"
+              >
+                {content.solutionLinkLabel}
+              </ButtonLink>
+            </article>
+          </SectionContainer>
+        </section>
+      ) : null}
+
+      {content.relatedLinks?.length ? (
+        <section className="bg-white pb-16 sm:pb-20">
+          <SectionContainer>
+            <div className="flex flex-wrap gap-3">
+              {content.relatedLinks.map((link) => (
+                <ButtonLink
+                  href={link.href}
+                  key={link.href}
+                  variant="secondary"
+                >
+                  {link.label}
+                </ButtonLink>
+              ))}
+            </div>
+          </SectionContainer>
+        </section>
+      ) : null}
 
       <section className="bg-[var(--color-surface-subtle)] py-16 sm:py-20 lg:py-24">
         <SectionContainer>

@@ -48,7 +48,7 @@ export function CaseStudyPage({
           </dl>
           <PublicConsultationCta
             className="mt-8"
-            label={copy.consultationLabel}
+            label={content.consultationLabel ?? copy.consultationLabel}
           />
         </SectionContainer>
       </header>
@@ -134,32 +134,38 @@ export function CaseStudyPage({
         </section>
       ) : null}
 
-      <section className="bg-white py-16 sm:py-20 lg:py-24">
-        <SectionContainer>
-          <article className="card grid gap-7 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end">
-            <div>
-              <p className="eyebrow">{copy.related}</p>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-                {copy.relatedDescription}
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <ButtonLink
-                href={content.relatedSolution.href}
-                variant="secondary"
-              >
-                {content.relatedSolution.label}
-              </ButtonLink>
-              <ButtonLink
-                href={content.relatedIndustry.href}
-                variant="secondary"
-              >
-                {content.relatedIndustry.label}
-              </ButtonLink>
-            </div>
-          </article>
-        </SectionContainer>
-      </section>
+      {content.relatedSolution || content.relatedIndustry ? (
+        <section className="bg-white py-16 sm:py-20 lg:py-24">
+          <SectionContainer>
+            <article className="card grid gap-7 p-7 sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <p className="eyebrow">{copy.related}</p>
+                <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
+                  {copy.relatedDescription}
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                {content.relatedSolution ? (
+                  <ButtonLink
+                    href={content.relatedSolution.href}
+                    variant="secondary"
+                  >
+                    {content.relatedSolution.label}
+                  </ButtonLink>
+                ) : null}
+                {content.relatedIndustry ? (
+                  <ButtonLink
+                    href={content.relatedIndustry.href}
+                    variant="secondary"
+                  >
+                    {content.relatedIndustry.label}
+                  </ButtonLink>
+                ) : null}
+              </div>
+            </article>
+          </SectionContainer>
+        </section>
+      ) : null}
 
       <section className="bg-[var(--color-surface-subtle)] py-16 sm:py-20 lg:py-24">
         <SectionContainer>
@@ -170,12 +176,13 @@ export function CaseStudyPage({
                 {copy.consultationTitle}
               </h2>
               <p className="mt-5 max-w-2xl text-sm leading-7 text-[var(--color-muted)]">
-                {copy.consultationDescription}
+                {content.consultationDescription ??
+                  copy.consultationDescription}
               </p>
             </div>
             <PublicConsultationCta
               className="shrink-0"
-              label={copy.consultationLabel}
+              label={content.consultationLabel ?? copy.consultationLabel}
             />
           </div>
         </SectionContainer>

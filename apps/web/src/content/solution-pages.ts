@@ -11,7 +11,7 @@ export type SolutionPageContent = {
   overviewEyebrow: string;
   overviewTitle: string;
   overviewDescription: string;
-  priorities: ReadonlyArray<{ title: string; description: string }>;
+  priorities: ReadonlyArray<{ title: string; description?: string }>;
   scopeEyebrow: string;
   scopeTitle: string;
   scopeDescription: string;
@@ -32,6 +32,7 @@ export type SolutionPageContent = {
   consultationDescription: string;
   consultationAgentLabel: string;
   consultationFormLabel: string;
+  relatedLinks?: ReadonlyArray<{ label: string; href: string }>;
 };
 
 export const schoolCanteenSolution: Record<Locale, SolutionPageContent> = {
