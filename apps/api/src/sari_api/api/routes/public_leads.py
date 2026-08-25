@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sari_api.adapters.crm_repository import SqlAlchemyCrmRepository
 from sari_api.adapters.database import get_session
 from sari_api.adapters.models import AuditEvent, Contact, IdempotencyKey, Lead, Organization
+from sari_api.adapters.public_content_repository import PublicContentRepository
 from sari_api.adapters.rate_limit import consume_fixed_window
 from sari_api.core.config import get_settings
 
@@ -40,6 +41,20 @@ class PublicOrganization(PublicModel):
     country_code: str | None = Field(default=None, min_length=2, max_length=2)
 
 
+class PublicProductContext(PublicModel):
+    source: Literal["product_page"]
+    product_locale: Literal["en", "zh-CN"]
+    product_name: str = Field(min_length=2, max_length=250)
+    product_slug: str = Field(
+        min_length=1,
+        max_length=160,
+        pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$",
+    )
+    sku_model: str = Field(min_length=1, max_length=160)
+    price_mode: Literal["fixed", "starting_from", "range", "request_quote"]
+    displayed_price: str = Field(min_length=1, max_length=160)
+
+
 class PublicInquiry(PublicModel):
     message: str = Field(min_length=10, max_length=10000)
     project_country_code: str | None = Field(default=None, min_length=2, max_length=2)
@@ -49,14 +64,16 @@ class PublicInquiry(PublicModel):
     expected_capacity: str | None = Field(default=None, max_length=120)
     target_timeline: str | None = Field(default=None, max_length=100)
     budget_range: str | None = Field(default=None, max_length=120)
+    product_context: PublicProductContext | None = None
 
 
 class PublicAttribution(PublicModel):
     source: Literal["website", "website_ai_assistant"] = "website"
     campaign: str | None = Field(default=None, max_length=200)
-    acquisition_source: Literal[
-        "organic_google", "organic_bing", "ai_search", "direct", "social", "referral"
-    ] | None = None
+    acquisition_source: (
+        Literal["organic_google", "organic_bing", "ai_search", "direct", "social", "referral"]
+        | None
+    ) = None
     landing_path: str | None = Field(default=None, max_length=500, pattern=r"^/[^?#]*$")
     referrer_domain: str | None = Field(
         default=None,
@@ -128,6 +145,11 @@ async def submit_public_lead(
     tenant_id = UUID(settings.public_tenant_id)
     repo = SqlAlchemyCrmRepository(session, tenant_id)
     await repo.set_tenant_context()
+    product_context = await verified_product_context(
+        session,
+        tenant_id=tenant_id,
+        context=payload.inquiry.product_context,
+    )
     request_hash = hashlib.sha256(
         json.dumps(payload.model_dump(mode="json"), sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
@@ -241,6 +263,7 @@ async def submit_public_lead(
                 "contact_consent": True,
                 "facility_type": payload.inquiry.facility_type,
                 "budget_range": payload.inquiry.budget_range,
+                "product_context": product_context,
                 "acquisition_attribution": {
                     "source": payload.attribution.acquisition_source,
                     "landing_path": payload.attribution.landing_path,
@@ -277,6 +300,57 @@ async def submit_public_lead(
     )
     await session.commit()
     return result
+
+
+async def verified_product_context(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    context: PublicProductContext | None,
+) -> dict[str, str] | None:
+    if context is None:
+        return None
+    product_locale = context.product_locale
+    repo = PublicContentRepository(session, tenant_id)
+    published = await repo.get_published_page(
+        page_type="product",
+        slug=context.product_slug,
+        locale=product_locale,
+    )
+    if published is None:
+        raise HTTPException(status_code=422, detail="The referenced public product is unavailable.")
+    _, version = published
+    content = version.structured_content
+    expected = {
+        "source": "product_page",
+        "product_locale": product_locale,
+        "product_name": version.title,
+        "product_slug": context.product_slug,
+        "sku_model": str(content.get("sku_model", "")),
+        "price_mode": str(content.get("price_mode", "")),
+        "displayed_price": public_product_price_label(content, product_locale),
+    }
+    if context.model_dump(mode="json") != expected:
+        raise HTTPException(
+            status_code=422,
+            detail="Product inquiry context does not match the published product.",
+        )
+    return expected
+
+
+def public_product_price_label(content: dict[str, object], locale: str) -> str:
+    mode = content.get("price_mode")
+    if mode == "request_quote":
+        return "价格请咨询" if locale == "zh-CN" else "Contact us for pricing"
+    currency = str(content.get("currency") or "")
+    minimum = str(content.get("price_min") or "")
+    if mode == "fixed":
+        return f"{currency} {minimum}".strip()
+    if mode == "starting_from":
+        prefix = "起价" if locale == "zh-CN" else "From"
+        return f"{prefix} {currency} {minimum}".strip()
+    maximum = str(content.get("price_max") or "")
+    return f"{currency} {minimum}\u2013{maximum}".strip()
 
 
 def uppercase(value: str | None) -> str | None:

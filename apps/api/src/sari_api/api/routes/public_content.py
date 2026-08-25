@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime
+from decimal import Decimal
+from secrets import compare_digest
 from typing import Annotated, Any, Literal, cast
+from urllib.parse import urljoin
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Query, Response
@@ -27,13 +30,22 @@ from sari_api.api.routes.content_governance import (
     save_idempotency,
 )
 from sari_api.core.config import get_settings
+from sari_api.core.observability import get_correlation_id
 from sari_api.domain.identity import Principal
 
 router = APIRouter(prefix="/api/v1/public-content", tags=["public-content"])
 
-PageType = Literal["solution", "industry", "case_study", "guide"]
+PageType = Literal["solution", "industry", "case_study", "guide", "product"]
 Locale = Literal["en", "zh-CN"]
-SourceType = Literal["manual", "knowledge_version", "marketing_content_version"]
+SourceType = Literal[
+    "manual",
+    "knowledge_version",
+    "marketing_content_version",
+    "docx_import",
+    "pdf_import",
+    "html_import",
+    "text_import",
+]
 
 
 class StrictModel(BaseModel):
@@ -43,7 +55,10 @@ class StrictModel(BaseModel):
 class RelatedContentInput(StrictModel):
     label: str = Field(min_length=1, max_length=200)
     public_content_item_id: UUID | None = None
-    path: str | None = Field(default=None, pattern=r"^/(solutions|industries|projects|guides)/")
+    path: str | None = Field(
+        default=None,
+        pattern=r"^/(solutions|industries|projects|guides|products)/",
+    )
 
     @model_validator(mode="after")
     def require_reference(self) -> RelatedContentInput:
@@ -126,11 +141,71 @@ class GuideContentInput(StrictModel):
     cta: CtaInput
 
 
+class ProductSpecificationInput(StrictModel):
+    label: str = Field(min_length=1, max_length=160)
+    value: str = Field(min_length=1, max_length=2000)
+
+
+class ProductContentInput(StrictModel):
+    product_name: str = Field(min_length=2, max_length=250)
+    sku_model: str = Field(min_length=1, max_length=160)
+    category: str = Field(min_length=1, max_length=160)
+    brand: str | None = Field(default=None, max_length=160)
+    short_description: str = Field(min_length=3, max_length=1000)
+    detailed_description: list[str] = Field(min_length=1, max_length=30)
+    features: list[str] = Field(min_length=1, max_length=60)
+    applications: list[str] = Field(min_length=1, max_length=60)
+    material: str | None = Field(default=None, max_length=500)
+    dimensions: str | None = Field(default=None, max_length=500)
+    configuration: str | None = Field(default=None, max_length=2000)
+    specifications: list[ProductSpecificationInput] = Field(default_factory=list, max_length=80)
+    price_mode: Literal["fixed", "starting_from", "range", "request_quote"]
+    currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+    price_min: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)
+    price_max: Decimal | None = Field(default=None, ge=0, max_digits=14, decimal_places=2)
+    price_note: str | None = Field(default=None, max_length=1000)
+    moq: str | None = Field(default=None, max_length=250)
+    availability_note: str | None = Field(default=None, max_length=1000)
+    hero_media_asset_id: UUID | None = None
+    gallery_media_asset_ids: list[UUID] = Field(default_factory=list, max_length=80)
+    drawing_media_asset_ids: list[UUID] = Field(default_factory=list, max_length=40)
+    related_products: list[RelatedContentInput] = Field(default_factory=list, max_length=30)
+    related_solution: RelatedContentInput | None = None
+    related_industry: RelatedContentInput | None = None
+    related_guide: RelatedContentInput | None = None
+    related_project: RelatedContentInput | None = None
+    inquiry_cta: CtaInput
+    quote_cta: CtaInput
+
+    @model_validator(mode="after")
+    def validate_pricing(self) -> ProductContentInput:
+        if (
+            self.inquiry_cta.destination != "public_consultation_agent"
+            or self.quote_cta.destination != "public_consultation_agent"
+        ):
+            raise ValueError("Product inquiry CTAs must open the Public Consultation Agent.")
+        if self.price_mode == "request_quote":
+            if self.price_min is not None or self.price_max is not None:
+                raise ValueError("Request-quote products cannot include a numeric price.")
+            return self
+        if self.currency is None or self.price_min is None:
+            raise ValueError("Published indicative pricing requires currency and price_min.")
+        if self.price_mode == "range":
+            if self.price_max is None:
+                raise ValueError("Range pricing requires price_max.")
+            if self.price_max < self.price_min:
+                raise ValueError("price_max must be greater than or equal to price_min.")
+        elif self.price_max is not None:
+            raise ValueError("Only range pricing may include price_max.")
+        return self
+
+
 PAGE_SCHEMAS: dict[PageType, type[StrictModel]] = {
     "solution": SolutionContentInput,
     "industry": IndustryContentInput,
     "case_study": CaseStudyContentInput,
     "guide": GuideContentInput,
+    "product": ProductContentInput,
 }
 
 
@@ -174,6 +249,8 @@ class PublicContentVersionResponse(StrictModel):
     media_references: list[dict[str, Any]]
     source_type: str
     source_reference_id: UUID | None
+    source_structuring_run_id: UUID | None
+    source_candidate_key: str | None
     source_filename: str | None
     source_checksum: str | None
     content_sha256: str
@@ -241,6 +318,7 @@ class PublicContentDecisionResponse(StrictModel):
 class GovernanceCommandResponse(StrictModel):
     item: PublicContentItemResponse
     decision: PublicContentDecisionResponse | None = None
+    publication: PublicationEventResponse | None = None
 
 
 class PublicContentAuditResponse(StrictModel):
@@ -266,6 +344,46 @@ class PublishedPublicContentResponse(StrictModel):
     seo_description: str
     canonical_path: str
     structured_content: dict[str, Any]
+    media_references: list[dict[str, Any]]
+    published_at: datetime
+    version_created_at: datetime
+
+
+class PublishedPublicRouteResponse(StrictModel):
+    page_type: PageType
+    slug: str
+    locale: Locale
+    canonical_path: str
+    published_at: datetime
+
+
+class PublicationEventResponse(StrictModel):
+    event_id: UUID
+    tenant_id: UUID
+    page_type: PageType
+    slug: str
+    locale: Locale
+    published_version_id: UUID
+    canonical_path: str
+    canonical_url: str
+    published_at: datetime
+
+
+class PublicationAutomationAttemptInput(StrictModel):
+    event_type: Literal["publish", "remove"]
+    public_content_version_id: UUID
+    revalidation_outcome: Literal["succeeded", "failed"]
+    indexnow_outcome: Literal[
+        "disabled", "not_configured", "no_eligible_urls", "submitted", "failed"
+    ]
+    duration_ms: int = Field(ge=0, le=120_000)
+    retry_state: Literal["complete", "retry_required"]
+    failure_code: str | None = Field(default=None, max_length=120)
+
+
+class PublicationAutomationAttemptResponse(StrictModel):
+    status: Literal["recorded"] = "recorded"
+    correlation_id: str
 
 
 LEGACY_PUBLIC_PATHS = frozenset(
@@ -280,6 +398,13 @@ RELATED_FIELDS: dict[PageType, tuple[str, ...]] = {
     "industry": ("relevant_solutions", "related_projects"),
     "case_study": ("related_solution", "related_industry"),
     "guide": ("related_solutions", "related_industries", "related_projects"),
+    "product": (
+        "related_products",
+        "related_solution",
+        "related_industry",
+        "related_guide",
+        "related_project",
+    ),
 }
 
 
@@ -289,8 +414,31 @@ def canonical_path(page_type: PageType, slug: str) -> str:
         "industry": "industries",
         "case_study": "projects",
         "guide": "guides",
+        "product": "products",
     }[page_type]
     return f"/{prefix}/{slug}"
+
+
+def canonical_public_url(path: str) -> str:
+    return urljoin(f"{get_settings().public_base_url.rstrip('/')}/", path.lstrip("/"))
+
+
+def publication_event(
+    item: PublicContentItem, decision: PublicContentDecisionResponse
+) -> PublicationEventResponse:
+    if item.published_version_id is None or item.published_at is None:
+        raise PublicContentStateError("Published content is missing its exact version pointer.")
+    return PublicationEventResponse(
+        event_id=decision.id,
+        tenant_id=item.tenant_id,
+        page_type=cast(PageType, item.page_type),
+        slug=item.slug,
+        locale=cast(Locale, item.locale),
+        published_version_id=item.published_version_id,
+        canonical_path=item.canonical_path,
+        canonical_url=canonical_public_url(item.canonical_path),
+        published_at=item.published_at,
+    )
 
 
 def validated_version_values(page_type: PageType, payload: VersionInput) -> dict[str, Any]:
@@ -309,11 +457,37 @@ def validated_version_values(page_type: PageType, payload: VersionInput) -> dict
             ],
         ) from exc
     values = payload.model_dump(mode="python")
+    if page_type == "product":
+        product = cast(ProductContentInput, structured)
+        if product.product_name != payload.title:
+            raise HTTPException(
+                status_code=422,
+                detail="Product name must match the governed page title.",
+            )
+        _validate_product_media(product, payload.media_references)
     values["structured_content"] = structured.model_dump(mode="json")
     values["media_references"] = [
         reference.model_dump(mode="json") for reference in payload.media_references
     ]
     return values
+
+
+def _validate_product_media(
+    product: ProductContentInput,
+    media_references: list[MediaReferenceInput],
+) -> None:
+    referenced = {reference.media_asset_id for reference in media_references}
+    product_media = {
+        *product.gallery_media_asset_ids,
+        *product.drawing_media_asset_ids,
+    }
+    if product.hero_media_asset_id is not None:
+        product_media.add(product.hero_media_asset_id)
+    if not product_media.issubset(referenced):
+        raise HTTPException(
+            status_code=422,
+            detail="Product media IDs must also appear in governed media_references.",
+        )
 
 
 async def repository(session: AsyncSession, principal: Principal) -> PublicContentRepository:
@@ -396,7 +570,9 @@ async def sanitize_public_structure(
         else:
             content[field] = await sanitize_related_content(repo, locale=locale, value=raw)
     if page_type == "case_study":
-        content["gallery_references"] = []
+        content["gallery_references"] = await sanitize_media_references(
+            repo, content.get("gallery_references")
+        )
         facts = content.get("approved_project_facts")
         if isinstance(facts, list):
             content["approved_project_facts"] = [
@@ -406,7 +582,66 @@ async def sanitize_public_structure(
                 and isinstance(fact.get("label"), str)
                 and isinstance(fact.get("value"), str)
             ]
+    if page_type == "product":
+        content["hero_media_asset_id"] = await sanitize_product_media_id(
+            repo, content.get("hero_media_asset_id")
+        )
+        for field in ("gallery_media_asset_ids", "drawing_media_asset_ids"):
+            raw_ids = content.get(field)
+            content[field] = (
+                [
+                    asset_id
+                    for value in raw_ids
+                    if (asset_id := await sanitize_product_media_id(repo, value)) is not None
+                ]
+                if isinstance(raw_ids, list)
+                else []
+            )
     return content
+
+
+async def sanitize_product_media_id(repo: PublicContentRepository, value: object) -> str | None:
+    try:
+        asset_id = UUID(str(value))
+    except (TypeError, ValueError):
+        return None
+    asset = await repo.get_public_media(asset_id)
+    return str(asset.id) if asset else None
+
+
+async def sanitize_media_references(
+    repo: PublicContentRepository, value: object
+) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    resolved: list[dict[str, Any]] = []
+    for reference in value:
+        if not isinstance(reference, dict):
+            continue
+        try:
+            asset_id = UUID(str(reference.get("media_asset_id")))
+        except (TypeError, ValueError):
+            continue
+        asset = await repo.get_public_media(asset_id)
+        role = reference.get("role")
+        alt_text = reference.get("alt_text")
+        if asset is None or not isinstance(role, str) or not isinstance(alt_text, str):
+            continue
+        resolved.append(
+            {
+                "media_asset_id": str(asset.id),
+                "role": role,
+                "mime_type": asset.mime_type,
+                "width": asset.width,
+                "height": asset.height,
+                "alt_text": alt_text,
+                "caption": reference.get("caption")
+                if isinstance(reference.get("caption"), str)
+                else None,
+                "url": f"/api/v1/media/public/{asset.id}",
+            }
+        )
+    return resolved
 
 
 def handle_error(exc: Exception) -> HTTPException:
@@ -431,6 +666,7 @@ async def render_published_public_content(
     locale: Locale,
     response: Response,
     session: Annotated[AsyncSession, Depends(get_session)],
+    site_token: Annotated[str | None, Header(alias="X-Site-Token")] = None,
 ) -> PublishedPublicContentResponse:
     tenant_id = UUID(get_settings().public_tenant_id)
     repo = PublicContentRepository(session, tenant_id)
@@ -441,6 +677,20 @@ async def render_published_public_content(
         locale=locale,
     )
     if published is None:
+        governed_unavailable = (
+            await repo.get_governed_route_state(
+                page_type=page_type, slug=slug, locale=locale
+            )
+            == "archived"
+        )
+        if governed_unavailable and site_token and compare_digest(
+            site_token, get_settings().public_site_token
+        ):
+            raise HTTPException(
+                status_code=404,
+                detail="Published public content not found.",
+                headers={"X-Public-Content-State": "governed-unavailable"},
+            )
         raise HTTPException(status_code=404, detail="Published public content not found.")
     item, version = published
     response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
@@ -459,7 +709,79 @@ async def render_published_public_content(
             locale=locale,
             structured_content=version.structured_content,
         ),
+        media_references=await sanitize_media_references(repo, version.media_references),
+        published_at=cast(datetime, item.published_at),
+        version_created_at=version.created_at,
     )
+
+
+@router.get(
+    "/catalog/routes",
+    response_model=list[PublishedPublicRouteResponse],
+)
+async def list_published_public_routes(
+    locale: Locale,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> list[PublishedPublicRouteResponse]:
+    tenant_id = UUID(get_settings().public_tenant_id)
+    repo = PublicContentRepository(session, tenant_id)
+    await repo.set_tenant_context()
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=300"
+    return [
+        PublishedPublicRouteResponse(
+            page_type=cast(PageType, item.page_type),
+            slug=item.slug,
+            locale=cast(Locale, item.locale),
+            canonical_path=item.canonical_path,
+            published_at=cast(datetime, item.published_at),
+        )
+        for item, _ in await repo.list_published_pages(page_type=None, locale=locale)
+    ]
+
+
+@router.get(
+    "/catalog/products",
+    response_model=list[PublishedPublicContentResponse],
+    response_model_exclude_none=True,
+)
+async def list_published_products(
+    locale: Locale,
+    response: Response,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    category: str | None = Query(default=None, max_length=160),
+) -> list[PublishedPublicContentResponse]:
+    tenant_id = UUID(get_settings().public_tenant_id)
+    repo = PublicContentRepository(session, tenant_id)
+    await repo.set_tenant_context()
+    result: list[PublishedPublicContentResponse] = []
+    for item, version in await repo.list_published_pages(page_type="product", locale=locale):
+        structured = await sanitize_public_structure(
+            repo,
+            page_type="product",
+            locale=locale,
+            structured_content=version.structured_content,
+        )
+        if category and str(structured.get("category", "")).casefold() != category.casefold():
+            continue
+        result.append(
+            PublishedPublicContentResponse(
+                page_type="product",
+                slug=item.slug,
+                locale=cast(Locale, item.locale),
+                title=version.title,
+                summary=version.summary,
+                seo_title=version.seo_title,
+                seo_description=version.seo_description,
+                canonical_path=item.canonical_path,
+                structured_content=structured,
+                media_references=await sanitize_media_references(repo, version.media_references),
+                published_at=cast(datetime, item.published_at),
+                version_created_at=version.created_at,
+            )
+        )
+    response.headers["Cache-Control"] = "public, max-age=30, stale-while-revalidate=60"
+    return result
 
 
 @router.post("/items", response_model=PublicContentItemResponse, status_code=201)
@@ -693,9 +1015,13 @@ async def governed_command(
                 actor_id=principal.membership_id,
                 comment=payload.comment,
             )
+        decision_response = PublicContentDecisionResponse.model_validate(recorded)
         result = GovernanceCommandResponse(
             item=await item_response(repo, item),
-            decision=PublicContentDecisionResponse.model_validate(recorded),
+            decision=decision_response,
+            publication=(
+                publication_event(item, decision_response) if command == "publish" else None
+            ),
         )
         save_idempotency(
             session,
@@ -888,6 +1214,85 @@ async def restore_public_content(
         expected=parse_if_match(if_match),
         restore=True,
     )
+
+
+@router.post(
+    "/items/{item_id}/publication-automation",
+    response_model=PublicationAutomationAttemptResponse,
+)
+async def record_publication_automation(
+    item_id: UUID,
+    payload: PublicationAutomationAttemptInput,
+    response: Response,
+    principal: Annotated[Principal, Depends(get_current_principal)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    idempotency_key: Annotated[str, Header(alias="Idempotency-Key", min_length=8, max_length=200)],
+) -> PublicationAutomationAttemptResponse:
+    required_permission = (
+        "public_content:publish" if payload.event_type == "publish" else "public_content:archive"
+    )
+    if required_permission not in principal.permissions:
+        raise HTTPException(status_code=403, detail="This action is not permitted.")
+    repo = await repository(session, principal)
+    payload_hash = request_hash(
+        {"item_id": item_id, **payload.model_dump(mode="json")}
+    )
+    scope = f"public-content-{item_id}-publication-automation"
+    existing = await existing_idempotent_response(
+        session,
+        principal=principal,
+        scope=scope,
+        key=idempotency_key,
+        payload_hash=payload_hash,
+    )
+    if existing:
+        response.status_code = existing.response_status
+        return PublicationAutomationAttemptResponse.model_validate(existing.response_body)
+    try:
+        item = await repo.get_item(item_id)
+        version = await repo.get_version(item.id, payload.public_content_version_id)
+        if version is None or item.published_version_id != version.id:
+            raise PublicContentStateError(
+                "Publication automation must target the exact published version."
+            )
+        if payload.event_type == "publish" and item.status == "archived":
+            raise PublicContentStateError("Archived content cannot record publish automation.")
+        if payload.event_type == "remove" and item.status != "archived":
+            raise PublicContentStateError("Removal automation requires archived public content.")
+        await repo.record_automation_attempt(
+            actor_id=principal.membership_id,
+            item=item,
+            version=version,
+            event_type=payload.event_type,
+            details={
+                "page_type": item.page_type,
+                "slug": item.slug,
+                "locale": item.locale,
+                "canonical_path": item.canonical_path,
+                "canonical_url": canonical_public_url(item.canonical_path),
+                "published_version_id": str(version.id),
+                "revalidation_outcome": payload.revalidation_outcome,
+                "indexnow_outcome": payload.indexnow_outcome,
+                "duration_ms": payload.duration_ms,
+                "retry_state": payload.retry_state,
+                "failure_code": payload.failure_code,
+            },
+        )
+        result = PublicationAutomationAttemptResponse(correlation_id=get_correlation_id())
+        save_idempotency(
+            session,
+            principal=principal,
+            scope=scope,
+            key=idempotency_key,
+            payload_hash=payload_hash,
+            status_code=200,
+            body=result,
+        )
+        await session.commit()
+        return result
+    except (PublicContentNotFoundError, PublicContentStateError) as exc:
+        await session.rollback()
+        raise handle_error(exc) from exc
 
 
 @router.get("/items/{item_id}/decisions", response_model=list[PublicContentDecisionResponse])

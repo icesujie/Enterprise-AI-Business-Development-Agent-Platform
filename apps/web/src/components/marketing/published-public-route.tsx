@@ -8,11 +8,11 @@ import { SolutionPage } from "@/components/marketing/solution-page";
 import { StructuredData } from "@/components/seo/structured-data";
 import {
   resolvePublishedPublicPage,
+  type GovernedTemplatePageType,
   type ResolvedPublicPage,
 } from "@/content/published-public-pages";
 import type { Locale } from "@/i18n/config";
 import { buildPublicRouteMetadata } from "@/lib/seo";
-import type { PublicPageType } from "@/lib/public-content";
 import {
   buildBreadcrumbStructuredData,
   buildFaqStructuredData,
@@ -22,7 +22,7 @@ import {
 } from "@/lib/structured-data";
 
 export async function buildPublishedPublicMetadata(
-  pageType: PublicPageType,
+  pageType: GovernedTemplatePageType,
   slug: string,
   locale: Locale,
 ): Promise<Metadata> {
@@ -53,7 +53,7 @@ export async function PublishedPublicRoute({
   slug,
   locale,
 }: {
-  pageType: PublicPageType;
+  pageType: GovernedTemplatePageType;
   slug: string;
   locale: Locale;
 }) {

@@ -8,6 +8,7 @@ import {
   createPublicContentSuccessor,
   decidePublicContentReview,
   publishPublicContent,
+  retryPublicContentAutomation,
   submitPublicContentReview,
 } from "@/app/(workspace)/public-content/actions";
 import {
@@ -16,7 +17,7 @@ import {
 } from "@/app/(workspace)/public-content/action-state";
 import type { CurrentIdentity, PublicContentItem } from "@/lib/api";
 
-type PageType = "solution" | "industry" | "case_study" | "guide";
+type PageType = "solution" | "industry" | "case_study" | "guide" | "product";
 
 export function CreatePublicContentForm({ zh }: { zh: boolean }) {
   const [pageType, setPageType] = useState<PageType>("solution");
@@ -39,6 +40,7 @@ export function CreatePublicContentForm({ zh }: { zh: boolean }) {
             <option value="industry">Industry</option>
             <option value="case_study">Case study</option>
             <option value="guide">Guide</option>
+            <option value="product">Product</option>
           </select>
         </Field>
         <Field label={zh ? "语言" : "Locale"}>
@@ -57,7 +59,12 @@ export function CreatePublicContentForm({ zh }: { zh: boolean }) {
         </Field>
       </div>
       <MetadataFields />
-      <StructuredEditor key={pageType} pageType={pageType} />
+      {pageType === "product" ? (
+        <ProductEditor />
+      ) : (
+        <StructuredEditor key={pageType} pageType={pageType} />
+      )}
+      <MediaReferencesEditor />
       <label className="flex items-center gap-3 text-sm text-[var(--color-muted)]">
         <input type="checkbox" name="is_synthetic" />
         {zh
@@ -102,11 +109,17 @@ export function PublicContentDetailActions({
             {zh ? "创建后继版本" : "Create successor version"}
           </h2>
           <IdempotencyInput />
+          <input type="hidden" name="page_type" value={item.page_type} />
           <MetadataFields version={current} />
-          <StructuredEditor
-            pageType={item.page_type}
-            value={current.structured_content}
-          />
+          {item.page_type === "product" ? (
+            <ProductEditor value={current.structured_content} />
+          ) : (
+            <StructuredEditor
+              pageType={item.page_type}
+              value={current.structured_content}
+            />
+          )}
+          <MediaReferencesEditor value={current.media_references} />
           <ActionState state={editState} />
           <button
             className="button-secondary"
@@ -178,8 +191,48 @@ export function PublicContentDetailActions({
         {can("public_content:publish") && item.status === "archived" ? (
           <LifecycleForm item={item} restore label={zh ? "恢复" : "Restore"} />
         ) : null}
+        {item.published_version_id &&
+        ((item.status === "archived" && can("public_content:archive")) ||
+          (item.status !== "archived" && can("public_content:publish"))) ? (
+          <DiscoveryRetryForm item={item} zh={zh} />
+        ) : null}
       </section>
     </div>
+  );
+}
+
+function DiscoveryRetryForm({
+  item,
+  zh,
+}: {
+  item: PublicContentItem;
+  zh: boolean;
+}) {
+  const [state, action, pending] = useActionState(
+    retryPublicContentAutomation.bind(null, item.id),
+    initialPublicContentActionState,
+  );
+  return (
+    <form
+      action={action}
+      className="rounded-xl border border-[var(--color-line)] p-4"
+    >
+      <p className="text-sm text-[var(--color-muted)]">
+        {zh
+          ? "仅重试公开页面、列表、站点地图和搜索通知，不会重新审批或修改内容。"
+          : "Retry public page, listing, sitemap, and search notification refresh only. This does not reapprove or edit content."}
+      </p>
+      <ActionState state={state} />
+      <button className="button-tertiary mt-3" disabled={pending} type="submit">
+        {pending
+          ? zh
+            ? "刷新中…"
+            : "Refreshing…"
+          : zh
+            ? "重试公开发现刷新"
+            : "Retry discovery refresh"}
+      </button>
+    </form>
   );
 }
 
@@ -328,13 +381,356 @@ function StructuredEditor({
   return (
     <Field label="Structured page content (JSON)">
       <p className="mb-2 text-xs leading-5 text-[var(--color-muted)]">
-        Schema-controlled fields only. HTML is not accepted. Media references
-        use stable IDs in a later phase.
+        Schema-controlled fields only. HTML is not accepted.
       </p>
       <textarea
         className="input min-h-[28rem] font-mono text-xs leading-5"
         name="structured_content"
         defaultValue={JSON.stringify(value ?? template(pageType), null, 2)}
+        spellCheck={false}
+        required
+      />
+    </Field>
+  );
+}
+
+function ProductEditor({ value = {} }: { value?: Record<string, unknown> }) {
+  const text = (key: string) =>
+    typeof value[key] === "string" ? String(value[key]) : "";
+  const list = (key: string) =>
+    Array.isArray(value[key])
+      ? (value[key] as unknown[])
+          .filter((entry) => typeof entry === "string")
+          .join("\n")
+      : "";
+  const json = (key: string, fallback: unknown) =>
+    JSON.stringify(value[key] ?? fallback, null, 2);
+  return (
+    <section className="space-y-6 rounded-xl border border-[var(--color-line)] p-5">
+      <div>
+        <h2 className="text-lg font-semibold">Structured Product fields</h2>
+        <p className="mt-1 text-xs leading-5 text-[var(--color-muted)]">
+          Enter only approved factual product information. Pricing is indicative
+          and never calculated automatically.
+        </p>
+      </div>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <TextField
+          label="Product name"
+          name="product_name"
+          value={text("product_name")}
+          required
+        />
+        <TextField
+          label="SKU / model"
+          name="sku_model"
+          value={text("sku_model")}
+          required
+        />
+        <TextField
+          label="Category"
+          name="category"
+          value={text("category")}
+          required
+        />
+        <TextField
+          label="Brand (optional)"
+          name="brand"
+          value={text("brand")}
+        />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <TextAreaField
+          label="Short description"
+          name="short_description"
+          value={text("short_description")}
+          required
+        />
+        <TextAreaField
+          label="Detailed description — one paragraph per line"
+          name="detailed_description"
+          value={list("detailed_description")}
+          required
+        />
+        <TextAreaField
+          label="Features — one per line"
+          name="features"
+          value={list("features")}
+          required
+        />
+        <TextAreaField
+          label="Applications — one per line"
+          name="applications"
+          value={list("applications")}
+          required
+        />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <TextField
+          label="Material (optional)"
+          name="material"
+          value={text("material")}
+        />
+        <TextField
+          label="Dimensions (optional)"
+          name="dimensions"
+          value={text("dimensions")}
+        />
+        <TextField
+          label="Configuration (optional)"
+          name="configuration"
+          value={text("configuration")}
+        />
+      </div>
+      <JsonField
+        label="Structured specifications"
+        name="specifications"
+        value={json("specifications", [])}
+        hint='JSON list, for example [{"label":"Power","value":"Only if approved"}]'
+      />
+      <div className="grid gap-5 sm:grid-cols-4">
+        <Field label="Price mode">
+          <select
+            className="input"
+            name="price_mode"
+            defaultValue={text("price_mode") || "request_quote"}
+          >
+            <option value="fixed">Fixed</option>
+            <option value="starting_from">Starting from</option>
+            <option value="range">Range</option>
+            <option value="request_quote">Request quote</option>
+          </select>
+        </Field>
+        <TextField
+          label="Currency (ISO)"
+          name="currency"
+          value={text("currency")}
+          pattern="[A-Z]{3}"
+        />
+        <TextField
+          label="Minimum / fixed price"
+          name="price_min"
+          value={text("price_min")}
+          type="number"
+          step="0.01"
+          min="0"
+        />
+        <TextField
+          label="Maximum price"
+          name="price_max"
+          value={text("price_max")}
+          type="number"
+          step="0.01"
+          min="0"
+        />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <TextAreaField
+          label="Visible indicative-price note"
+          name="price_note"
+          value={text("price_note")}
+        />
+        <TextField
+          label="MOQ (only if explicitly provided)"
+          name="moq"
+          value={text("moq")}
+        />
+        <TextField
+          label="Availability note (only if explicitly provided)"
+          name="availability_note"
+          value={text("availability_note")}
+        />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-3">
+        <TextField
+          label="Hero Media Asset ID"
+          name="hero_media_asset_id"
+          value={text("hero_media_asset_id")}
+        />
+        <TextAreaField
+          label="Gallery Media Asset IDs — one per line"
+          name="gallery_media_asset_ids"
+          value={list("gallery_media_asset_ids")}
+        />
+        <TextAreaField
+          label="Drawing Media Asset IDs — one per line"
+          name="drawing_media_asset_ids"
+          value={list("drawing_media_asset_ids")}
+        />
+      </div>
+      <p className="text-xs leading-5 text-[var(--color-muted)]">
+        Product media IDs must also be entered in Media references below. Only
+        approved public media can publish or render.
+      </p>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <JsonField
+          label="Related products"
+          name="related_products"
+          value={json("related_products", [])}
+        />
+        <JsonField
+          label="Related Solution"
+          name="related_solution"
+          value={json("related_solution", null)}
+        />
+        <JsonField
+          label="Related Industry"
+          name="related_industry"
+          value={json("related_industry", null)}
+        />
+        <JsonField
+          label="Related Guide"
+          name="related_guide"
+          value={json("related_guide", null)}
+        />
+        <JsonField
+          label="Related Project / Case"
+          name="related_project"
+          value={json("related_project", null)}
+        />
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <TextField
+          label="Inquiry CTA label"
+          name="inquiry_cta_label"
+          value={
+            nestedText(value, "inquiry_cta", "label") ||
+            "Ask About This Product"
+          }
+          required
+        />
+        <TextField
+          label="Inquiry CTA description"
+          name="inquiry_cta_description"
+          value={
+            nestedText(value, "inquiry_cta", "description") ||
+            "Discuss this product with the Sari Arta team."
+          }
+          required
+        />
+        <TextField
+          label="Quote CTA label"
+          name="quote_cta_label"
+          value={nestedText(value, "quote_cta", "label") || "Request a Quote"}
+          required
+        />
+        <TextField
+          label="Quote CTA description"
+          name="quote_cta_description"
+          value={
+            nestedText(value, "quote_cta", "description") ||
+            "Share quantity, configuration and delivery location for human follow-up."
+          }
+          required
+        />
+      </div>
+    </section>
+  );
+}
+
+function TextField({
+  label,
+  name,
+  value,
+  required = false,
+  ...input
+}: {
+  label: string;
+  name: string;
+  value: string;
+  required?: boolean;
+} & Pick<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "type" | "step" | "min" | "pattern"
+>) {
+  return (
+    <Field label={label}>
+      <input
+        className="input"
+        name={name}
+        defaultValue={value}
+        required={required}
+        {...input}
+      />
+    </Field>
+  );
+}
+
+function TextAreaField({
+  label,
+  name,
+  value,
+  required = false,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  required?: boolean;
+}) {
+  return (
+    <Field label={label}>
+      <textarea
+        className="input min-h-24"
+        name={name}
+        defaultValue={value}
+        required={required}
+      />
+    </Field>
+  );
+}
+
+function JsonField({
+  label,
+  name,
+  value,
+  hint,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <Field label={label}>
+      {hint ? (
+        <p className="mb-2 text-xs text-[var(--color-muted)]">{hint}</p>
+      ) : null}
+      <textarea
+        className="input min-h-24 font-mono text-xs"
+        name={name}
+        defaultValue={value}
+        spellCheck={false}
+      />
+    </Field>
+  );
+}
+
+function nestedText(
+  value: Record<string, unknown>,
+  key: string,
+  nestedKey: string,
+) {
+  const nested = value[key];
+  if (!nested || typeof nested !== "object" || Array.isArray(nested)) return "";
+  const result = (nested as Record<string, unknown>)[nestedKey];
+  return typeof result === "string" ? result : "";
+}
+
+function MediaReferencesEditor({
+  value = [],
+}: {
+  value?: readonly Record<string, unknown>[];
+}) {
+  return (
+    <Field label="Media references (JSON)">
+      <p className="mb-2 text-xs leading-5 text-[var(--color-muted)]">
+        Use stable IDs from the Media Library. Referenced assets must be
+        approved for public use before this content can be published.
+      </p>
+      <textarea
+        className="input min-h-32 font-mono text-xs leading-5"
+        name="media_references"
+        defaultValue={JSON.stringify(value, null, 2)}
         spellCheck={false}
         required
       />

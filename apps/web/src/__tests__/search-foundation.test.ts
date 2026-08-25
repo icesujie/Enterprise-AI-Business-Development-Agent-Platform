@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
@@ -13,6 +13,7 @@ import {
   type PublishedPublicRoute,
 } from "@/lib/search-foundation";
 import { eligibleIndexNowUrls, isIndexNowEnabled } from "@/lib/indexnow-policy";
+import { notifyIndexNow } from "@/lib/indexnow";
 import {
   buildPublicPageMetadata,
   buildPublicRouteMetadata,
@@ -26,10 +27,19 @@ import {
   buildSiteStructuredData,
 } from "@/lib/structured-data";
 
+const { getPublishedCmsRoutesMock } = vi.hoisted(() => ({
+  getPublishedCmsRoutesMock: vi.fn(),
+}));
+
+vi.mock("@/lib/public-content", () => ({
+  getPublishedCmsRoutes: getPublishedCmsRoutesMock,
+}));
+
 const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 beforeEach(() => {
   process.env.NEXT_PUBLIC_SITE_URL = "https://www.sariarta.example";
+  getPublishedCmsRoutesMock.mockResolvedValue([]);
 });
 
 afterEach(() => {
@@ -79,6 +89,7 @@ describe("crawl boundary", () => {
       "/solutions",
       "/industries",
       "/projects",
+      "/products",
       "/about",
       "/contact",
     ]) {
@@ -91,13 +102,14 @@ describe("crawl boundary", () => {
 });
 
 describe("sitemap publication rules", () => {
-  test("contains canonical public routes and no internal routes", () => {
-    const urls = sitemap().map((entry) => entry.url);
+  test("contains canonical public routes and no internal routes", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
     expect(urls).toEqual([
       "https://www.sariarta.example/",
       "https://www.sariarta.example/solutions",
       "https://www.sariarta.example/industries",
       "https://www.sariarta.example/projects",
+      "https://www.sariarta.example/products",
       "https://www.sariarta.example/about",
       "https://www.sariarta.example/contact",
       "https://www.sariarta.example/solutions/school-canteen-kitchen",
@@ -125,6 +137,42 @@ describe("sitemap publication rules", () => {
     expect(urls).not.toContain("https://www.sariarta.example/guides/draft");
     expect(urls.some((url) => url.includes("knowledge"))).toBe(false);
     expect(urls.some((url) => url.includes("?"))).toBe(false);
+  });
+
+  test("adds every governed CMS page type from the published route boundary", async () => {
+    getPublishedCmsRoutesMock.mockImplementation(async (locale: string) =>
+      locale === "en"
+        ? [
+            {
+              page_type: "solution",
+              slug: "governed-solution",
+              locale: "en",
+              canonical_path: "/solutions/governed-solution",
+              published_at: "2026-08-25T08:00:00Z",
+            },
+            {
+              page_type: "product",
+              slug: "governed-product",
+              locale: "en",
+              canonical_path: "/products/governed-product",
+              published_at: "2026-08-25T09:00:00Z",
+            },
+          ]
+        : [],
+    );
+    const entries = await sitemap();
+    expect(entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          url: "https://www.sariarta.example/solutions/governed-solution",
+          lastModified: new Date("2026-08-25T08:00:00Z"),
+        }),
+        expect.objectContaining({
+          url: "https://www.sariarta.example/products/governed-product",
+          lastModified: new Date("2026-08-25T09:00:00Z"),
+        }),
+      ]),
+    );
   });
 });
 
@@ -242,4 +290,63 @@ test("keeps IndexNow disabled and filters every non-public candidate", () => {
     "https://www.sariarta.example/guides/approved-guide",
   ]);
   expect(isIndexNowEnabled("false")).toBe(false);
+  expect(
+    eligibleIndexNowUrls(
+      [
+        {
+          path: "/products/previously-published",
+          status: "archived",
+          isPublic: true,
+          wasPublished: true,
+        },
+        {
+          path: "/products/draft",
+          status: "draft",
+          isPublic: true,
+          wasPublished: false,
+        },
+      ],
+      "remove",
+    ),
+  ).toEqual(["https://www.sariarta.example/products/previously-published"]);
+});
+
+test("submits only canonical governed public URLs when IndexNow is configured", async () => {
+  const fetcher = vi.fn(
+    async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      new Response(null, { status: 200 }),
+  );
+  const disabled = await notifyIndexNow(
+    [{ path: "/products/public", status: "published", isPublic: true }],
+    { environment: { INDEXNOW_ENABLED: "false" }, fetcher },
+  );
+  expect(disabled.status).toBe("disabled");
+  expect(fetcher).not.toHaveBeenCalled();
+
+  const result = await notifyIndexNow(
+    [
+      { path: "/products/public", status: "published", isPublic: true },
+      { path: "/products/draft", status: "draft", isPublic: true },
+      {
+        path: "/marketing-content/internal",
+        status: "published",
+        isPublic: true,
+      },
+    ],
+    {
+      environment: {
+        INDEXNOW_ENABLED: "true",
+        INDEXNOW_KEY: "synthetic-indexnow-key",
+        INDEXNOW_KEY_LOCATION:
+          "https://www.sariarta.example/synthetic-indexnow-key.txt",
+        INDEXNOW_ENDPOINT: "https://api.indexnow.org/indexnow",
+      },
+      fetcher,
+    },
+  );
+  expect(result).toEqual({ status: "submitted", submitted: 1 });
+  const request = fetcher.mock.calls[0][1] as RequestInit;
+  expect(JSON.parse(String(request.body)).urlList).toEqual([
+    "https://www.sariarta.example/products/public",
+  ]);
 });

@@ -12,6 +12,7 @@ export const publicIndexableRoutes = [
   { path: "/solutions", changeFrequency: "monthly", priority: 0.8 },
   { path: "/industries", changeFrequency: "monthly", priority: 0.8 },
   { path: "/projects", changeFrequency: "monthly", priority: 0.8 },
+  { path: "/products", changeFrequency: "weekly", priority: 0.8 },
   { path: "/about", changeFrequency: "monthly", priority: 0.8 },
   { path: "/contact", changeFrequency: "monthly", priority: 0.9 },
 ] as const satisfies ReadonlyArray<{
@@ -41,6 +42,7 @@ const futurePublicPrefixes = [
   "/industries/",
   "/projects/",
   "/guides/",
+  "/products/",
 ] as const;
 
 export type PublishedPublicRoute = {

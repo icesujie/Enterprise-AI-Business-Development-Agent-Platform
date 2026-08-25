@@ -17,6 +17,7 @@ export function WorkspaceNav() {
     [copy.knowledge, "/knowledge"],
     [copy.marketingContent, "/marketing-content"],
     [copy.publicContent, "/public-content"],
+    [copy.media, "/media"],
   ] as const;
   const records = [
     [copy.companies, "/organizations"],

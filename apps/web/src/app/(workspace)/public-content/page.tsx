@@ -32,12 +32,17 @@ export default async function PublicContentPage({
         description={
           zh
             ? "管理解决方案、行业、案例与指南的不可变版本、审核和发布。"
-            : "Govern immutable versions, review, approval, and publication for solutions, industries, case studies, and guides."
+            : "Govern immutable versions, review, approval, and publication for solutions, industries, case studies, guides, and products."
         }
         actions={
-          <Link className="button-primary" href="/public-content/new">
-            {zh ? "创建页面草稿" : "Create page draft"}
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link className="button-tertiary" href="/public-content/imports">
+              {zh ? "导入文档" : "Import document"}
+            </Link>
+            <Link className="button-primary" href="/public-content/new">
+              {zh ? "创建页面草稿" : "Create page draft"}
+            </Link>
+          </div>
         }
       />
       <form
@@ -62,6 +67,7 @@ export default async function PublicContentPage({
           <option value="industry">Industry</option>
           <option value="case_study">Case study</option>
           <option value="guide">Guide</option>
+          <option value="product">Product</option>
         </select>
         <select
           className="input"

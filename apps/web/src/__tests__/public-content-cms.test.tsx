@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import PublicContentDetailPage from "@/app/(workspace)/public-content/[id]/page";
@@ -21,6 +21,7 @@ vi.mock("@/app/(workspace)/public-content/actions", () => ({
   decidePublicContentReview: vi.fn(),
   publishPublicContent: vi.fn(),
   archivePublicContent: vi.fn(),
+  retryPublicContentAutomation: vi.fn(),
 }));
 
 beforeEach(() => {
@@ -53,8 +54,14 @@ test("renders governed public content filters and publication pointers", async (
 test("creates only schema-controlled page types and visibly gates synthetic content", async () => {
   render(await NewPublicContentPage());
   const pageType = screen.getByLabelText("Page type");
-  expect(pageType.querySelectorAll("option")).toHaveLength(4);
-  expect(screen.getByText(/HTML is not accepted/i)).toBeDefined();
+  expect(pageType.querySelectorAll("option")).toHaveLength(5);
+  fireEvent.change(pageType, { target: { value: "product" } });
+  expect(screen.getByLabelText("SKU / model")).toBeDefined();
+  expect(screen.getByLabelText("Price mode")).toBeDefined();
+  expect(
+    screen.getByText(/approved factual product information/i),
+  ).toBeDefined();
+  expect(screen.getByText("Media references (JSON)")).toBeDefined();
   expect(screen.getByText(/publishing is blocked/i)).toBeDefined();
 });
 
@@ -123,6 +130,8 @@ function version(number: number): PublicContentVersion {
     media_references: [],
     source_type: "manual",
     source_reference_id: null,
+    source_structuring_run_id: null,
+    source_candidate_key: null,
     source_filename: null,
     source_checksum: null,
     content_sha256: (number === 1 ? "a" : "b").repeat(64),

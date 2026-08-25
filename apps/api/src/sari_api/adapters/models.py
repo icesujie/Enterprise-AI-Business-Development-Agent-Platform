@@ -1410,7 +1410,7 @@ class PublicContentItem(Base):
             "tenant_id", "canonical_path", "locale", name="uq_public_content_canonical_locale"
         ),
         CheckConstraint(
-            "page_type IN ('solution','industry','case_study','guide')",
+            "page_type IN ('solution','industry','case_study','guide','product')",
             name="public_content_items_page_type_check",
         ),
         CheckConstraint("locale IN ('en','zh-CN')", name="public_content_items_locale_check"),
@@ -1522,6 +1522,10 @@ class PublicContentVersion(Base):
     media_references: Mapped[list[dict[str, Any]]] = mapped_column(JSONB, server_default="[]")
     source_type: Mapped[str] = mapped_column(String(40), server_default="manual")
     source_reference_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
+    source_structuring_run_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("public_content_structuring_runs.id", ondelete="RESTRICT")
+    )
+    source_candidate_key: Mapped[str | None] = mapped_column(String(40))
     source_filename: Mapped[str | None] = mapped_column(String(500))
     source_checksum: Mapped[str | None] = mapped_column(String(64))
     content_sha256: Mapped[str] = mapped_column(String(64))
@@ -1595,6 +1599,219 @@ class PublicContentAuditLog(Base):
     details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
     correlation_id: Mapped[str | None] = mapped_column(String(100))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MediaAsset(Base):
+    __tablename__ = "media_assets"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "storage_key", name="uq_media_assets_storage_key"),
+        CheckConstraint("media_type IN ('image')", name="media_assets_type_check"),
+        CheckConstraint(
+            "mime_type IN ('image/jpeg','image/png','image/webp')",
+            name="media_assets_mime_check",
+        ),
+        CheckConstraint("file_size > 0", name="media_assets_size_check"),
+        CheckConstraint("width > 0 AND height > 0", name="media_assets_dimensions_check"),
+        CheckConstraint("length(checksum) = 64", name="media_assets_checksum_check"),
+        CheckConstraint("visibility IN ('private','public')", name="media_assets_visibility_check"),
+        CheckConstraint(
+            "public_use_status IN ('uploaded','review','approved','revoked','archived')",
+            name="media_assets_public_use_status_check",
+        ),
+        CheckConstraint(
+            "source_type IN ('manual_upload','docx_import','pdf_import','html_import')",
+            name="media_assets_source_type_check",
+        ),
+        CheckConstraint("record_version > 0", name="media_assets_version_check"),
+        Index(
+            "ix_media_assets_tenant_status",
+            "tenant_id",
+            "public_use_status",
+            "updated_at",
+        ),
+        Index("ix_media_assets_tenant_checksum", "tenant_id", "checksum"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    media_type: Mapped[str] = mapped_column(String(30), server_default="image")
+    original_filename: Mapped[str] = mapped_column(String(255))
+    mime_type: Mapped[str] = mapped_column(String(80))
+    file_size: Mapped[int] = mapped_column(Integer)
+    checksum: Mapped[str] = mapped_column(String(64))
+    storage_provider: Mapped[str] = mapped_column(String(40), server_default="local")
+    storage_key: Mapped[str] = mapped_column(String(500))
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    title: Mapped[str] = mapped_column(String(250))
+    alt_text: Mapped[str] = mapped_column(String(500))
+    caption: Mapped[str | None] = mapped_column(Text)
+    visibility: Mapped[str] = mapped_column(String(20), server_default="private")
+    public_use_status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
+    source_type: Mapped[str] = mapped_column(String(40), server_default="manual_upload")
+    source_reference_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True))
+    uploaded_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    approved_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    record_version: Mapped[int] = mapped_column(Integer, server_default="1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    approved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    archived_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+
+
+class MediaAuditLog(Base):
+    __tablename__ = "media_audit_logs"
+    __table_args__ = (
+        Index("ix_media_audit_tenant_asset", "tenant_id", "media_asset_id", "created_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    media_asset_id: Mapped[UUID] = mapped_column(ForeignKey("media_assets.id", ondelete="RESTRICT"))
+    actor_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(80))
+    before_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    after_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PublicContentImport(Base):
+    __tablename__ = "public_content_imports"
+    __table_args__ = (
+        CheckConstraint(
+            "source_type IN ('docx','pdf','html','txt','markdown')",
+            name="public_content_imports_source_type_check",
+        ),
+        CheckConstraint(
+            "processing_status IN ('uploaded','processing','completed','failed')",
+            name="public_content_imports_status_check",
+        ),
+        CheckConstraint("file_size > 0", name="public_content_imports_size_check"),
+        CheckConstraint("length(checksum) = 64", name="public_content_imports_sha_check"),
+        Index(
+            "ix_public_content_imports_tenant_status",
+            "tenant_id",
+            "processing_status",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    source_type: Mapped[str] = mapped_column(String(20))
+    original_filename: Mapped[str] = mapped_column(String(255))
+    mime_type: Mapped[str] = mapped_column(String(100))
+    checksum: Mapped[str] = mapped_column(String(64))
+    file_size: Mapped[int] = mapped_column(Integer)
+    requested_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    storage_provider: Mapped[str] = mapped_column(String(40), server_default="local")
+    storage_key: Mapped[str] = mapped_column(String(500))
+    processing_status: Mapped[str] = mapped_column(String(20), server_default="uploaded")
+    failure_reason: Mapped[str | None] = mapped_column(String(500))
+    extraction_metadata: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    extraction_result: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    extracted_media_ids: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class PublicContentImportAuditLog(Base):
+    __tablename__ = "public_content_import_audit_logs"
+    __table_args__ = (
+        Index(
+            "ix_public_content_import_audit_tenant_import",
+            "tenant_id",
+            "public_content_import_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    public_content_import_id: Mapped[UUID] = mapped_column(
+        ForeignKey("public_content_imports.id", ondelete="RESTRICT")
+    )
+    actor_membership_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    action: Mapped[str] = mapped_column(String(80))
+    details: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PublicContentStructuringRun(Base):
+    __tablename__ = "public_content_structuring_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "selected_page_type IN ('solution','industry','case_study','guide','product')",
+            name="public_content_structuring_selected_type_check",
+        ),
+        CheckConstraint(
+            "recommended_page_type IS NULL OR recommended_page_type IN "
+            "('solution','industry','case_study','guide','product')",
+            name="public_content_structuring_recommended_type_check",
+        ),
+        CheckConstraint("locale IN ('en','zh-CN')", name="public_content_structuring_locale_check"),
+        CheckConstraint(
+            "status IN ('running','completed','failed')",
+            name="public_content_structuring_status_check",
+        ),
+        CheckConstraint(
+            "outcome IS NULL OR outcome IN ('ready','requires_human_input','insufficient_source')",
+            name="public_content_structuring_outcome_check",
+        ),
+        Index(
+            "ix_public_content_structuring_tenant_import",
+            "tenant_id",
+            "public_content_import_id",
+            "created_at",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    tenant_id: Mapped[UUID] = mapped_column(ForeignKey("tenants.id", ondelete="RESTRICT"))
+    public_content_import_id: Mapped[UUID] = mapped_column(
+        ForeignKey("public_content_imports.id", ondelete="RESTRICT")
+    )
+    requested_by: Mapped[UUID] = mapped_column(
+        ForeignKey("tenant_memberships.id", ondelete="RESTRICT")
+    )
+    selected_page_type: Mapped[str] = mapped_column(String(30))
+    recommended_page_type: Mapped[str | None] = mapped_column(String(30))
+    provider: Mapped[str] = mapped_column(String(40))
+    model: Mapped[str] = mapped_column(String(120))
+    locale: Mapped[str] = mapped_column(String(20))
+    status: Mapped[str] = mapped_column(String(20), server_default="running")
+    outcome: Mapped[str | None] = mapped_column(String(40))
+    result: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default="{}")
+    missing_fields: Mapped[list[str]] = mapped_column(JSONB, server_default="[]")
+    failure_reason: Mapped[str | None] = mapped_column(String(500))
+    duration_ms: Mapped[int | None] = mapped_column(Integer)
+    correlation_id: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class AuditEvent(Base):

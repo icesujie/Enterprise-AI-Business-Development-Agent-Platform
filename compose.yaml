@@ -47,6 +47,7 @@ services:
       DEVELOPMENT_AUTH_SUBJECT: 30000000-0000-4000-8000-000000000001
       PUBLIC_SITE_TOKEN: local-public-site-token
       PUBLIC_TENANT_ID: 10000000-0000-4000-8000-000000000001
+      PUBLIC_BASE_URL: http://localhost:3000
       PUBLIC_CONSULTATION_RATE_LIMIT: ${PUBLIC_CONSULTATION_RATE_LIMIT:-30}
       PUBLIC_CONSULTATION_AI_ENABLED: ${PUBLIC_CONSULTATION_AI_ENABLED:-false}
       AI_ENABLED: ${AI_ENABLED:-false}
@@ -57,6 +58,11 @@ services:
       AGENT_STALE_AFTER_SECONDS: ${AGENT_STALE_AFTER_SECONDS:-120}
       AGENT_RECOVERY_INTERVAL_SECONDS: ${AGENT_RECOVERY_INTERVAL_SECONDS:-30}
       KNOWLEDGE_STORAGE_PATH: /app/data/knowledge
+      MEDIA_STORAGE_PATH: /app/data/media
+      PUBLIC_CONTENT_IMPORT_MAX_UPLOAD_BYTES: ${PUBLIC_CONTENT_IMPORT_MAX_UPLOAD_BYTES:-10485760}
+      PUBLIC_CONTENT_STRUCTURING_PROVIDER: ${PUBLIC_CONTENT_STRUCTURING_PROVIDER:-mock}
+      PUBLIC_CONTENT_STRUCTURING_MODEL: ${PUBLIC_CONTENT_STRUCTURING_MODEL:-gpt-5-mini}
+      MEDIA_MAX_UPLOAD_BYTES: ${MEDIA_MAX_UPLOAD_BYTES:-10485760}
       KNOWLEDGE_EMBEDDING_PROVIDER: ${KNOWLEDGE_EMBEDDING_PROVIDER:-mock}
       KNOWLEDGE_EMBEDDING_MODEL: ${KNOWLEDGE_EMBEDDING_MODEL:-text-embedding-3-small}
       KNOWLEDGE_EMBEDDING_DIMENSIONS: ${KNOWLEDGE_EMBEDDING_DIMENSIONS:-1536}
@@ -69,6 +75,7 @@ services:
       KNOWLEDGE_DEMO_ROOT: /app/demo-data/knowledge
     volumes:
       - knowledge_data:/app/data/knowledge
+      - media_data:/app/data/media
       - ./demo-data/knowledge:/app/demo-data/knowledge:ro
     ports:
       - "8000:8000"
@@ -139,6 +146,11 @@ services:
       DEMO_AUTH_PASSWORD: ${DEMO_AUTH_PASSWORD:-SariArtaDemo2026!}
       DEMO_AUTH_SECRET: ${DEMO_AUTH_SECRET:-local-demo-session-secret-change-before-shared-use}
       PUBLIC_SITE_TOKEN: local-public-site-token
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      INDEXNOW_ENABLED: ${INDEXNOW_ENABLED:-false}
+      INDEXNOW_KEY: ${INDEXNOW_KEY:-}
+      INDEXNOW_KEY_LOCATION: ${INDEXNOW_KEY_LOCATION:-}
+      INDEXNOW_ENDPOINT: ${INDEXNOW_ENDPOINT:-https://api.indexnow.org/indexnow}
     ports:
       - "3000:3000"
     depends_on:
@@ -149,3 +161,4 @@ volumes:
   postgres_data:
   redis_data:
   knowledge_data:
+  media_data:

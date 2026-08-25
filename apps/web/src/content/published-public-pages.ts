@@ -14,7 +14,9 @@ import {
 import type { Locale } from "@/i18n/config";
 import {
   getPublishedCmsPage,
+  isGovernedUnavailable,
   type PublishedCmsPage,
+  type PublishedMediaReference,
   type PublicPageType,
 } from "@/lib/public-content";
 
@@ -51,6 +53,7 @@ type CmsCaseStudy = {
   functional_areas: Section[];
   delivery_approach: Section[];
   approved_project_facts: Array<{ label: string; value: string }>;
+  gallery_references: PublishedMediaReference[];
   related_solution: Related | null;
   related_industry: Related | null;
   cta: Cta;
@@ -96,14 +99,17 @@ export type ResolvedPublicPage =
       updatedAt?: string;
     };
 
+export type GovernedTemplatePageType = Exclude<PublicPageType, "product">;
+
 export async function resolvePublishedPublicPage(
-  pageType: PublicPageType,
+  pageType: GovernedTemplatePageType,
   slug: string,
   locale: Locale,
 ): Promise<ResolvedPublicPage | null> {
   const fallback = legacyFallback(pageType, slug, locale);
   try {
     const cms = await getPublishedCmsPage(pageType, slug, locale);
+    if (isGovernedUnavailable(cms)) return null;
     return cms ? adaptCmsPage(cms, locale) : fallback;
   } catch (error) {
     if (fallback) return fallback;
@@ -227,7 +233,18 @@ function adaptCmsPage(
         kitchenAreas: content.functional_areas,
         deliveryApproach: content.delivery_approach,
         approvedProjectFacts: content.approved_project_facts,
-        images: [],
+        images: [...page.media_references, ...content.gallery_references]
+          .filter((reference) =>
+            ["hero", "project_gallery", "supporting"].includes(reference.role),
+          )
+          .filter(
+            (reference, index, all) =>
+              all.findIndex(
+                (candidate) =>
+                  candidate.media_asset_id === reference.media_asset_id,
+              ) === index,
+          )
+          .map(publicImage),
         relatedSolution: content.related_solution
           ? caseRelated(content.related_solution)
           : undefined,
@@ -237,6 +254,8 @@ function adaptCmsPage(
         consultationLabel: content.cta.label,
         consultationDescription: content.cta.description,
       },
+      publishedAt: page.published_at,
+      updatedAt: page.version_created_at,
     };
   }
   const content = page.structured_content as CmsGuide;
@@ -263,11 +282,13 @@ function adaptCmsPage(
       consultationLabel: content.cta.label,
       consultationDescription: content.cta.description,
     },
+    publishedAt: page.published_at,
+    updatedAt: page.version_created_at,
   };
 }
 
 function legacyFallback(
-  pageType: PublicPageType,
+  pageType: GovernedTemplatePageType,
   slug: string,
   locale: Locale,
 ): ResolvedPublicPage | null {
@@ -332,6 +353,16 @@ function caseRelated(value: Related) {
   return {
     label: value.label,
     href: value.path as `/solutions/${string}` | `/industries/${string}`,
+  };
+}
+
+function publicImage(reference: PublishedMediaReference) {
+  return {
+    src: `/public-media/${reference.media_asset_id}`,
+    alt: reference.alt_text,
+    width: reference.width,
+    height: reference.height,
+    caption: reference.caption ?? undefined,
   };
 }
 

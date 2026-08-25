@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -10,6 +11,10 @@ import {
   type PublicContentGovernanceCommand,
   type PublicContentItem,
 } from "@/lib/api";
+import {
+  runPublicationAutomation,
+  type PublicationAutomationOutcome,
+} from "@/lib/publication-automation";
 
 export async function createPublicContent(
   _previous: PublicContentActionState,
@@ -31,7 +36,7 @@ export async function createPublicContent(
           seo_title: value(formData, "seo_title"),
           seo_description: value(formData, "seo_description"),
           structured_content: structured(formData),
-          media_references: [],
+          media_references: mediaReferences(formData),
           source_type: "manual",
           is_synthetic: formData.get("is_synthetic") === "on",
         }),
@@ -66,7 +71,7 @@ export async function createPublicContentSuccessor(
           seo_title: value(formData, "seo_title"),
           seo_description: value(formData, "seo_description"),
           structured_content: structured(formData),
-          media_references: [],
+          media_references: mediaReferences(formData),
           source_type: "manual",
         }),
       },
@@ -125,15 +130,37 @@ export async function publishPublicContent(
   _previous: PublicContentActionState,
   formData: FormData,
 ): Promise<PublicContentActionState> {
-  return exactVersionCommand(
-    itemId,
-    recordVersion,
-    "publish",
-    versionId,
-    checksum,
-    value(formData, "idempotency_key"),
-    optional(formData, "comment"),
-  );
+  try {
+    const result = await apiFetch<PublicContentGovernanceCommand>(
+      `/api/v1/public-content/items/${itemId}/publish`,
+      {
+        method: "POST",
+        headers: mutationHeaders(
+          recordVersion,
+          value(formData, "idempotency_key"),
+        ),
+        body: JSON.stringify({
+          public_content_version_id: versionId,
+          content_sha256: checksum,
+          comment: optional(formData, "comment"),
+        }),
+      },
+    );
+    if (!result.publication) {
+      return refresh(
+        itemId,
+        "Published, but no publication event was returned.",
+      );
+    }
+    const automation = await runPublicationAutomation(
+      result.item,
+      "publish",
+      result.publication.event_id,
+    );
+    return refresh(itemId, automationMessage("Content published.", automation));
+  } catch (error) {
+    return actionError(error);
+  }
 }
 
 export async function archivePublicContent(
@@ -144,18 +171,66 @@ export async function archivePublicContent(
   formData: FormData,
 ): Promise<PublicContentActionState> {
   try {
-    await apiFetch<PublicContentItem>(
+    const idempotencyKey = value(formData, "idempotency_key");
+    const item = await apiFetch<PublicContentItem>(
       `/api/v1/public-content/items/${itemId}/${restore ? "restore" : "archive"}`,
       {
         method: "POST",
-        headers: mutationHeaders(
-          recordVersion,
-          value(formData, "idempotency_key"),
-        ),
+        headers: mutationHeaders(recordVersion, idempotencyKey),
         body: JSON.stringify({ reason: value(formData, "reason") }),
       },
     );
-    return refresh(itemId, restore ? "Content restored." : "Content archived.");
+    if (!item.published_version_id) {
+      return refresh(
+        itemId,
+        restore ? "Content restored." : "Content archived.",
+      );
+    }
+    const eventType = restore ? "publish" : "remove";
+    const automation = await runPublicationAutomation(
+      item,
+      eventType,
+      `${eventType}-${idempotencyKey}`,
+    );
+    return refresh(
+      itemId,
+      automationMessage(
+        restore ? "Content restored." : "Content archived.",
+        automation,
+      ),
+    );
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+export async function retryPublicContentAutomation(
+  itemId: string,
+  _previous: PublicContentActionState,
+  _formData: FormData,
+): Promise<PublicContentActionState> {
+  void _previous;
+  void _formData;
+  try {
+    const item = await apiFetch<PublicContentItem>(
+      `/api/v1/public-content/items/${itemId}`,
+    );
+    if (!item.published_version_id) {
+      return {
+        status: "error",
+        message: "This content has no published version.",
+      };
+    }
+    const eventType = item.status === "archived" ? "remove" : "publish";
+    const automation = await runPublicationAutomation(
+      item,
+      eventType,
+      `retry-${randomUUID()}`,
+    );
+    return refresh(
+      itemId,
+      automationMessage("Discovery refresh retried.", automation),
+    );
   } catch (error) {
     return actionError(error);
   }
@@ -192,12 +267,76 @@ async function exactVersionCommand(
 }
 
 function structured(formData: FormData): Record<string, unknown> {
+  if (value(formData, "page_type") === "product") {
+    return productStructured(formData);
+  }
   const raw = value(formData, "structured_content");
   const parsed: unknown = JSON.parse(raw);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("Structured content must be a JSON object.");
   }
   return parsed as Record<string, unknown>;
+}
+
+function productStructured(formData: FormData): Record<string, unknown> {
+  return {
+    product_name: value(formData, "product_name"),
+    sku_model: value(formData, "sku_model"),
+    category: value(formData, "category"),
+    brand: optional(formData, "brand"),
+    short_description: value(formData, "short_description"),
+    detailed_description: lines(formData, "detailed_description"),
+    features: lines(formData, "features"),
+    applications: lines(formData, "applications"),
+    material: optional(formData, "material"),
+    dimensions: optional(formData, "dimensions"),
+    configuration: optional(formData, "configuration"),
+    specifications: jsonField(formData, "specifications", []),
+    price_mode: value(formData, "price_mode"),
+    currency: optional(formData, "currency")?.toUpperCase() ?? null,
+    price_min: optional(formData, "price_min"),
+    price_max: optional(formData, "price_max"),
+    price_note: optional(formData, "price_note"),
+    moq: optional(formData, "moq"),
+    availability_note: optional(formData, "availability_note"),
+    hero_media_asset_id: optional(formData, "hero_media_asset_id"),
+    gallery_media_asset_ids: lines(formData, "gallery_media_asset_ids"),
+    drawing_media_asset_ids: lines(formData, "drawing_media_asset_ids"),
+    related_products: jsonField(formData, "related_products", []),
+    related_solution: jsonField(formData, "related_solution", null),
+    related_industry: jsonField(formData, "related_industry", null),
+    related_guide: jsonField(formData, "related_guide", null),
+    related_project: jsonField(formData, "related_project", null),
+    inquiry_cta: {
+      label: value(formData, "inquiry_cta_label"),
+      description: value(formData, "inquiry_cta_description"),
+      destination: "public_consultation_agent",
+    },
+    quote_cta: {
+      label: value(formData, "quote_cta_label"),
+      description: value(formData, "quote_cta_description"),
+      destination: "public_consultation_agent",
+    },
+  };
+}
+
+function lines(formData: FormData, name: string): string[] {
+  return value(formData, name)
+    .split(/\r?\n/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function jsonField<T>(formData: FormData, name: string, fallback: T): unknown {
+  const raw = optional(formData, name);
+  return raw ? (JSON.parse(raw) as unknown) : fallback;
+}
+
+function mediaReferences(formData: FormData): unknown[] {
+  const parsed: unknown = JSON.parse(value(formData, "media_references"));
+  if (!Array.isArray(parsed))
+    throw new Error("Media references must be a JSON array.");
+  return parsed;
 }
 
 function mutationHeaders(recordVersion: number, idempotencyKey: string) {
@@ -211,6 +350,16 @@ function refresh(itemId: string, message: string): PublicContentActionState {
   revalidatePath("/public-content");
   revalidatePath(`/public-content/${itemId}`);
   return { status: "success", message };
+}
+
+function automationMessage(
+  prefix: string,
+  outcome: PublicationAutomationOutcome,
+): string {
+  if (outcome.retryRequired || !outcome.auditRecorded) {
+    return `${prefix} Search/discovery refresh needs an authorized retry. Correlation ID: ${outcome.correlationId}`;
+  }
+  return `${prefix} Public page, listings, and sitemap were refreshed.`;
 }
 
 function actionError(error: unknown): PublicContentActionState {

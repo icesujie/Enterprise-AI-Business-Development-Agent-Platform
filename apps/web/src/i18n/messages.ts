@@ -7,6 +7,7 @@ export type Messages = {
     solutions: string;
     industries: string;
     projects: string;
+    products: string;
     about: string;
     contact: string;
     consultation: string;
@@ -49,6 +50,7 @@ export type Messages = {
     knowledge: string;
     marketingContent: string;
     publicContent: string;
+    media: string;
     records: string;
     companies: string;
     contacts: string;
@@ -78,6 +80,7 @@ const en: Messages = {
     solutions: "Solutions",
     industries: "Industries",
     projects: "Projects",
+    products: "Products",
     about: "About Us",
     contact: "Contact",
     consultation: "Request kitchen consultation",
@@ -123,6 +126,7 @@ const en: Messages = {
     knowledge: "Knowledge",
     marketingContent: "Marketing Content",
     publicContent: "Public Content",
+    media: "Media",
     records: "Records",
     companies: "Companies",
     contacts: "Contacts",
@@ -152,6 +156,7 @@ const zh: Messages = {
     solutions: "解决方案",
     industries: "行业应用",
     projects: "项目案例",
+    products: "产品目录",
     about: "关于我们",
     contact: "联系我们",
     consultation: "申请厨房项目咨询",
@@ -197,6 +202,7 @@ const zh: Messages = {
     knowledge: "知识管理",
     marketingContent: "营销内容",
     publicContent: "公开内容",
+    media: "媒体库",
     records: "基础资料",
     companies: "客户公司",
     contacts: "联系人",

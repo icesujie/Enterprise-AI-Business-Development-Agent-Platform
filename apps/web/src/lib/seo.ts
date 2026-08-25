@@ -8,7 +8,13 @@ import {
 } from "@/lib/search-foundation";
 
 export type PublicPageKey =
-  "home" | "solutions" | "industries" | "projects" | "about" | "contact";
+  | "home"
+  | "solutions"
+  | "industries"
+  | "projects"
+  | "products"
+  | "about"
+  | "contact";
 
 export type PublicRouteMetadata = {
   title: string;
@@ -80,6 +86,20 @@ const publicMetadata: Record<
       description:
         "查看明确标记为演示内容的学校、医院、工厂食堂和中央厨房工程项目场景。",
       path: "/projects",
+    },
+  },
+  products: {
+    en: {
+      title: "Commercial Kitchen Product Catalog",
+      description:
+        "Explore approved public Sari Arta commercial kitchen product information and submit a product inquiry for human sales follow-up.",
+      path: "/products",
+    },
+    "zh-CN": {
+      title: "商用厨房产品目录",
+      description:
+        "查看经过批准并公开发布的 Sari Arta 商用厨房产品信息，并提交产品咨询，由销售人员跟进。",
+      path: "/products",
     },
   },
   about: {

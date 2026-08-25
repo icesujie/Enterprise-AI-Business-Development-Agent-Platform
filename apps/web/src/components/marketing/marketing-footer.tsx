@@ -23,6 +23,7 @@ export async function MarketingFooter() {
               [copy.solutions, "/solutions"],
               [copy.industries, "/industries"],
               [copy.projects, "/projects"],
+              [copy.products, "/products"],
             ]}
           />
           <FooterGroup

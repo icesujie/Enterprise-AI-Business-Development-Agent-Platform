@@ -60,6 +60,7 @@ export default async function WorkspaceLayout({
               [copy.knowledge, "/knowledge"],
               [copy.marketingContent, "/marketing-content"],
               [copy.publicContent, "/public-content"],
+              [copy.media, "/media"],
             ].map(([label, href]) => (
               <Link
                 key={href}

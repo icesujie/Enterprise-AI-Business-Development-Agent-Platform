@@ -34,6 +34,22 @@ export type FaqStructuredDataItem = {
   answer: string;
 };
 
+export type ProductStructuredDataInput = {
+  name: string;
+  description: string;
+  path: string;
+  skuModel: string;
+  category: string;
+  brand: string | null;
+  material: string | null;
+  images: string[];
+  specifications: Array<{ label: string; value: string }>;
+  priceMode: "fixed" | "starting_from" | "range" | "request_quote";
+  currency: string | null;
+  priceMin: string | null;
+  priceMax: string | null;
+};
+
 export function buildSiteStructuredData(locale: Locale): StructuredDataNode {
   const siteUrl = absolutePublicUrl("/");
   return {
@@ -143,5 +159,66 @@ export function buildFaqStructuredData(
         text: item.answer,
       },
     })),
+  };
+}
+
+export function buildProductStructuredData(
+  product: ProductStructuredDataInput,
+): StructuredDataNode {
+  const offer = buildVisibleProductOffer(product);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description,
+    url: absolutePublicUrl(product.path),
+    sku: product.skuModel,
+    category: product.category,
+    ...(product.brand
+      ? { brand: { "@type": "Brand", name: product.brand } }
+      : {}),
+    ...(product.material ? { material: product.material } : {}),
+    ...(product.images.length
+      ? { image: product.images.map(absolutePublicUrl) }
+      : {}),
+    ...(product.specifications.length
+      ? {
+          additionalProperty: product.specifications.map((specification) => ({
+            "@type": "PropertyValue",
+            name: specification.label,
+            value: specification.value,
+          })),
+        }
+      : {}),
+    ...(offer ? { offers: offer } : {}),
+  };
+}
+
+function buildVisibleProductOffer(
+  product: ProductStructuredDataInput,
+): StructuredDataNode | null {
+  if (
+    product.priceMode === "request_quote" ||
+    !product.currency ||
+    !product.priceMin
+  )
+    return null;
+  if (product.priceMode === "fixed") {
+    return {
+      "@type": "Offer",
+      priceCurrency: product.currency,
+      price: product.priceMin,
+      url: absolutePublicUrl(product.path),
+    };
+  }
+  return {
+    "@type": "AggregateOffer",
+    priceCurrency: product.currency,
+    lowPrice: product.priceMin,
+    ...(product.priceMode === "range" && product.priceMax
+      ? { highPrice: product.priceMax }
+      : {}),
+    offerCount: 1,
+    url: absolutePublicUrl(product.path),
   };
 }

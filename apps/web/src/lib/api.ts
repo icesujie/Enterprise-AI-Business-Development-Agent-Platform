@@ -597,6 +597,8 @@ export type PublicContentVersion = {
   media_references: Array<Record<string, unknown>>;
   source_type: string;
   source_reference_id: string | null;
+  source_structuring_run_id: string | null;
+  source_candidate_key: string | null;
   source_filename: string | null;
   source_checksum: string | null;
   content_sha256: string;
@@ -608,7 +610,7 @@ export type PublicContentVersion = {
 export type PublicContentItem = {
   id: string;
   tenant_id: string;
-  page_type: "solution" | "industry" | "case_study" | "guide";
+  page_type: "solution" | "industry" | "case_study" | "guide" | "product";
   slug: string;
   locale: "en" | "zh-CN";
   title: string;
@@ -663,6 +665,168 @@ export type PublicContentAuditLog = {
 export type PublicContentGovernanceCommand = {
   item: PublicContentItem;
   decision: PublicContentDecision | null;
+  publication: PublicContentPublicationEvent | null;
+};
+
+export type PublicContentPublicationEvent = {
+  event_id: string;
+  tenant_id: string;
+  page_type: PublicContentItem["page_type"];
+  slug: string;
+  locale: PublicContentItem["locale"];
+  published_version_id: string;
+  canonical_path: string;
+  canonical_url: string;
+  published_at: string;
+};
+
+export type MediaAsset = {
+  id: string;
+  tenant_id: string;
+  media_type: "image";
+  original_filename: string;
+  mime_type: "image/jpeg" | "image/png" | "image/webp";
+  file_size: number;
+  checksum: string;
+  storage_provider: string;
+  width: number;
+  height: number;
+  title: string;
+  alt_text: string;
+  caption: string | null;
+  visibility: "private" | "public";
+  public_use_status:
+    "uploaded" | "review" | "approved" | "revoked" | "archived";
+  source_type: "manual_upload" | "docx_import" | "pdf_import" | "html_import";
+  source_reference_id: string | null;
+  uploaded_by: string;
+  approved_by: string | null;
+  record_version: number;
+  created_at: string;
+  updated_at: string;
+  approved_at: string | null;
+  revoked_at: string | null;
+  archived_at: string | null;
+};
+
+export type MediaAuditLog = {
+  id: string;
+  media_asset_id: string;
+  actor_membership_id: string;
+  action: string;
+  before_metadata: Record<string, unknown>;
+  after_metadata: Record<string, unknown>;
+  details: Record<string, unknown>;
+  correlation_id: string | null;
+  created_at: string;
+};
+
+export type PublicContentImportBlock = {
+  kind: "heading" | "paragraph" | "list" | "table";
+  text: string;
+  order: number;
+  level: number | null;
+  page_number: number | null;
+  section_title: string | null;
+};
+
+export type PublicContentImport = {
+  id: string;
+  tenant_id: string;
+  source_type: "docx" | "pdf" | "html" | "txt" | "markdown";
+  original_filename: string;
+  mime_type: string;
+  checksum: string;
+  file_size: number;
+  requested_by: string;
+  storage_provider: string;
+  processing_status: "uploaded" | "processing" | "completed" | "failed";
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  failure_reason: string | null;
+  extraction_metadata: Record<string, unknown>;
+  extraction_result: {
+    title?: string | null;
+    blocks?: PublicContentImportBlock[];
+    media?: Array<{
+      media_asset_id: string;
+      order: number;
+      page_number: number | null;
+      section_title: string | null;
+    }>;
+  };
+  extracted_media_ids: string[];
+};
+
+export type PublicContentStructuringRun = {
+  id: string;
+  tenant_id: string;
+  public_content_import_id: string;
+  requested_by: string;
+  selected_page_type:
+    "solution" | "industry" | "case_study" | "guide" | "product";
+  recommended_page_type:
+    "solution" | "industry" | "case_study" | "guide" | "product" | null;
+  provider: string;
+  model: string;
+  locale: "en" | "zh-CN";
+  status: "running" | "completed" | "failed";
+  outcome: "ready" | "requires_human_input" | "insufficient_source" | null;
+  result: {
+    title?: string | null;
+    summary?: string | null;
+    seo_title?: string | null;
+    seo_description?: string | null;
+    content?: Record<string, unknown>;
+    cms_structured_content?: Record<string, unknown>;
+    multiple_products_detected?: boolean;
+    product_candidates?: Array<{
+      candidate_key: string;
+      slug_suggestion: string;
+      title: string | null;
+      summary: string | null;
+      seo_title: string | null;
+      seo_description: string | null;
+      content: Record<string, unknown>;
+      cms_structured_content: Record<string, unknown>;
+      missing_fields: string[];
+      media_suggestions: Array<{
+        media_asset_id: string;
+        role: "hero" | "gallery";
+        order: number;
+        source_page: number | null;
+        source_section: string | null;
+      }>;
+      evidence: Array<{
+        field_path: string;
+        import_id: string;
+        block_order: number | null;
+        source_section: string | null;
+        source_page: number | null;
+        media_asset_id: string | null;
+      }>;
+    }>;
+    media_suggestions?: Array<{
+      media_asset_id: string;
+      role: "hero" | "gallery";
+      order: number;
+      source_page: number | null;
+      source_section: string | null;
+    }>;
+    evidence?: Array<{
+      field_path: string;
+      import_id: string;
+      block_order: number | null;
+      source_section: string | null;
+      source_page: number | null;
+      media_asset_id: string | null;
+    }>;
+  };
+  missing_fields: string[];
+  failure_reason: string | null;
+  duration_ms: number | null;
+  correlation_id: string | null;
 };
 
 export class ApiRequestError extends Error {

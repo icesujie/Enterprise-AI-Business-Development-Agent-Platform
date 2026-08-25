@@ -24,6 +24,15 @@ export type PublicLeadPayload = {
     expected_capacity: string;
     target_timeline: string;
     budget_range?: string | null;
+    product_context?: {
+      source: "product_page";
+      product_locale: "en" | "zh-CN";
+      product_name: string;
+      product_slug: string;
+      sku_model: string;
+      price_mode: "fixed" | "starting_from" | "range" | "request_quote";
+      displayed_price: string;
+    } | null;
   };
   attribution: {
     source: "website" | "website_ai_assistant";

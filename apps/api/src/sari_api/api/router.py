@@ -19,9 +19,14 @@ from sari_api.api.routes.marketing_content_evaluation import (
 from sari_api.api.routes.marketing_content_generation import (
     router as marketing_content_generation_router,
 )
+from sari_api.api.routes.media import router as media_router
 from sari_api.api.routes.opportunities import router as opportunities_router
 from sari_api.api.routes.public_consultation import router as public_consultation_router
 from sari_api.api.routes.public_content import router as public_content_router
+from sari_api.api.routes.public_content_imports import router as public_content_imports_router
+from sari_api.api.routes.public_content_structuring import (
+    router as public_content_structuring_router,
+)
 from sari_api.api.routes.public_leads import router as public_leads_router
 from sari_api.api.routes.qualification import router as qualification_router
 from sari_api.api.routes.work import router as work_router
@@ -33,6 +38,9 @@ router.include_router(crm_router)
 router.include_router(public_leads_router)
 router.include_router(public_consultation_router)
 router.include_router(public_content_router)
+router.include_router(public_content_imports_router)
+router.include_router(public_content_structuring_router)
+router.include_router(media_router)
 router.include_router(qualification_router)
 router.include_router(work_router)
 router.include_router(opportunities_router)

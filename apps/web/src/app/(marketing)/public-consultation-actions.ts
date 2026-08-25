@@ -2,6 +2,7 @@
 
 import { submitPublicLead, type PublicLeadAccepted } from "@/lib/public-leads";
 import type { AcquisitionAttribution } from "@/lib/acquisition-attribution";
+import type { ProductConsultationContext } from "@/lib/public-consultation-ui";
 
 export type ConsultationLanguage = "en" | "zh-CN";
 export type ConsultationField =
@@ -58,6 +59,7 @@ export async function createConsultationLead(input: {
   contactConsent: boolean;
   marketingConsent: boolean;
   attribution?: AcquisitionAttribution;
+  productContext?: ProductConsultationContext | null;
 }): Promise<PublicLeadAccepted> {
   if (input.contactConsent !== true) {
     throw new Error("Contact consent is required before creating an inquiry.");
@@ -80,7 +82,11 @@ export async function createConsultationLead(input: {
         country_code: null,
       },
       inquiry: {
-        message: buildSummary(input.language, input.values),
+        message: buildSummary(
+          input.language,
+          input.values,
+          input.productContext,
+        ),
         project_country_code: null,
         project_city: input.values.location,
         project_type: input.values.project_type,
@@ -88,6 +94,17 @@ export async function createConsultationLead(input: {
         expected_capacity: input.values.capacity,
         target_timeline: input.values.timeline,
         budget_range: input.values.budget_range || null,
+        product_context: input.productContext
+          ? {
+              source: input.productContext.source,
+              product_locale: input.productContext.productLocale,
+              product_name: input.productContext.productName,
+              product_slug: input.productContext.productSlug,
+              sku_model: input.productContext.skuModel,
+              price_mode: input.productContext.priceMode,
+              displayed_price: input.productContext.displayedPrice,
+            }
+          : null,
       },
       attribution: {
         source: "website_ai_assistant",
@@ -107,6 +124,7 @@ export async function createConsultationLead(input: {
 function buildSummary(
   language: ConsultationLanguage,
   values: Record<ConsultationField, string>,
+  productContext?: ProductConsultationContext | null,
 ) {
   const labels =
     language === "zh-CN"
@@ -127,5 +145,13 @@ function buildSummary(
     values.timeline,
     values.budget_range || (language === "zh-CN" ? "暂未提供" : "Not provided"),
   ];
-  return labels.map((label, index) => `${label}: ${data[index]}`).join("\n");
+  const summary = labels
+    .map((label, index) => `${label}: ${data[index]}`)
+    .join("\n");
+  if (!productContext) return summary;
+  const product =
+    language === "zh-CN"
+      ? `产品咨询: ${productContext.productName} (${productContext.skuModel}) · ${productContext.displayedPrice}`
+      : `Product inquiry: ${productContext.productName} (${productContext.skuModel}) · ${productContext.displayedPrice}`;
+  return `${product}\n${summary}`;
 }

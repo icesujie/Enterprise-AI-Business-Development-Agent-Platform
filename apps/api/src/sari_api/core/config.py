@@ -3,6 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal, Self
+from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
     development_auth_subject: str | None = None
     public_site_token: str = "local-public-site-token"
     public_tenant_id: str = "10000000-0000-4000-8000-000000000001"
+    public_base_url: str = "http://localhost:3000"
     public_rate_limit: int = Field(default=10, ge=1, le=1000)
     public_consultation_rate_limit: int = Field(default=30, ge=1, le=1000)
     public_consultation_ai_enabled: bool = False
@@ -55,6 +57,13 @@ class Settings(BaseSettings):
     knowledge_embedding_dimensions: int = Field(default=1536, ge=128, le=3072)
     knowledge_queue_name: str = "sari-arta:knowledge-ingestion"
     knowledge_processing_queue_name: str = "sari-arta:knowledge-processing"
+    media_storage_path: Path = Path(".local/media")
+    media_max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1024, le=25 * 1024 * 1024)
+    public_content_import_max_upload_bytes: int = Field(
+        default=10 * 1024 * 1024, ge=1024, le=50 * 1024 * 1024
+    )
+    public_content_structuring_provider: Literal["mock", "openai"] = "mock"
+    public_content_structuring_model: str = "gpt-5-mini"
     knowledge_retrieval_min_similarity: float = Field(default=0.15, ge=0, le=1)
     knowledge_retrieval_min_evidence_count: int = Field(default=1, ge=1, le=5)
     knowledge_retrieval_diagnostic_candidates: int = Field(default=5, ge=0, le=20)
@@ -77,6 +86,13 @@ class Settings(BaseSettings):
                 raise ValueError("production must disable development authentication")
             if self.public_site_token == "local-public-site-token":
                 raise ValueError("production PUBLIC_SITE_TOKEN must be configured")
+            public_url = urlsplit(self.public_base_url)
+            if public_url.scheme != "https" or not public_url.hostname:
+                raise ValueError("production PUBLIC_BASE_URL must be an absolute HTTPS URL")
+            if public_url.hostname in {"localhost", "127.0.0.1"}:
+                raise ValueError("production PUBLIC_BASE_URL must not use a local hostname")
+            if not self.media_storage_path.is_absolute():
+                raise ValueError("production MEDIA_STORAGE_PATH must be an absolute private path")
         if self.ai_enabled and self.openai_api_key is None:
             raise ValueError("AI_ENABLED requires OPENAI_API_KEY")
         if self.public_consultation_ai_enabled and not self.ai_enabled:
@@ -85,6 +101,8 @@ class Settings(BaseSettings):
             raise ValueError("OpenAI knowledge embeddings require OPENAI_API_KEY")
         if self.marketing_content_provider == "openai" and self.openai_api_key is None:
             raise ValueError("OpenAI marketing content generation requires OPENAI_API_KEY")
+        if self.public_content_structuring_provider == "openai" and self.openai_api_key is None:
+            raise ValueError("OpenAI public content structuring requires OPENAI_API_KEY")
         if self.knowledge_chunk_overlap >= self.knowledge_chunk_size:
             raise ValueError("KNOWLEDGE_CHUNK_OVERLAP must be smaller than KNOWLEDGE_CHUNK_SIZE")
         if self.knowledge_embedding_dimensions != 1536:

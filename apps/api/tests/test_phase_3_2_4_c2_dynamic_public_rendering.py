@@ -152,6 +152,9 @@ async def test_public_render_returns_exact_published_version_and_isolates_locale
                 "seo_description",
                 "canonical_path",
                 "structured_content",
+                "media_references",
+                "published_at",
+                "version_created_at",
             }
             assert rendered.headers["cache-control"].startswith("public, max-age=30")
 

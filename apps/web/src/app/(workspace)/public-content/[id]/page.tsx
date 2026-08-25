@@ -116,6 +116,18 @@ export default async function PublicContentDetailPage({
                 <p className="mt-1 text-xs text-[var(--color-muted)]">
                   {version.origin} · {format(version.created_at, locale)}
                 </p>
+                {version.source_structuring_run_id &&
+                version.source_reference_id ? (
+                  <Link
+                    className="mt-2 inline-block text-xs font-semibold text-[var(--color-brand)]"
+                    href={`/public-content/imports/${version.source_reference_id}`}
+                  >
+                    {zh ? "查看导入依据" : "View import evidence"}
+                    {version.source_candidate_key
+                      ? ` · ${version.source_candidate_key}`
+                      : ""}
+                  </Link>
+                ) : null}
                 <p className="mt-1 break-all font-mono text-[0.65rem] text-[var(--color-muted)]">
                   {version.content_sha256}
                 </p>

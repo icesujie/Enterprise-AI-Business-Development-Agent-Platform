@@ -1,19 +1,26 @@
 "use client";
 
-import { publicConsultationOpenEvent } from "@/lib/public-consultation-ui";
+import {
+  publicConsultationOpenEvent,
+  type ProductConsultationContext,
+} from "@/lib/public-consultation-ui";
 
 export function PublicConsultationCta({
   label,
   className = "",
+  context,
 }: {
   label: string;
   className?: string;
+  context?: ProductConsultationContext;
 }) {
   return (
     <button
       className={`button-primary ${className}`}
       onClick={() =>
-        window.dispatchEvent(new Event(publicConsultationOpenEvent))
+        window.dispatchEvent(
+          new CustomEvent(publicConsultationOpenEvent, { detail: context }),
+        )
       }
       type="button"
     >

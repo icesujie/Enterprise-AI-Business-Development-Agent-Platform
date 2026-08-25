@@ -14,6 +14,11 @@ const { getPublishedCmsPageMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/public-content", () => ({
   getPublishedCmsPage: getPublishedCmsPageMock,
+  isGovernedUnavailable: (value: unknown) =>
+    typeof value === "object" &&
+    value !== null &&
+    "state" in value &&
+    value.state === "governed_unavailable",
 }));
 vi.mock("next/navigation", () => ({
   notFound: vi.fn(() => {
@@ -111,6 +116,13 @@ test("does not invent a fallback for an unknown or unpublished CMS slug", async 
   );
 });
 
+test("does not revive an archived governed page through the legacy fallback", async () => {
+  getPublishedCmsPageMock.mockResolvedValue({ state: "governed_unavailable" });
+  await expect(
+    resolvePublishedPublicPage("solution", "school-canteen-kitchen", "en"),
+  ).resolves.toBeNull();
+});
+
 function solutionFixture(): PublishedCmsPage {
   return {
     page_type: "solution",
@@ -144,5 +156,8 @@ function solutionFixture(): PublishedCmsPage {
         destination: "public_consultation_agent",
       },
     },
+    media_references: [],
+    published_at: "2026-08-24T10:00:00Z",
+    version_created_at: "2026-08-24T09:00:00Z",
   };
 }

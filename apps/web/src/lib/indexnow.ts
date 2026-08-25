@@ -25,6 +25,7 @@ export async function notifyIndexNow(
   options: {
     environment?: IndexNowEnvironment;
     fetcher?: typeof fetch;
+    action?: "publish" | "remove";
   } = {},
 ): Promise<IndexNowResult> {
   const environment = options.environment ?? process.env;
@@ -45,11 +46,12 @@ export async function notifyIndexNow(
     return { status: "not_configured", submitted: 0 };
   }
 
-  const urls = eligibleIndexNowUrls(candidates);
+  const urls = eligibleIndexNowUrls(candidates, options.action);
   if (!urls.length) return { status: "no_eligible_urls", submitted: 0 };
 
   const endpoint = new URL(
-    environment.INDEXNOW_ENDPOINT?.trim() || "https://api.indexnow.org/indexnow",
+    environment.INDEXNOW_ENDPOINT?.trim() ||
+      "https://api.indexnow.org/indexnow",
   );
   if (endpoint.protocol !== "https:") {
     return { status: "not_configured", submitted: 0 };

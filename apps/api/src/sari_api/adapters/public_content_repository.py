@@ -10,6 +10,7 @@ from sqlalchemy import or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sari_api.adapters.models import (
+    MediaAsset,
     PublicContentAuditLog,
     PublicContentDecision,
     PublicContentItem,
@@ -46,6 +47,8 @@ def public_content_checksum(
     source_reference_id: UUID | None,
     source_filename: str | None,
     source_checksum: str | None,
+    source_structuring_run_id: UUID | None = None,
+    source_candidate_key: str | None = None,
 ) -> str:
     canonical = json.dumps(
         {
@@ -55,6 +58,10 @@ def public_content_checksum(
             "source_checksum": source_checksum,
             "source_filename": source_filename,
             "source_reference_id": str(source_reference_id) if source_reference_id else None,
+            "source_structuring_run_id": (
+                str(source_structuring_run_id) if source_structuring_run_id else None
+            ),
+            "source_candidate_key": source_candidate_key,
             "source_type": source_type,
             "structured_content": structured_content,
             "summary": summary,
@@ -84,6 +91,7 @@ class PublicContentRepository:
         actor_id: UUID,
         item_values: dict[str, Any],
         version_values: dict[str, Any],
+        version_origin: str = "human",
     ) -> tuple[PublicContentItem, PublicContentVersion]:
         item = PublicContentItem(
             tenant_id=self._tenant_id,
@@ -96,7 +104,7 @@ class PublicContentRepository:
             item=item,
             actor_id=actor_id,
             version_number=1,
-            origin="human",
+            origin=version_origin,
             based_on_version_id=None,
             values=version_values,
         )
@@ -199,6 +207,51 @@ class PublicContentRepository:
         ).one_or_none()
         return (row[0], row[1]) if row else None
 
+    async def list_published_pages(
+        self,
+        *,
+        page_type: str | None,
+        locale: str,
+    ) -> list[tuple[PublicContentItem, PublicContentVersion]]:
+        statement = (
+            select(PublicContentItem, PublicContentVersion)
+            .join(
+                PublicContentVersion,
+                PublicContentVersion.id == PublicContentItem.published_version_id,
+            )
+            .where(
+                PublicContentItem.tenant_id == self._tenant_id,
+                PublicContentItem.locale == locale,
+                PublicContentItem.status != "archived",
+                PublicContentItem.published_at.is_not(None),
+                PublicContentVersion.tenant_id == self._tenant_id,
+                PublicContentVersion.public_content_item_id == PublicContentItem.id,
+            )
+        )
+        if page_type is not None:
+            statement = statement.where(PublicContentItem.page_type == page_type)
+        rows = (
+            await self._session.execute(
+                statement.order_by(PublicContentItem.title, PublicContentItem.id)
+            )
+        ).all()
+        return [(row[0], row[1]) for row in rows]
+
+    async def get_governed_route_state(
+        self, *, page_type: str, slug: str, locale: str
+    ) -> str | None:
+        return cast(
+            str | None,
+            await self._session.scalar(
+                select(PublicContentItem.status).where(
+                    PublicContentItem.tenant_id == self._tenant_id,
+                    PublicContentItem.page_type == page_type,
+                    PublicContentItem.slug == slug,
+                    PublicContentItem.locale == locale,
+                )
+            ),
+        )
+
     async def get_published_relation(
         self,
         *,
@@ -228,6 +281,20 @@ class PublicContentRepository:
         if canonical_path is not None:
             statement = statement.where(PublicContentItem.canonical_path == canonical_path)
         return cast(PublicContentItem | None, await self._session.scalar(statement))
+
+    async def get_public_media(self, asset_id: UUID) -> MediaAsset | None:
+        return cast(
+            MediaAsset | None,
+            await self._session.scalar(
+                select(MediaAsset).where(
+                    MediaAsset.id == asset_id,
+                    MediaAsset.tenant_id == self._tenant_id,
+                    MediaAsset.public_use_status == "approved",
+                    MediaAsset.visibility == "public",
+                    MediaAsset.approved_at.is_not(None),
+                )
+            ),
+        )
 
     async def has_governed_path(self, *, locale: str, canonical_path: str) -> bool:
         return bool(
@@ -352,6 +419,26 @@ class PublicContentRepository:
         await self._session.flush()
         return item, decision
 
+    async def _require_public_media(self, version: PublicContentVersion) -> None:
+        references = list(version.media_references)
+        gallery = version.structured_content.get("gallery_references")
+        if isinstance(gallery, list):
+            references.extend(value for value in gallery if isinstance(value, dict))
+        asset_ids: set[UUID] = set()
+        for reference in references:
+            raw_id = reference.get("media_asset_id")
+            try:
+                asset_ids.add(UUID(str(raw_id)))
+            except (TypeError, ValueError) as exc:
+                raise PublicContentStateError(
+                    "Public content has an invalid media reference."
+                ) from exc
+        for asset_id in asset_ids:
+            if await self.get_public_media(asset_id) is None:
+                raise PublicContentStateError(
+                    "All referenced media must be approved for public use before publication."
+                )
+
     async def decide(
         self,
         *,
@@ -414,6 +501,7 @@ class PublicContentRepository:
         if item.status != "approved" or item.approved_version_id != version_id:
             raise PublicContentStateError("Only the exact approved version can be published.")
         version = await self._exact_current_version(item, version_id, checksum)
+        await self._require_public_media(version)
         before = self._item_state(item)
         decision = self._decision(item, version, "published", actor_id, comment)
         self._session.add(decision)
@@ -585,6 +673,24 @@ class PublicContentRepository:
                 correlation_id=get_correlation_id(),
             )
         )
+
+    async def record_automation_attempt(
+        self,
+        *,
+        actor_id: UUID,
+        item: PublicContentItem,
+        version: PublicContentVersion,
+        event_type: str,
+        details: dict[str, Any],
+    ) -> None:
+        self._audit(
+            actor_id=actor_id,
+            action=f"public_content.{event_type}_automation",
+            item=item,
+            version=version,
+            details=details,
+        )
+        await self._session.flush()
 
     @staticmethod
     def _item_state(item: PublicContentItem) -> dict[str, Any]:

@@ -16,7 +16,10 @@ import {
 } from "@/app/(marketing)/public-consultation-actions";
 import { Button } from "@/components/ui/button";
 import { captureAcquisitionAttribution } from "@/lib/acquisition-attribution";
-import { publicConsultationOpenEvent } from "@/lib/public-consultation-ui";
+import {
+  publicConsultationOpenEvent,
+  type ProductConsultationContext,
+} from "@/lib/public-consultation-ui";
 
 type Message = { role: "assistant" | "visitor"; text: string };
 type Point = { x: number; y: number };
@@ -64,6 +67,8 @@ export function PublicConsultationWidget({
   const [submitted, setSubmitted] = useState(false);
   const [duplicate, setDuplicate] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productContext, setProductContext] =
+    useState<ProductConsultationContext | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const stopLauncherDrag = useRef<(() => void) | null>(null);
@@ -94,7 +99,11 @@ export function PublicConsultationWidget({
   }, []);
 
   useEffect(() => {
-    const openConsultation = () => setOpen(true);
+    const openConsultation = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      setProductContext(isProductContext(detail) ? detail : null);
+      setOpen(true);
+    };
     window.addEventListener(publicConsultationOpenEvent, openConsultation);
     return () =>
       window.removeEventListener(publicConsultationOpenEvent, openConsultation);
@@ -153,6 +162,7 @@ export function PublicConsultationWidget({
         contactConsent: consent,
         marketingConsent,
         attribution: captureAcquisitionAttribution(),
+        productContext,
       });
       setDuplicate(Boolean(result.duplicate));
       setSubmitted(true);
@@ -246,6 +256,14 @@ export function PublicConsultationWidget({
           </header>
 
           <div className="min-h-0 flex-1 overflow-y-auto bg-[var(--color-surface-subtle)] p-4">
+            {productContext ? (
+              <div className="mb-4 rounded-xl border border-[var(--color-line)] bg-white p-3 text-xs leading-5">
+                <strong>{productContext.productName}</strong>
+                <span className="ml-2 text-[var(--color-muted)]">
+                  {productContext.skuModel} · {productContext.displayedPrice}
+                </span>
+              </div>
+            ) : null}
             <div className="mb-4 flex justify-end">
               <select
                 aria-label={copy.language}
@@ -408,6 +426,22 @@ function greeting(language: ConsultationLanguage): Message[] {
     { role: "assistant", text: copy.greeting },
     { role: "assistant", text: copy.firstQuestion },
   ];
+}
+
+function isProductContext(value: unknown): value is ProductConsultationContext {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const context = value as Record<string, unknown>;
+  return (
+    context.source === "product_page" &&
+    (context.productLocale === "en" || context.productLocale === "zh-CN") &&
+    typeof context.productName === "string" &&
+    typeof context.productSlug === "string" &&
+    typeof context.skuModel === "string" &&
+    ["fixed", "starting_from", "range", "request_quote"].includes(
+      String(context.priceMode),
+    ) &&
+    typeof context.displayedPrice === "string"
+  );
 }
 
 const en = {
